@@ -1209,7 +1209,18 @@ function vueTiroir() {
       <span class="libelle">Export</span>
       <button class="bouton bouton--primaire" data-action="exporter-fichier">Exporter clients-data.js</button>
       <span class="sourdine" style="font-size:14px;line-height:1.5">Tous les clients de la base, au format du fichier source.</span>
-      <button class="bouton bouton--secondaire" data-action="exporter-json">Exporter le client en JSON</button>
+      <button class="bouton bouton--secondaire" data-action="exporter-json">Exporter ce diagnostic en JSON</button>
+      <button class="bouton bouton--secondaire" data-action="exporter-base-json">Exporter toute la base en JSON</button>
+
+      <span class="libelle">Import</span>
+      <button class="bouton bouton--secondaire" data-action="importer-json" data-mode="remplacer">Injecter dans ce diagnostic</button>
+      <button class="bouton bouton--secondaire" data-action="importer-json" data-mode="nouveau">Importer comme nouveau diagnostic</button>
+      <span class="sourdine" style="font-size:14px;line-height:1.5">
+        Reprend un JSON exporté ici : processus, étapes, frictions, chiffres,
+        outils et environnement IT. « Injecter » remplace le contenu du
+        diagnostic courant en gardant sa place dans la liste.
+      </span>
+
       <button class="bouton" data-action="reinitialiser" style="background:transparent;color:var(--rouge-fonce);font-size:14px;text-align:left">
         Réinitialiser depuis les données d'origine
       </button>
@@ -2919,19 +2930,72 @@ const ACTIONS = {
   'exporter-json': () => {
     const c = client();
     if (!c) return;
-    const data = {
-      client: c.nom, site: c.site, date_visite: c.date,
-      exporte_le: new Date().toISOString(),
-      totaux: {
-        processus: c.processus.length,
-        etapes: c.processus.reduce((n, p) => n + p.etapes.length, 0),
-        frictions: c.processus.reduce((n, p) => n + p.frictions.length, 0)
-      },
-      processus: c.processus, outils: c.outils || [], notes: c.notes || ''
-    };
-    telecharger(`diagnostic-${c.id}.json`, JSON.stringify(data, null, 2), 'application/json');
+    telecharger(`diagnostic-${c.id}.json`,
+      JSON.stringify(paquetJson([c]), null, 2), 'application/json');
+  },
+  'exporter-base-json': () => {
+    if (!etat.base.length) return;
+    telecharger('diagnostic-os-base.json',
+      JSON.stringify(paquetJson(etat.base), null, 2), 'application/json');
   },
   'exporter-fichier': () => telecharger('clients-data.js', genererFichier(), 'text/javascript'),
+
+  /* --- import --- */
+  'importer-json': (i, id, cible) => {
+    const remplacer = cible.dataset.mode === 'remplacer';
+    lireFichierJson((donnees) => {
+      const courant = client();
+
+      /* En remplacement, l'identifiant du client courant se libère : le
+         diagnostic entrant le reprendra et gardera sa place dans la liste. */
+      const pris = etat.base
+        .map((x) => x.id)
+        .filter((x) => !(remplacer && courant && x === courant.id));
+
+      const clients = clientsDuJson(donnees, pris);
+      if (!clients.length) {
+        alert("Aucun diagnostic exploitable dans ce fichier.");
+        return;
+      }
+
+      if (remplacer && courant && clients.length === 1) {
+        const avant = totauxClient(courant);
+        if (avant.etapes + avant.frictions > 0 && !confirm(
+          `« ${courant.nom} » contient déjà ${avant.etapes} étape(s) et `
+          + `${avant.frictions} friction(s).\n\nLes remplacer par le contenu du fichier ?`
+        )) return;
+
+        const arrive = clients[0];
+        arrive.id = courant.id;
+        majBase(({ base }) => {
+          base[base.indexOf(courant)] = arrive;
+          return {
+            procId: arrive.processus[0] ? arrive.processus[0].id : null,
+            menu: false,
+            etapeActive: null
+          };
+        });
+        return;
+      }
+
+      if (remplacer && clients.length > 1) {
+        alert(`Le fichier contient ${clients.length} diagnostics : ils sont ajoutés `
+          + `à la base au lieu de remplacer un seul diagnostic.`);
+      }
+
+      majBase(({ base }) => {
+        clients.forEach((x) => base.push(x));
+        const premier = clients[0];
+        return {
+          clientId: premier.id,
+          procId: premier.processus[0] ? premier.processus[0].id : null,
+          menu: false,
+          edition: false,
+          etapeActive: null
+        };
+      });
+    });
+  },
   'reinitialiser': () => {
     if (!confirm("Abandonner toutes les modifications locales et repartir des données d'origine ?")) return;
     try { localStorage.removeItem(CLE_BASE); localStorage.removeItem(CLE_CLIENT); } catch (err) {}
@@ -3022,6 +3086,230 @@ function genererFichier() {
   });
   L.push('];');
   return L.join('\n') + '\n';
+}
+
+/* ==========================================================================
+   JSON — EXPORT FIDÈLE ET RÉINJECTION
+   Le JSON exporté contient le client entier (identifiant, processus, outils,
+   notes, environnement IT) : réinjecté, il reconstitue le diagnostic à
+   l'identique. `totaux` et `exporte_le` sont là pour la lecture humaine et
+   sont ignorés à l'import.
+
+   À l'import on ne fait jamais confiance au fichier : rien n'est adopté tel
+   quel. Chaque champ est recopié dans la forme attendue, les entrées vides
+   sont écartées, les identifiants sont réattribués s'ils sont déjà pris. Un
+   fichier bancal donne un diagnostic incomplet, jamais une base corrompue.
+   ========================================================================== */
+const FORMAT_JSON = 'diagnostic-os';
+const VERSION_JSON = 1;
+
+const net = (v) => (v == null ? '' : String(v)).trim();
+
+/** Une liste de supports peut arriver en tableau ou en chaîne : on range en chaîne. */
+const enChaineListe = (v) => (Array.isArray(v)
+  ? v.map(net).filter(Boolean).join(', ')
+  : net(v));
+
+function totauxClient(c) {
+  return {
+    processus: c.processus.length,
+    etapes: c.processus.reduce((n, p) => n + p.etapes.length, 0),
+    frictions: c.processus.reduce((n, p) => n + p.frictions.length, 0)
+  };
+}
+
+function paquetJson(clients) {
+  const liste = clients.map(clone);
+  return {
+    format: FORMAT_JSON,
+    version: VERSION_JSON,
+    exporte_le: new Date().toISOString(),
+    totaux: liste.length === 1
+      ? totauxClient(liste[0])
+      : { clients: liste.length },
+    clients: liste
+  };
+}
+
+function normaliserEtape(brut) {
+  if (!brut || typeof brut !== 'object') return null;
+  const role = net(brut.role);
+  const texte = net(brut.texte);
+  if (!role && !texte) return null;               /* ligne vide : rien à poser */
+
+  const et = { ordre: 0, role, texte, phase: net(brut.phase) };
+  const role2 = net(brut.role2);
+  if (role2 && role2 !== role) et.role2 = role2;
+  const supports = enChaineListe(brut.supports);
+  if (supports) et.supports = supports;
+  const lien = net(brut.lien);
+  if (lien && ORDRE_LIENS.includes(lien)) et.lien = lien;
+  return et;
+}
+
+function normaliserProcessus(brut, pris) {
+  if (!brut || typeof brut !== 'object') return null;
+
+  const etapes = (Array.isArray(brut.etapes) ? brut.etapes : [])
+    .map(normaliserEtape).filter(Boolean);
+  etapes.forEach((et, i) => { et.ordre = i + 1; });
+
+  /* Les couloirs du diagramme sont bâtis sur `roles` : tout rôle cité par une
+     étape doit y figurer, sinon la carte n'a aucune ligne où se poser. */
+  const roles = [];
+  const noterRole = (r) => {
+    const v = net(r);
+    if (v && !roles.includes(v)) roles.push(v);
+  };
+  (Array.isArray(brut.roles) ? brut.roles : []).forEach(noterRole);
+  etapes.forEach((et) => { noterRole(et.role); noterRole(et.role2); });
+
+  const frictions = (Array.isArray(brut.frictions) ? brut.frictions : [])
+    .map((f) => (f && typeof f === 'object'
+      ? { role: net(f.role) || 'Transverse', texte: net(f.texte) }
+      : null))
+    .filter((f) => f && f.texte);
+
+  const chiffres = (Array.isArray(brut.chiffres) ? brut.chiffres : [])
+    .map((x) => (x && typeof x === 'object'
+      ? { valeur: net(x.valeur), libelle: net(x.libelle) }
+      : null))
+    .filter((x) => x && (x.valeur || x.libelle));
+
+  const nom = net(brut.nom) || 'Processus importé';
+  return {
+    id: idUnique(net(brut.id) || nom, pris),
+    nom,
+    soustitre: net(brut.soustitre),
+    roles: roles.length ? roles : ['RH'],
+    etapes,
+    frictions,
+    chiffres
+  };
+}
+
+/** Environnement IT. Absent du fichier → on laisse `si` vide : l'app le
+    reconstruira par déduction au premier affichage (assurerSI). */
+function normaliserSI(brut) {
+  if (!brut || typeof brut !== 'object') return null;
+  const si = {};
+
+  if (Array.isArray(brut.domaines)) {
+    si.domaines = brut.domaines.map(net).filter(Boolean);
+  }
+  if (brut.classement && typeof brut.classement === 'object') {
+    si.classement = {};
+    Object.keys(brut.classement).forEach((k) => {
+      const outil = net(k), domaine = net(brut.classement[k]);
+      if (outil && domaine) si.classement[outil] = domaine;
+    });
+  }
+  if (brut.missions && typeof brut.missions === 'object') {
+    si.missions = {};
+    Object.keys(brut.missions).forEach((k) => {
+      const domaine = net(k), liste = brut.missions[k];
+      if (domaine && Array.isArray(liste)) {
+        si.missions[domaine] = liste.map(net).filter(Boolean);
+      }
+    });
+  }
+  if (Array.isArray(brut.liens)) {
+    si.liens = brut.liens
+      .map((l) => (l && typeof l === 'object' ? {
+        de: net(l.de),
+        vers: net(l.vers),
+        nature: net(l.nature),
+        libelle: net(l.libelle),
+        nb: Number(l.nb) || 0
+      } : null))
+      .filter((l) => l && l.de && l.vers);
+  }
+  return Object.keys(si).length ? si : null;
+}
+
+function normaliserClient(brut, pris) {
+  if (!brut || typeof brut !== 'object') return null;
+
+  /* `client` en chaîne : ancien format d'export, où le nom était à plat. */
+  const nom = net(brut.nom) || net(brut.client) || 'Diagnostic importé';
+
+  const idsProc = [];
+  const processus = [];
+  (Array.isArray(brut.processus) ? brut.processus : []).forEach((pb) => {
+    const p = normaliserProcessus(pb, idsProc);
+    if (!p) return;
+    idsProc.push(p.id);
+    processus.push(p);
+  });
+  if (!processus.length) processus.push(processusVierge([]));
+
+  const c = {
+    id: idUnique(net(brut.id) || nom, pris),
+    nom,
+    site: net(brut.site),
+    date: net(brut.date) || net(brut.date_visite) || dateDuJour(),
+    processus,
+    outils: (Array.isArray(brut.outils) ? brut.outils : []).map(net).filter(Boolean),
+    notes: net(brut.notes)
+  };
+  const si = normaliserSI(brut.si);
+  if (si) c.si = si;
+  return c;
+}
+
+/** Accepte les quatre formes rencontrées : paquet `{clients:[…]}`, paquet
+    `{client:{…}}`, tableau nu de clients, ou client seul (dont l'ancien
+    export à plat, reconnaissable à son `processus` de premier niveau). */
+function clientsDuJson(donnees, pris) {
+  /* Sans l'un de ces champs, l'objet n'a rien d'un diagnostic : mieux vaut le
+     refuser que fabriquer un client vide à partir d'un fichier sans rapport. */
+  const ressembleAUnClient = (o) => !!o && typeof o === 'object'
+    && ['processus', 'nom', 'client', 'site', 'outils'].some((k) => o[k] !== undefined);
+
+  let bruts = [];
+  if (Array.isArray(donnees)) {
+    bruts = donnees;
+  } else if (donnees && typeof donnees === 'object') {
+    if (Array.isArray(donnees.clients)) bruts = donnees.clients;
+    else if (donnees.client && typeof donnees.client === 'object') bruts = [donnees.client];
+    else if (ressembleAUnClient(donnees)) bruts = [donnees];
+  }
+
+  const dejaPris = pris.slice();
+  const out = [];
+  bruts.forEach((b) => {
+    const c = normaliserClient(b, dejaPris);
+    if (!c) return;
+    dejaPris.push(c.id);
+    out.push(c);
+  });
+  return out;
+}
+
+/** Sélecteur de fichier jetable : `#racine` est réécrit à chaque rendu, un
+    <input> posé dans le balisage n'y survivrait pas. */
+function lireFichierJson(surSucces) {
+  const champ = document.createElement('input');
+  champ.type = 'file';
+  champ.accept = 'application/json,.json';
+  champ.addEventListener('change', () => {
+    const fichier = champ.files && champ.files[0];
+    if (!fichier) return;
+    const lecteur = new FileReader();
+    lecteur.onload = () => {
+      let donnees;
+      try {
+        donnees = JSON.parse(lecteur.result);
+      } catch (err) {
+        alert("Fichier illisible : ce n'est pas du JSON valide.");
+        return;
+      }
+      surSucces(donnees);
+    };
+    lecteur.onerror = () => alert('Lecture du fichier impossible.');
+    lecteur.readAsText(fichier);
+  });
+  champ.click();
 }
 
 /* ==========================================================================
