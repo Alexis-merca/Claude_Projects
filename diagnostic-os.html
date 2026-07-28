@@ -1,0 +1,3056 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnostic OS — Mercateam</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@600&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================================
+   1. JETONS — charte Mercateam 2024
+   ========================================================================= */
+:root {
+  --violet:        #6733FD;   /* primary-500 : CTA, liens, états actifs */
+  --violet-300:    #8C63FD;   /* hover primaire */
+  --violet-200:    #C7B4FE;
+  --violet-150:    #D1C2FE;
+  --violet-400:    #A485FE;
+  --violet-50:     #F0EBFF;   /* wash violet */
+  --violet-800:    #2A146A;   /* texte sur wash violet */
+  --turquoise:     #2AC6CC;
+
+  --encre:         #2B2B2B;   /* texte principal */
+  --gris:          #7B7B7B;   /* texte secondaire */
+  --bord:          #D5D5D5;   /* anneaux d'input et de carte */
+  --filet:         #EFEFEF;   /* séparateurs */
+  --page:          #F7F9FA;   /* fond de page */
+  --blanc:         #FFFFFF;
+  --blanc-casse:   #FCFCFD;   /* couloir alterné */
+
+  /* Rouge = friction, uniquement. Jamais une force. */
+  --rouge:         #E90101;
+  --rouge-fonce:   #AD0101;
+  --rouge-clair:   #FFD9D1;
+  --rouge-anneau:  #FFB3A3;
+
+  --r-chip:   4px;
+  --r-petit:  8px;
+  --r-carte:  12px;
+  --r-pilule: 100px;
+
+  --ombre:    0 2px 8px rgba(0, 0, 0, .08);
+  --ombre-lg: 0 8px 32px rgba(0, 0, 0, .12);
+  --anneau:   inset 0 0 0 1px var(--bord);
+
+  --ui:      'Overpass', system-ui, -apple-system, sans-serif;
+  --titre:   'General Sans', 'Overpass', system-ui, sans-serif;
+  --mono:    'Roboto Mono', ui-monospace, monospace;
+
+  --colonne-max: 300px;       /* plafond d'une colonne d'étape (fit-content) */
+  --couloir: 200px;           /* largeur de la colonne des rôles */
+}
+
+/* =========================================================================
+   2. BASE
+   ========================================================================= */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--encre);
+  font: 400 15px/1.4 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2 { margin: 0; font-family: var(--titre); font-weight: 600; }
+h1 { font-size: 44px; line-height: 1.1; }
+h2 { font-size: 30px; line-height: 1.15; }
+
+button { font-family: var(--ui); }
+input, textarea, select { font-family: var(--ui); }
+textarea { resize: vertical; }
+
+.libelle {
+  font: 600 12px/1 var(--ui);
+  color: var(--gris);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.libelle--large { font-size: 13px; letter-spacing: .14em; }
+.sourdine { color: var(--gris); }
+.mono { font-family: var(--mono); }
+
+/* =========================================================================
+   3. BOUTONS
+   ========================================================================= */
+.bouton {
+  border: none;
+  border-radius: var(--r-pilule);
+  font: 600 15px/1 var(--ui);
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+.bouton--primaire { background: var(--violet); color: var(--blanc); }
+.bouton--primaire:hover { background: var(--violet-300); }
+.bouton--primaire:active { background: var(--violet-800); }
+
+.bouton--secondaire { background: var(--page); box-shadow: var(--anneau); color: var(--encre); }
+.bouton--secondaire:hover { background: var(--violet-50); }
+
+.bouton--sombre { background: var(--violet-800); color: var(--blanc); }
+.bouton--sombre:hover { background: var(--violet); }
+
+.bouton--mini {
+  background: var(--violet-50);
+  color: var(--violet);
+  font-size: 13px;
+  padding: 9px 16px;
+}
+.bouton--mini:hover { background: var(--violet-150); }
+
+.bouton--danger {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--rouge-anneau);
+  color: var(--rouge-fonce);
+  font-size: 14px;
+  padding: 11px 18px;
+}
+.bouton--danger:hover { background: var(--rouge-clair); }
+
+.bouton--carre {
+  width: 34px; height: 34px; padding: 0;
+  background: var(--page);
+  box-shadow: var(--anneau);
+  color: var(--gris);
+  font: 400 15px/1 var(--ui);
+}
+.bouton--carre:hover:not(:disabled) { background: var(--violet-50); color: var(--violet); }
+.bouton--carre[data-role="supprimer"]:hover { background: var(--rouge-clair); color: var(--rouge-fonce); }
+.bouton--carre:disabled { opacity: .35; cursor: default; }
+
+.bouton--clair {
+  width: 34px; height: 34px; padding: 0;
+  background: rgba(255, 255, 255, .7);
+  box-shadow: none;
+  color: var(--gris);
+  font: 400 15px/1 var(--ui);
+}
+.bouton--clair:hover { background: var(--blanc); color: var(--rouge-fonce); }
+
+.bouton--ajout-clair {
+  background: rgba(255, 255, 255, .7);
+  font-size: 13px;
+  padding: 9px 16px;
+  align-self: flex-start;
+}
+.bouton--ajout-clair:hover { background: var(--blanc); }
+.panneau--frictions .bouton--ajout-clair { color: var(--rouge-fonce); }
+.panneau--chiffres  .bouton--ajout-clair { color: var(--violet); }
+
+.bouton--retirer {
+  width: 22px; height: 22px; padding: 0;
+  background: transparent;
+  color: var(--gris);
+  font: 400 15px/1 var(--ui);
+  border-radius: var(--r-pilule);
+  border: none;
+  cursor: pointer;
+}
+.bouton--retirer:hover { background: var(--rouge-clair); color: var(--rouge-fonce); }
+
+/* =========================================================================
+   4. CHAMPS
+   ========================================================================= */
+.champ, .zone, .selecteur {
+  width: 100%;
+  border: none;
+  border-radius: var(--r-petit);
+  background: var(--blanc);
+  box-shadow: var(--anneau);
+  padding: 9px 12px;
+  font: 400 15px/1.4 var(--ui);
+  color: var(--encre);
+  outline: none;
+  transition: box-shadow .15s;
+}
+.champ:focus, .zone:focus, .selecteur:focus { box-shadow: inset 0 0 0 1px var(--violet); }
+.selecteur { cursor: pointer; }
+
+.champ--valeur { font: 700 17px/1.2 var(--mono); color: var(--violet); }
+
+.zone--claire {
+  background: rgba(255, 255, 255, .75);
+  box-shadow: inset 0 0 0 1px rgba(173, 1, 1, .18);
+}
+.zone--claire:focus { box-shadow: inset 0 0 0 1px var(--rouge); }
+
+.champ-nu {
+  width: 130px;
+  border: none;
+  background: transparent;
+  font: 400 15px/1.3 var(--ui);
+  color: var(--encre);
+  outline: none;
+}
+
+.groupe { display: flex; flex-direction: column; gap: 7px; }
+
+/* =========================================================================
+   5. BARRE SUPÉRIEURE ET TIROIR
+   ========================================================================= */
+.barre {
+  position: sticky; top: 0; z-index: 40;
+  height: 64px;
+  background: var(--blanc);
+  box-shadow: 0 1px 0 var(--filet);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; gap: 24px;
+}
+.barre__bloc { display: flex; align-items: center; gap: 16px; }
+.barre__logo { width: 190px; height: 27px; display: block; }
+.barre__logo svg { width: 100%; height: 100%; display: block; }
+.barre__filet { width: 1px; height: 24px; background: var(--filet); }
+.barre__contexte { display: flex; align-items: center; gap: 6px; font: 500 15px/1.3 var(--ui); color: var(--gris); }
+
+.burger {
+  width: 40px; height: 40px;
+  border: none; border-radius: var(--r-pilule);
+  background: var(--violet-50);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  cursor: pointer;
+}
+.burger:hover { background: var(--violet-150); }
+.burger span { display: block; width: 16px; height: 2px; border-radius: var(--r-pilule); background: var(--violet); }
+
+.puce-edition {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: var(--r-pilule);
+  background: var(--violet-50); color: var(--violet-800);
+  font: 600 14px/1.3 var(--ui);
+}
+.puce-edition::before {
+  content: ''; width: 8px; height: 8px;
+  border-radius: var(--r-pilule); background: var(--violet);
+}
+
+.voile { position: fixed; inset: 0; z-index: 50; background: rgba(43, 43, 43, .45); border: none; }
+
+.tiroir {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 60;
+  width: 400px; background: var(--blanc);
+  box-shadow: var(--ombre-lg);
+  display: flex; flex-direction: column;
+}
+.tiroir__entete {
+  height: 64px; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--filet);
+}
+.tiroir__corps { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.tiroir__pied { padding: 24px; border-top: 1px solid var(--filet); display: flex; flex-direction: column; gap: 12px; }
+.tiroir__fermer {
+  width: 36px; height: 36px; border: none; border-radius: var(--r-pilule);
+  background: var(--page); color: var(--encre); font: 400 20px/1 var(--ui); cursor: pointer;
+}
+.tiroir__fermer:hover { background: var(--violet-50); }
+
+.fiche-client {
+  border: none; text-align: left; cursor: pointer;
+  border-radius: var(--r-carte); padding: 14px 16px;
+  background: var(--page); color: var(--encre);
+  box-shadow: inset 0 0 0 1px var(--filet);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.fiche-client:hover { box-shadow: inset 0 0 0 1px var(--violet-200); }
+.fiche-client--actif {
+  background: var(--violet-50); color: var(--violet-800);
+  box-shadow: inset 0 0 0 1px var(--violet-400);
+}
+.fiche-client__nom { font: 600 16px/1.3 var(--ui); }
+.fiche-client__meta { font: 400 14px/1.3 var(--ui); opacity: .7; }
+
+/* =========================================================================
+   6. STRUCTURE DE PAGE
+   ========================================================================= */
+.principal {
+  width: 100%; max-width: 2400px; margin: 0 auto;
+  padding: 40px clamp(16px, 2.5vw, 40px) 72px;
+  display: flex; flex-direction: column; gap: 32px;
+}
+.section { display: flex; flex-direction: column; gap: 24px; }
+.section--synthese { padding-top: 16px; border-top: 1px solid var(--filet); }
+
+.carte {
+  background: var(--blanc);
+  border-radius: var(--r-carte);
+  box-shadow: var(--ombre);
+  padding: 28px 30px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.carte--flux { padding: 24px 0 8px; gap: 0; }
+
+.grille-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grille-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+.grille-analyse { display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; align-items: start; }
+.rangee { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rangee--pied { padding-top: 4px; border-top: 1px solid var(--filet); }
+.pousse-droite { margin-left: auto; }
+
+/* --- en-tête du diagnostic --- */
+.entete {
+  background: var(--blanc); border-radius: var(--r-carte); box-shadow: var(--ombre);
+  padding: 36px 40px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 40px; flex-wrap: wrap;
+}
+.entete__titre { display: flex; flex-direction: column; gap: 12px; }
+.entete__sur-titre { font: 600 14px/1 var(--ui); color: var(--violet); letter-spacing: .14em; text-transform: uppercase; }
+.entete__kpis { display: flex; gap: 32px; }
+.kpi { display: flex; flex-direction: column; gap: 6px; }
+.kpi__valeur { font: 700 34px/1 var(--mono); color: var(--violet); }
+.kpi__valeur--friction { color: var(--rouge); }
+.kpi__libelle { font: 400 15px/1.3 var(--ui); color: var(--gris); }
+
+.pilule {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: var(--r-pilule);
+  font: 500 15px/1.3 var(--ui);
+}
+.pilule--violet { background: var(--violet-50); color: var(--violet-800); font-weight: 600; }
+.pilule--contour { background: var(--page); box-shadow: var(--anneau); color: var(--encre); }
+
+/* --- onglets de processus --- */
+.onglets {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  border-bottom: 1px solid var(--filet);
+}
+.onglet {
+  border: none; cursor: pointer; background: transparent;
+  padding: 12px 18px;
+  font: 600 16px/1.3 var(--ui); color: var(--gris);
+}
+.onglet:hover { color: var(--encre); }
+.onglet--actif { color: var(--violet); box-shadow: inset 0 -3px 0 var(--violet); }
+
+/* =========================================================================
+   7. DIAGRAMME DE FLUX
+   Une seule grille pour tout le diagramme : ligne 1 = frise temporelle,
+   puis une ligne par rôle. C'est ce qui permet à une carte de chevaucher
+   deux couloirs (grid-row: span 2).
+   Colonnes en fit-content() : chaque étape ne prend que la largeur de son
+   texte, plafonnée — d'où beaucoup moins de défilement horizontal.
+   ========================================================================= */
+.flux__entete {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px 16px; gap: 16px; flex-wrap: wrap;
+}
+.flux-defile { overflow-x: auto; padding: 14px 24px 16px 0; }
+
+.flux {
+  min-width: min-content;
+  display: grid;
+  position: relative;
+  align-items: stretch;
+}
+
+/* fond du couloir, tiré sur toute la largeur de la grille */
+.flux__bande { z-index: 0; background: var(--blanc); border-top: 1px solid var(--filet); }
+.flux__bande--paire { background: var(--blanc-casse); }
+
+.flux-svg { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; overflow: visible; }
+/* Les flèches visibles restent sous les cartes (z-index 2), mais les zones de
+   clic doivent passer AU-DESSUS des cellules (z-index 3) : sinon la cellule
+   intercepte le clic et la flèche n'est jamais atteinte. D'où deux calques. */
+.flux-svg--cibles { z-index: 5; }
+/* chemin transparent élargi : cible de clic confortable sur la flèche */
+.fleche-cible { pointer-events: stroke; cursor: pointer; }
+
+/* --- frise temporelle --- */
+.flux__phase {
+  position: relative;
+  margin: 0 0 10px; padding: 7px 12px;
+  border-radius: var(--r-petit);
+  background: var(--violet-50); color: var(--violet-800);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  z-index: 3;
+}
+.flux__phase--vide { background: transparent; }
+.flux__phase--coupe { border-left: 1px dashed var(--violet-200); }
+.flux__phase-libelle {
+  font: 600 12px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; text-align: center;
+}
+/* bouton d'ajout en bout de frise, aligné sur les bandeaux */
+.flux__phase-ajout {
+  margin: 0 0 10px; padding: 7px 10px;
+  border: 1px dashed var(--violet-200); border-radius: var(--r-petit);
+  background: transparent; color: var(--violet);
+  font: 600 12px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; z-index: 3;
+  opacity: .55; transition: opacity .15s, background .15s;
+}
+.flux__phase-ajout:hover { opacity: 1; background: var(--violet-50); }
+
+/* écart de temps entre deux jalons, posé sur la séparation */
+.flux__ecart {
+  position: absolute; left: 0; top: -10px; transform: translateX(-50%);
+  background: var(--blanc); box-shadow: inset 0 0 0 1px var(--violet-200);
+  color: var(--violet); font: 600 11px/1 var(--mono);
+  padding: 3px 8px; border-radius: var(--r-pilule);
+  white-space: nowrap; z-index: 4;
+}
+
+/* --- couloirs et cellules --- */
+.flux__etiquette {
+  position: sticky; left: 0; z-index: 6;
+  display: flex; align-items: center;
+  padding: 12px 16px 12px 24px;   /* la marge vit ici, pas sur le conteneur défilant */
+}
+.flux__cellule {
+  z-index: 3;
+  padding: 12px 14px;
+  display: flex; align-items: stretch;
+  min-width: 150px;
+}
+.flux__cellule--coupe { border-left: 1px dashed var(--violet-200); }
+
+.flux__carte {
+  position: relative;   /* repère du bandeau de supports à cheval sur la bordure */
+  /* pas de width:100% : sinon la grille ne peut pas mesurer le texte
+     et toutes les colonnes retombent sur le plancher de min-width. */
+  flex: 1 1 auto; min-width: 0; text-align: left;
+  background: var(--blanc); border: none;
+  border-radius: var(--r-carte);
+  box-shadow: var(--anneau);
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+/* Carte à cheval : elle garde sa taille d'origine et se centre sur la ligne
+   de séparation des deux couloirs (décalage calculé après la mise en page). */
+.flux__cellule--cheval { align-items: flex-start; }
+.flux__carte--cheval {
+  z-index: 4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .10), inset 0 0 0 1px var(--violet-200);
+}
+.flux__carte--actif { box-shadow: inset 0 0 0 2px var(--violet); }
+.flux__carte-tete {
+  display: flex; align-items: flex-start; flex-wrap: wrap; gap: 4px 8px;
+}
+.flux__carte-phase {
+  flex: 1 1 auto; min-width: 0;
+  font: 600 12px/1.2 var(--ui); color: var(--violet-400);
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.flux__carte-texte { font: 400 15px/1.4 var(--ui); color: var(--encre); text-wrap: pretty; }
+
+/* --- supports : badges de marque, à cheval sur la bordure haute de la carte --- */
+.badge-support { display: block; flex: none; }
+
+.supports-bordure {
+  position: absolute; top: 0; left: 12px; z-index: 4;
+  transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: calc(100% - 40px);   /* laisse la place à la poignée */
+}
+.supports-bordure__reste {
+  font: 700 10px/1 var(--mono); color: var(--violet);
+  background: var(--blanc); border-radius: var(--r-pilule); padding: 3px 5px;
+}
+/* En édition, chaque badge porte sa croix de retrait : fond blanc pour rester
+   lisible en chevauchant la bordure. */
+.support-modif {
+  display: inline-flex; align-items: center; gap: 1px;
+  padding: 2px 2px 2px 3px;
+  border-radius: var(--r-petit);
+  background: var(--blanc); box-shadow: var(--anneau);
+}
+.support-modif:hover { box-shadow: inset 0 0 0 1px var(--violet-200); }
+
+.chip {
+  display: inline-flex; align-items: center; justify-self: start; align-self: start;
+  padding: 5px 12px; border-radius: var(--r-pilule);
+  background: var(--chip-fond, var(--filet)); color: var(--chip-encre, var(--encre));
+  font: 600 14px/1.35 var(--ui); white-space: nowrap;
+}
+.chip--large { padding: 6px 14px; }
+.chip--mini { padding: 2px 8px; font-size: 11px; }
+
+.vide {
+  margin: 0 24px 20px; padding: 40px;
+  border-radius: var(--r-carte);
+  background: var(--page); box-shadow: inset 0 0 0 1px var(--filet);
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+.vide__titre { font: 600 17px/1.3 var(--ui); }
+
+/* --- barre de zoom --- */
+.flux__zoom { display: flex; align-items: center; gap: 10px; }
+.flux__zoom input[type="range"] { width: 120px; accent-color: var(--violet); cursor: pointer; }
+.flux__zoom-valeur { font: 600 13px/1 var(--mono); color: var(--gris); min-width: 40px; text-align: right; }
+
+/* --- légende des flèches --- */
+.flux__legende { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.flux__legende-item { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1 var(--ui); color: var(--gris); }
+.flux__legende-trait { width: 26px; height: 0; border-top-width: 2px; }
+
+/* =========================================================================
+   7 bis. ÉDITION DIRECTE SUR LE DIAGRAMME
+   ========================================================================= */
+.flux--edition .flux__cellule { min-width: 210px; }
+
+/* champ de phase du bandeau : renomme la phase de tout le groupe */
+.flux__phase-edition { display: flex; align-items: center; gap: 2px; width: 100%; }
+.bouton--puce-claire {
+  width: 22px; height: 22px; flex: none; padding: 0;
+  border: none; border-radius: var(--r-pilule);
+  background: rgba(255, 255, 255, .7);
+  color: var(--violet-800); font: 400 13px/1 var(--ui); cursor: pointer;
+  opacity: 0; transition: opacity .15s, background .15s, color .15s;
+}
+.flux__phase:hover .bouton--puce-claire,
+.flux__phase-edition:focus-within .bouton--puce-claire { opacity: 1; }
+.bouton--puce-claire:hover { background: var(--blanc); color: var(--rouge-fonce); }
+
+.flux__phase-champ {
+  width: 100%; min-width: 0; border: none; background: transparent;
+  padding: 2px 4px; outline: none;
+  border-radius: var(--r-chip);
+  text-align: center;
+}
+.flux__phase-champ {
+  font: 600 12px/1.2 var(--ui); color: var(--violet-800);
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.flux__phase-champ:hover { background: rgba(255, 255, 255, .6); }
+.flux__phase-champ:focus { background: var(--blanc); box-shadow: inset 0 0 0 1px var(--violet); }
+.flux__phase-champ::placeholder { color: var(--violet-400); }
+
+/* couloir de rôle éditable */
+.flux__etiquette--edition { flex-direction: column; align-items: stretch; gap: 6px; padding-right: 12px; }
+/* Garde l'aspect « pastille de rôle » : le code couleur reste lisible en édition. */
+.flux__role-champ {
+  width: 100%; border: none; border-radius: var(--r-pilule);
+  padding: 5px 12px; outline: none;
+  background: var(--chip-fond, var(--filet));
+  color: var(--chip-encre, var(--encre));
+  font: 600 14px/1.35 var(--ui);
+  text-overflow: ellipsis;
+}
+.flux__role-champ:hover { box-shadow: 0 0 0 1px var(--chip-encre, var(--bord)); }
+.flux__role-champ:focus { background: var(--blanc); color: var(--encre); box-shadow: inset 0 0 0 1px var(--violet); }
+.flux__role-outils { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.flux__etiquette--edition:hover .flux__role-outils,
+.flux__etiquette--edition:focus-within .flux__role-outils { opacity: 1; }
+.bouton--puce {
+  width: 26px; height: 26px; padding: 0;
+  border: none; border-radius: var(--r-pilule);
+  background: var(--page); box-shadow: var(--anneau);
+  color: var(--gris); font: 400 13px/1 var(--ui); cursor: pointer;
+}
+.bouton--puce:hover:not(:disabled) { background: var(--violet-50); color: var(--violet); }
+.bouton--puce[data-role="supprimer"]:hover { background: var(--rouge-clair); color: var(--rouge-fonce); }
+.bouton--puce:disabled { opacity: .3; cursor: default; }
+.bouton--puce svg { display: block; margin: 0 auto; }
+
+/* carte d'étape en édition */
+.flux__carte--edition { position: relative; gap: 6px; padding: 10px 12px 8px; }
+.flux__carte--edition:focus-within { box-shadow: inset 0 0 0 2px var(--violet); }
+.carte__tete { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.carte__poignee {
+  cursor: grab; color: var(--bord); font-size: 14px; line-height: 1;
+  padding: 2px 3px; border-radius: var(--r-chip); user-select: none;
+}
+.carte__poignee:hover { color: var(--violet); background: var(--violet-50); }
+.carte__poignee:active { cursor: grabbing; }
+.carte__texte {
+  width: 100%; border: none; background: transparent;
+  padding: 2px 4px; outline: none; overflow: hidden;
+  border-radius: var(--r-chip);
+  font: 400 15px/1.4 var(--ui); color: var(--encre);
+  resize: none;
+}
+.carte__texte:hover { background: var(--page); }
+.carte__texte:focus { background: var(--page); box-shadow: inset 0 0 0 1px var(--violet-200); }
+.carte__texte::placeholder { color: var(--bord); }
+/* supports : pastilles retirables + liste déroulante des outils du site */
+.support--modif { gap: 2px; padding-right: 3px; }
+.carte__support-choix {
+  align-self: flex-start;
+  border: none; background: transparent; outline: none; cursor: pointer;
+  padding: 2px 4px; border-radius: var(--r-chip);
+  font: 600 11px/1.3 var(--ui); color: var(--violet);
+  max-width: 100%;
+}
+.carte__support-choix:hover { background: var(--violet-50); }
+.carte__support-choix:focus { background: var(--violet-50); box-shadow: inset 0 0 0 1px var(--violet-200); }
+
+/* Les commandes secondaires s'effacent au repos mais gardent leur place :
+   aucun calque ne vient recouvrir le texte ni le choix du support. */
+.carte__outils {
+  display: flex; gap: 4px; justify-content: flex-end;
+  opacity: 0; transition: opacity .15s;
+}
+.flux__carte--edition:hover .carte__outils,
+.flux__carte--edition:focus-within .carte__outils { opacity: 1; }
+
+/* glisser-déposer d'une étape vers un autre couloir / une autre colonne */
+.flux__carte--glissee { opacity: .35; }
+.flux__cellule--cible { background: var(--violet-50); box-shadow: inset 0 0 0 2px var(--violet-200); border-radius: var(--r-carte); }
+
+/* Bandes de dépôt sur la séparation de deux couloirs : inertes au repos,
+   activées seulement pendant un glissement. */
+.flux__frontiere {
+  align-self: end; height: 20px; z-index: 5;
+  transform: translateY(10px);
+  pointer-events: none; border-radius: var(--r-pilule);
+  margin: 0 14px;
+}
+.flux--glisse .flux__frontiere {
+  pointer-events: auto;
+  box-shadow: inset 0 0 0 1px var(--violet-200);
+  background: rgba(103, 51, 253, .05);
+}
+.flux--glisse .flux__frontiere--cible {
+  background: var(--violet-50);
+  box-shadow: inset 0 0 0 2px var(--violet);
+}
+.flux__ajout {
+  width: 100%; min-height: 46px;
+  border: 1px dashed var(--bord); border-radius: var(--r-carte);
+  background: transparent; color: var(--gris);
+  font: 600 13px/1 var(--ui); cursor: pointer;
+  opacity: .4; transition: opacity .15s, background .15s, color .15s;
+}
+.flux__cellule:hover .flux__ajout { opacity: 1; }
+.flux__ajout:hover { background: var(--violet-50); border-color: var(--violet-200); color: var(--violet); opacity: 1; }
+.flux__pied {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 24px 6px; border-top: 1px solid var(--filet);
+}
+
+/* =========================================================================
+   8. TABLEAU D'ÉTAPES ET PANNEAUX
+   ========================================================================= */
+.table-etapes {
+  display: grid;
+  grid-template-columns: 44px 190px 130px 1fr 190px 128px;
+  gap: 10px 12px; align-items: center;
+}
+.table-etapes__num { font: 700 15px/1 var(--mono); color: var(--gris); text-align: center; }
+.table-etapes__num--actif { color: var(--violet); }
+.table-etapes__actions { display: flex; gap: 6px; }
+
+.roles-ligne { display: grid; grid-template-columns: var(--couloir) 1fr auto; gap: 12px; align-items: center; }
+
+.panneau {
+  border-radius: var(--r-carte);
+  padding: 24px 26px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.panneau--frictions { background: var(--rouge-clair); }
+.panneau--chiffres { background: var(--violet-50); }
+.panneau__titre { font: 700 14px/1 var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+.panneau--frictions .panneau__titre { color: var(--rouge-fonce); display: flex; align-items: center; gap: 10px; }
+.panneau--frictions .panneau__titre::before {
+  content: ''; width: 10px; height: 10px; border-radius: var(--r-pilule); background: var(--rouge);
+}
+.panneau--chiffres .panneau__titre { color: var(--violet-800); }
+
+.friction-groupe { display: grid; grid-template-columns: 190px 1fr; gap: 16px; align-items: start; }
+.friction-groupe__items { display: flex; flex-direction: column; gap: 8px; }
+.friction {
+  background: rgba(255, 255, 255, .65);
+  border-radius: var(--r-petit);
+  padding: 10px 14px;
+  font: 400 15px/1.4 var(--ui); text-wrap: pretty;
+}
+.grille-frictions { display: grid; grid-template-columns: 190px 1fr 34px; gap: 10px 12px; align-items: start; }
+.grille-chiffres  { display: grid; grid-template-columns: 110px 1fr 34px; gap: 10px 12px; align-items: center; }
+
+.chiffre { display: flex; align-items: baseline; gap: 16px; }
+.chiffre__valeur { font: 700 28px/1 var(--mono); color: var(--violet); min-width: 96px; }
+.chiffre__libelle { font: 400 15px/1.4 var(--ui); }
+
+/* =========================================================================
+   8 bis. ENVIRONNEMENT IT — logigramme des échanges entre outils
+   ========================================================================= */
+.section--si { padding-top: 16px; border-top: 1px solid var(--filet); }
+
+.si-defile { overflow-x: auto; padding: 8px 24px 20px; }
+.si__grille {
+  position: relative;
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  gap: 40px 34px; padding: 6px 0 10px;
+}
+.si-svg { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; overflow: visible; }
+
+/* Un bloc par domaine : pastille de titre et badges d'outils en débord sur la
+   bordure haute, missions à l'intérieur. */
+.si__bloc {
+  position: relative; z-index: 1;
+  flex: 1 1 300px; max-width: 420px;
+  border: 1.5px solid var(--c); border-radius: 14px;
+  background: var(--blanc);
+  padding: 26px 16px 16px;
+}
+/* Une seule barre en débord : le titre et les outils se partagent la largeur
+   et se réduisent plutôt que de se chevaucher. */
+.si__bloc-entete {
+  position: absolute; top: 0; left: 14px; right: 14px; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.si__bloc-titre {
+  flex: 0 1 auto; min-width: 0;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 6px 13px; border-radius: var(--r-petit);
+  background: var(--c); color: var(--blanc);
+  font: 700 12px/1.2 var(--ui); letter-spacing: .05em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.si__bloc-champ {
+  border: none; background: transparent; outline: none;
+  color: var(--blanc); font: 700 12px/1.2 var(--ui); letter-spacing: .05em;
+  text-transform: uppercase; min-width: 6ch;
+}
+.si__bloc-titre .bouton--retirer { color: rgba(255, 255, 255, .75); }
+.si__bloc-titre .bouton--retirer:hover { background: rgba(255, 255, 255, .22); color: var(--blanc); }
+
+.si__bloc-outils {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 5px; flex-wrap: nowrap;
+}
+.si__outil--compact { padding: 4px; }
+.si__outil {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px 4px 5px; border-radius: var(--r-pilule);
+  background: var(--blanc); box-shadow: var(--anneau);
+  font: 600 12px/1.2 var(--ui); color: var(--encre); white-space: nowrap;
+}
+
+.si__bloc-missions { display: flex; flex-wrap: wrap; gap: 7px; }
+.si__mission {
+  padding: 7px 12px; border-radius: 7px;
+  background: color-mix(in srgb, var(--c) 13%, white);
+  color: color-mix(in srgb, var(--c) 78%, black);
+  font: 500 14px/1.3 var(--ui);
+}
+.si__bloc-vide { font: italic 400 13px/1.4 var(--ui); color: var(--gris); }
+
+/* missions éditables */
+.si__mission--modif { display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 10px; }
+.si__mission-champ {
+  border: none; background: transparent; outline: none;
+  color: inherit; font: 500 14px/1.3 var(--ui);
+  min-width: 6ch;
+}
+.si__mission-ajout {
+  border: 1px dashed var(--c); border-radius: 7px;
+  background: transparent; color: var(--c);
+  padding: 6px 11px; cursor: pointer;
+  font: 600 12px/1.3 var(--ui);
+  opacity: .65; transition: opacity .15s, background .15s;
+}
+.si__mission-ajout:hover { opacity: 1; background: color-mix(in srgb, var(--c) 10%, white); }
+
+/* classement des outils, en édition */
+.si__classement { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px 16px; }
+.si__classement-ligne { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; align-items: center; }
+
+.si__ligne {
+  display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr) 150px minmax(0, 1.4fr) 34px;
+  gap: 10px; align-items: center;
+}
+/* En lecture, les paires outil→outil se serrent sur leur contenu. */
+.si__ligne--lecture {
+  grid-template-columns: max-content 18px max-content 110px minmax(0, 1fr);
+  gap: 12px; padding: 3px 0;
+}
+.si__paire { display: inline-flex; align-items: center; gap: 7px; font: 500 14px/1.3 var(--ui); }
+.si__fleche-texte { text-align: center; font: 600 15px/1 var(--ui); color: var(--violet-400); }
+.si__nature { font: 600 12px/1.3 var(--ui); }
+.selecteur--compact { padding: 7px 10px; font-size: 14px; }
+
+/* =========================================================================
+   9. SYNTHÈSE
+   ========================================================================= */
+.synthese-grille { display: grid; grid-template-columns: repeat(var(--np, 4), 1fr); gap: 20px; }
+.carte-synthese {
+  background: var(--blanc); border-radius: var(--r-carte); box-shadow: var(--ombre);
+  padding: 24px 26px; display: flex; flex-direction: column; gap: 12px;
+}
+.carte-synthese__nom { font: 600 19px/1.25 var(--ui); }
+.carte-synthese__mesure { display: flex; align-items: baseline; gap: 10px; }
+.carte-synthese__nombre { font: 700 30px/1 var(--mono); color: var(--violet); }
+.carte-synthese__nombre--friction { color: var(--rouge); }
+
+.grille-bilan { display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; align-items: stretch; }
+.carte-inventaire { background: var(--blanc); border-radius: var(--r-carte); box-shadow: var(--ombre); padding: 28px 30px; display: flex; flex-direction: column; gap: 20px; }
+.nuage { display: flex; flex-wrap: wrap; gap: 10px; }
+.etiquette-outil {
+  display: inline-flex; padding: 6px 14px; border-radius: var(--r-pilule);
+  background: var(--page); box-shadow: var(--anneau);
+  font: 400 15px/1.3 var(--ui);
+}
+.total-frictions {
+  background: var(--rouge-clair); border-radius: var(--r-carte);
+  padding: 28px 30px;
+  display: flex; flex-direction: column; gap: 14px; justify-content: center;
+}
+.total-frictions__nombre { font: 700 80px/1 var(--mono); color: var(--rouge-fonce); }
+.total-frictions__legende { font: 400 16px/1.4 var(--ui); }
+
+/* =========================================================================
+   10. IMPRESSION / PDF — vue de lecture seule
+   ========================================================================= */
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  body { background: var(--blanc); }
+  .barre, .tiroir, .voile, .ne-pas-imprimer { display: none !important; }
+  .principal { max-width: none; padding: 0; gap: 20px; }
+  .carte, .entete, .carte-synthese, .carte-inventaire, .panneau, .total-frictions {
+    box-shadow: none;
+    border: 1px solid var(--filet);
+    break-inside: avoid;
+  }
+  .section, .grille-analyse, .grille-bilan { break-inside: avoid; }
+  .si__bloc { break-inside: avoid; }
+  .si-defile { overflow: visible; }
+  .flux-defile { overflow: visible; }
+  h2 { break-after: avoid; }
+}
+</style>
+</head>
+
+<body>
+<div id="racine"></div>
+
+<script>
+/* ==========================================================================
+   DONNÉES — reprises telles quelles de clients-data.js
+   Chaque étape   : { ordre, role, texte, phase }  → ordre = colonne du flux
+   Chaque friction: { role, texte }  → "Transverse" si elle ne porte pas sur un rôle unique
+   ========================================================================== */
+const BASE_SOURCE = [
+  {
+    id: 'sekurit-float-france',
+    nom: 'Sekurit',
+    site: 'Usine FLOAT France',
+    date: '22.06.2026',
+    processus: [
+      {
+        id: 'onboarding',
+        nom: 'Onboarding',
+        soustitre: "Arrivée d'un collaborateur — de la définition du besoin à l'intégration",
+        roles: ['RH', 'EHS', 'Chef de quart / manager', 'Collaborateur'],
+        etapes: [
+          { ordre: 1, role: 'RH', texte: "Définition de l'orga cible (DIR)", phase: 'Avant J1' },
+          { ordre: 2, role: 'RH', texte: 'Budget intérim en year-1', phase: 'Avant J1' },
+          { ordre: 3, role: 'EHS', texte: 'Accueil EHS (1 h) : PPT + vidéo + évaluation QCM', phase: 'J1' },
+          { ordre: 4, role: 'EHS', texte: 'Remise des EPI', phase: 'J1' },
+          { ordre: 5, role: 'Collaborateur', texte: 'Modules BOOST — pas de délai de visionnage', phase: 'J1' },
+          { ordre: 6, role: 'RH', texte: 'Checklist contractuelle', phase: 'J1' },
+          { ordre: 7, role: 'Chef de quart / manager', texte: 'Accueil EHS au poste, sur papier (risques au poste + bons EPI)', phase: 'J1' },
+          { ordre: 8, role: 'Collaborateur', texte: "Journée d'intégration (dernière édition fin 2021 avec l'école SG) — beaucoup de personnes en même temps", phase: 'Après J1' }
+        ],
+        frictions: [
+          { role: 'Collaborateur', texte: "Le collaborateur ne peut pas suivre ses modules BOOST dès les premiers jours : accès non encore créé" },
+          { role: 'EHS', texte: '3 premiers mois : formation EHS poussée (sensibilisation)' },
+          { role: 'Transverse', texte: "Pas d'accueil qualité aujourd'hui" }
+        ],
+        chiffres: [
+          { valeur: '1 h', libelle: "durée de l'accueil EHS en salle" },
+          { valeur: '3 mois', libelle: 'de formation EHS de sensibilisation' },
+          { valeur: '2021', libelle: "dernière journée d'intégration organisée" }
+        ]
+      },
+      {
+        id: 'habilitations',
+        nom: 'Pilotage des habilitations',
+        soustitre: "Du plan de formation annuel à l'archivage des preuves",
+        roles: ['RH', 'Chef d\u2019équipe', 'Formateur externe (électrique)', 'Formateur interne', 'Médical', 'EHS', 'Collaborateur / intérim'],
+        etapes: [
+          { ordre: 1, role: 'RH', texte: 'Construction du plan de formation annuel', phase: '' },
+          { ordre: 2, role: 'Chef d\u2019équipe', texte: 'Entretien annuel', phase: '' },
+          { ordre: 3, role: 'RH', texte: 'Organise les formations externes / internes selon les inscriptions des managers — communication par mail', phase: '' },
+          { ordre: 4, role: 'Collaborateur / intérim', texte: "Formation CACES en intérim, gérée par l'agence", phase: '' },
+          { ordre: 5, role: 'Formateur externe (électrique)', texte: 'Formation', phase: '' },
+          { ordre: 6, role: 'Formateur interne', texte: "Formation interne (avec date d'expiration) — support & checklist, salle + terrain", phase: '' },
+          { ordre: 7, role: 'Médical', texte: 'Visite médicale (tous les 5 ans)', phase: '' },
+          { ordre: 8, role: 'Formateur externe (électrique)', texte: 'Attestation de formation', phase: '' },
+          { ordre: 9, role: 'Collaborateur / intérim', texte: 'Signatures (collaborateur, formateur interne, RH)', phase: '' },
+          { ordre: 10, role: 'RH', texte: 'Suivi disponible sur le SharePoint', phase: '' },
+          { ordre: 11, role: 'Médical', texte: 'Archivage dans Padoa + Excel (historique papier)', phase: '' },
+          { ordre: 12, role: 'RH', texte: 'Archivage papier, géré au cas par cas', phase: '' },
+          { ordre: 13, role: 'Collaborateur / intérim', texte: "Cartons d'autorisations (toutes habilitations)", phase: '' },
+          { ordre: 14, role: 'EHS', texte: "Mise à jour des dates pour les badges d'accès engins", phase: '' }
+        ],
+        frictions: [
+          { role: 'RH', texte: "Renouvellement / archivage gérés au cas par cas — renouvellement parfois à l'aveugle" },
+          { role: 'Médical', texte: 'La production ne suit pas le médical' },
+          { role: 'Collaborateur / intérim', texte: 'Carton papier : engins, pont, nacelles, SST, médical' },
+          { role: 'Transverse', texte: 'La production se repose trop sur une seule personne (Stéphanie)' }
+        ],
+        chiffres: [
+          { valeur: '5 ans', libelle: 'périodicité de la visite médicale' },
+          { valeur: '1 / an', libelle: 'construction du plan de formation' },
+          { valeur: '3', libelle: "supports d'archivage en parallèle : Padoa, Excel, papier" }
+        ]
+      },
+      {
+        id: 'competences',
+        nom: 'Compétences & formation au poste',
+        soustitre: 'Périmètre production — du livret de formation à la matrice de compétences',
+        roles: ['RH', 'Chef de quart', 'Chef d\u2019atelier', 'Tuteur', 'Qualité', 'Collaborateur'],
+        etapes: [
+          { ordre: 1, role: 'RH', texte: 'Définition du plan de formation — initiation côté production', phase: '' },
+          { ordre: 2, role: 'Collaborateur', texte: 'Pré-requis listés dans le livret de formation', phase: '' },
+          { ordre: 3, role: 'Collaborateur', texte: 'Livret de formation imprimé et rempli', phase: '' },
+          { ordre: 4, role: 'Chef de quart', texte: 'Identification du tuteur (2 maximum) — formation de formateur selon le potentiel pédagogique et sécurité', phase: '' },
+          { ordre: 5, role: 'Collaborateur', texte: 'Formation en doublon', phase: '' },
+          { ordre: 6, role: 'Qualité', texte: 'Formation R43 en interne — à formaliser', phase: '' },
+          { ordre: 7, role: 'Chef d\u2019atelier', texte: 'Rituels de suivi + remplissage du livret', phase: '' },
+          { ordre: 8, role: 'Chef d\u2019atelier', texte: 'Checklist de validation', phase: '' },
+          { ordre: 9, role: 'Tuteur', texte: 'Évaluation, validation et signature(s)', phase: '' },
+          { ordre: 10, role: 'Chef d\u2019atelier', texte: 'Évaluation, validation et signature', phase: '' },
+          { ordre: 11, role: 'Tuteur', texte: 'Reformation si nécessaire', phase: '' },
+          { ordre: 12, role: 'Tuteur', texte: 'Prime tuteur si preuves de formation validées', phase: '' },
+          { ordre: 13, role: 'Chef d\u2019atelier', texte: 'Stockage des livrets — pas toujours rigoureux', phase: '' },
+          { ordre: 14, role: 'RH', texte: 'Mise à jour de la matrice de compétences', phase: '' },
+          { ordre: 15, role: 'Chef d\u2019atelier', texte: 'Matrice de compétences pas toujours accessible', phase: '' }
+        ],
+        frictions: [
+          { role: 'RH', texte: "Administration BOOST : délais de modification et de création d'accès pour les nouveaux arrivants" },
+          { role: 'Chef d\u2019atelier', texte: 'Archivage de la formation validée peu rigoureux' },
+          { role: 'Qualité', texte: 'Pas de formation qualité (autres contrôleurs)' },
+          { role: 'Transverse', texte: 'La production prend la main sur les lancements de formation — planification et suivi défectueux' },
+          { role: 'Transverse', texte: 'Pas de livret de formation pour tous les services : un par poste en production, aucun en exploitation' },
+          { role: 'Transverse', texte: 'Livrets construits une fois et non révisés — certains datent de 2014' }
+        ],
+        chiffres: [
+          { valeur: '2', libelle: 'tuteurs maximum identifiés par formation' },
+          { valeur: '2014', libelle: 'année de rédaction de certains livrets' }
+        ]
+      },
+      {
+        id: 'planification',
+        nom: 'Planification des opérateurs',
+        soustitre: 'Production & Dol — même process, du M-1 au jour J',
+        roles: ['Chef d\u2019équipe', 'Dol / autres services', 'Collaborateur'],
+        etapes: [
+          { ordre: 1, role: 'Collaborateur', texte: 'Point ordo toutes les semaines (log, prod, qualité, ordo)', phase: 'M-1' },
+          { ordre: 2, role: 'Collaborateur', texte: 'Demande de congés via formulaire papier au chef de quart — demande compteur temps Kronos', phase: 'M-1' },
+          { ordre: 3, role: 'Dol / autres services', texte: 'Informe des postes ouverts le samedi et le dimanche', phase: 'M-1' },
+          { ordre: 4, role: 'Dol / autres services', texte: "S'inscrit sur le planning d'heures supplémentaires", phase: 'M-1' },
+          { ordre: 5, role: 'Dol / autres services', texte: 'Validation', phase: 'M-1' },
+          { ordre: 6, role: 'Chef d\u2019équipe', texte: 'Construit le planning au mois : titulaires en priorité, formations selon les possibilités', phase: 'M-1' },
+          { ordre: 7, role: 'Chef d\u2019équipe', texte: 'Imprime pour le mois M et M+1 à partir du 15', phase: 'S-1' },
+          { ordre: 8, role: 'Chef d\u2019équipe', texte: 'Planning du mois diffusé', phase: 'S-1' },
+          { ordre: 9, role: 'Collaborateur', texte: 'Consulte le format imprimé devant la salle des chefs de quart', phase: 'Jour J' },
+          { ordre: 10, role: 'Collaborateur', texte: 'Absence imprévue', phase: 'Jour J' },
+          { ordre: 11, role: 'Chef d\u2019équipe', texte: 'Met à jour chaque jour sur le format papier', phase: 'Jour J' },
+          { ordre: 12, role: 'Chef d\u2019équipe', texte: "Alimentation de Cronos de l'absence a posteriori", phase: 'Jour J' }
+        ],
+        frictions: [
+          { role: 'Chef d\u2019équipe', texte: 'Pas de vision consolidée des demandes et des saisies de congés — pas de suivi' },
+          { role: 'Chef de quart', texte: 'Pointage à la main des tâches spécifiques à chaque fin de shift' },
+          { role: 'Transverse', texte: 'Peu de vision sur les restrictions médicales' }
+        ],
+        chiffres: [
+          { valeur: '5x8', libelle: 'rythme cyclique en production (historiquement différent)' },
+          { valeur: '2-5 %', libelle: "d'absentéisme compris dans l'équipe type (2 remplacent)" },
+          { valeur: '3', libelle: 'équipes couvertes par les intérimaires' }
+        ]
+      }
+    ],
+    outils: ['Papier', 'Excel', 'SharePoint', 'Padoa', 'BOOST', 'Kronos / Cronos', 'E-mail'],
+    notes: "Titulaire — confirmé — habilité · absentéisme comblé au détriment de la formation · pas d'affectation au poste sans habilitation"
+  }
+];
+
+/* ==========================================================================
+   CONSTANTES
+   ========================================================================== */
+const CLE_BASE = 'diagnosticos.base.v2';
+const CLE_CLIENT = 'diagnosticos.client.v2';
+
+/* 8 couleurs de tag de la charte : surface claire + texte foncé */
+const PASTELS = [
+  ['#D4DEF9', '#2D5BAE'], ['#D4F3E9', '#337572'], ['#DBEEFA', '#256F9A'], ['#DEF3CC', '#107558'],
+  ['#F8EAC1', '#CE6700'], ['#F5E4D9', '#A3512B'], ['#FFCFCF', '#AA2D46'], ['#F9DBF4', '#AA2B89']
+];
+
+const LOGO = `<svg viewBox="0 0 346 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mercateam">
+  <g transform="translate(86.877 6.192)">
+    <path d="M 28.416 25.664 L 6.4 25.664 C 6.613 28.523 7.509 30.869 9.088 32.704 C 10.667 34.539 13.035 35.456 16.192 35.456 C 18.026 35.456 19.562 35.264 20.8 34.88 C 22.08 34.453 23.36 33.941 24.64 33.344 L 26.56 37.824 C 25.194 38.763 23.445 39.445 21.312 39.872 C 19.221 40.341 17.514 40.576 16.192 40.576 C 10.987 40.576 6.976 39.083 4.16 36.096 C 1.387 33.067 0 29.12 0 24.256 C 0 19.435 1.301 15.509 3.904 12.48 C 6.549 9.451 10.197 7.936 14.848 7.936 C 19.882 7.936 23.402 9.707 25.408 13.248 C 27.413 16.789 28.416 20.928 28.416 25.664 Z M 22.464 21.504 C 22.08 18.944 21.269 16.917 20.032 15.424 C 18.794 13.931 17.002 13.184 14.656 13.184 C 12.267 13.184 10.389 13.952 9.024 15.488 C 7.659 16.981 6.827 18.987 6.528 21.504 L 22.464 21.504 Z M 35.889 39.808 L 35.889 8.768 L 39.345 8.768 L 41.329 13.184 C 42.523 12.16 44.017 11.179 45.809 10.24 C 47.643 9.259 49.393 8.768 51.057 8.768 L 52.401 13.696 C 50.694 13.696 48.902 14.165 47.025 15.104 C 45.19 16 43.526 17.173 42.033 18.624 L 42.033 39.808 L 35.889 39.808 Z M 70.988 13.184 C 68.087 13.184 65.911 14.251 64.46 16.384 C 63.052 18.475 62.327 21.077 62.284 24.192 C 62.284 27.435 62.967 30.123 64.332 32.256 C 65.698 34.347 67.852 35.392 70.796 35.392 C 72.674 35.392 74.146 35.2 75.212 34.816 C 76.322 34.432 77.538 33.92 78.86 33.28 L 80.716 37.696 C 79.351 38.635 77.687 39.36 75.724 39.872 C 73.762 40.384 72.119 40.64 70.796 40.64 C 66.018 40.64 62.348 39.125 59.788 36.096 C 57.271 33.067 56.012 29.12 56.012 24.256 C 56.055 19.435 57.356 15.509 59.916 12.48 C 62.519 9.451 66.231 7.936 71.052 7.936 C 72.332 7.936 73.932 8.213 75.852 8.768 C 77.815 9.28 79.479 10.005 80.844 10.944 L 79.052 15.296 C 77.73 14.741 76.514 14.251 75.404 13.824 C 74.295 13.397 72.823 13.184 70.988 13.184 Z M 92.121 30.848 C 92.121 32.043 92.547 33.152 93.401 34.176 C 94.254 35.2 95.555 35.712 97.305 35.712 C 98.883 35.712 100.355 35.328 101.721 34.56 C 103.129 33.792 104.366 32.811 105.433 31.616 L 105.433 25.344 L 97.881 25.344 C 96.003 25.344 94.574 25.899 93.593 27.008 C 92.611 28.117 92.121 29.397 92.121 30.848 Z M 88.473 10.688 C 89.667 9.877 91.395 9.216 93.657 8.704 C 95.918 8.192 97.71 7.936 99.033 7.936 C 102.617 7.936 105.603 8.939 107.993 10.944 C 110.382 12.949 111.577 15.552 111.577 18.752 L 111.577 39.808 L 108.121 39.808 C 107.822 39.339 107.545 38.848 107.289 38.336 C 107.033 37.824 106.777 37.333 106.521 36.864 C 105.454 37.803 104.089 38.656 102.425 39.424 C 100.761 40.192 99.097 40.576 97.433 40.576 C 93.763 40.576 91.033 39.659 89.241 37.824 C 87.491 35.989 86.617 33.664 86.617 30.848 C 86.617 27.733 87.662 25.365 89.753 23.744 C 91.886 22.08 94.638 21.248 98.009 21.248 L 105.369 21.248 C 105.369 19.115 104.942 17.28 104.089 15.744 C 103.235 14.208 101.593 13.44 99.161 13.44 C 97.326 13.44 95.662 13.675 94.169 14.144 C 92.675 14.571 91.353 15.04 90.201 15.552 L 88.473 10.688 Z M 136.433 39.552 C 135.878 39.851 135.089 40.149 134.065 40.448 C 133.083 40.747 132.123 40.896 131.185 40.896 C 128.155 40.896 125.745 40.064 123.953 38.4 C 122.161 36.736 121.265 34.325 121.265 31.168 L 121.265 13.824 L 116.913 13.824 L 116.849 9.152 L 121.265 9.152 L 121.265 1.408 L 127.409 0 L 127.409 9.152 L 133.041 9.152 L 134.961 13.824 L 127.409 13.824 L 127.409 30.208 C 127.409 31.787 127.75 33.088 128.433 34.112 C 129.158 35.093 130.289 35.584 131.825 35.584 C 132.337 35.584 132.849 35.52 133.361 35.392 C 133.915 35.221 134.406 35.051 134.833 34.88 L 136.433 39.552 Z M 169.291 25.664 L 147.275 25.664 C 147.488 28.523 148.384 30.869 149.963 32.704 C 151.541 34.539 153.909 35.456 157.067 35.456 C 158.901 35.456 160.437 35.264 161.675 34.88 C 162.955 34.453 164.235 33.941 165.515 33.344 L 167.435 37.824 C 166.069 38.763 164.32 39.445 162.187 39.872 C 160.096 40.341 158.389 40.576 157.067 40.576 C 151.861 40.576 147.851 39.083 145.035 36.096 C 142.261 33.067 140.875 29.12 140.875 24.256 C 140.875 19.435 142.176 15.509 144.779 12.48 C 147.424 9.451 151.072 7.936 155.723 7.936 C 160.757 7.936 164.277 9.707 166.283 13.248 C 168.288 16.789 169.291 20.928 169.291 25.664 Z M 163.339 21.504 C 162.955 18.944 162.144 16.917 160.907 15.424 C 159.669 13.931 157.877 13.184 155.531 13.184 C 153.141 13.184 151.264 13.952 149.899 15.488 C 148.533 16.981 147.701 18.987 147.403 21.504 L 163.339 21.504 Z M 180.796 30.848 C 180.796 32.043 181.222 33.152 182.076 34.176 C 182.929 35.2 184.23 35.712 185.98 35.712 C 187.558 35.712 189.03 35.328 190.396 34.56 C 191.804 33.792 193.041 32.811 194.108 31.616 L 194.108 25.344 L 186.556 25.344 C 184.678 25.344 183.249 25.899 182.268 27.008 C 181.286 28.117 180.796 29.397 180.796 30.848 Z M 177.148 10.688 C 178.342 9.877 180.07 9.216 182.332 8.704 C 184.593 8.192 186.385 7.936 187.708 7.936 C 191.292 7.936 194.278 8.939 196.668 10.944 C 199.057 12.949 200.252 15.552 200.252 18.752 L 200.252 39.808 L 196.796 39.808 C 196.497 39.339 196.22 38.848 195.964 38.336 C 195.708 37.824 195.452 37.333 195.196 36.864 C 194.129 37.803 192.764 38.656 191.1 39.424 C 189.436 40.192 187.772 40.576 186.108 40.576 C 182.438 40.576 179.708 39.659 177.916 37.824 C 176.166 35.989 175.292 33.664 175.292 30.848 C 175.292 27.733 176.337 25.365 178.428 23.744 C 180.561 22.08 183.313 21.248 186.684 21.248 L 194.044 21.248 C 194.044 19.115 193.617 17.28 192.764 15.744 C 191.91 14.208 190.268 13.44 187.836 13.44 C 186.001 13.44 184.337 13.675 182.844 14.144 C 181.35 14.571 180.028 15.04 178.876 15.552 L 177.148 10.688 Z M 234.132 12.8 C 235.454 11.349 237.14 10.155 239.188 9.216 C 241.278 8.235 243.241 7.744 245.076 7.744 C 248.873 7.744 251.625 8.853 253.332 11.072 C 255.081 13.248 255.956 16 255.956 19.328 L 255.956 39.808 L 249.748 39.808 L 249.748 19.904 C 249.748 17.813 249.236 16.149 248.212 14.912 C 247.23 13.675 245.737 13.035 243.732 12.992 C 242.409 12.992 241.001 13.355 239.508 14.08 C 238.014 14.805 236.649 15.765 235.412 16.96 C 235.454 17.387 235.476 17.792 235.476 18.176 C 235.518 18.517 235.54 18.901 235.54 19.328 L 235.54 39.808 L 229.332 39.808 L 229.332 19.904 C 229.332 17.813 228.841 16.149 227.86 14.912 C 226.878 13.675 225.406 13.035 223.444 12.992 C 222.164 12.992 220.82 13.312 219.412 13.952 C 218.004 14.592 216.702 15.509 215.508 16.704 L 215.508 39.808 L 209.364 39.808 L 209.364 8.768 L 212.82 8.768 L 214.484 12.096 C 215.849 10.816 217.47 9.771 219.348 8.96 C 221.268 8.149 223.06 7.744 224.724 7.744 C 227.07 7.744 229.012 8.213 230.548 9.152 C 232.126 10.048 233.321 11.264 234.132 12.8 Z" fill="rgb(43,43,43)" fill-rule="nonzero"/>
+  </g>
+  <g transform="translate(0.0 0.0)">
+    <path d="M 31.533 3.813 C 30.203 1.457 27.707 0 25.001 0 C 22.296 0 19.8 1.457 18.47 3.813 L 0.97 34.813 C -1.066 38.42 0.207 42.995 3.814 45.031 C 7.421 47.067 11.996 45.794 14.033 42.187 L 25.001 22.756 L 35.97 42.187 C 38.006 45.794 42.581 47.067 46.188 45.031 C 49.795 42.995 51.069 38.42 49.033 34.813 L 31.533 3.813 Z M 61.576 4.394 C 59.584 0.762 55.026 -0.568 51.394 1.424 C 47.762 3.416 46.432 7.974 48.424 11.606 L 65.424 42.606 C 67.416 46.238 71.974 47.568 75.606 45.576 C 79.238 43.584 80.568 39.026 78.576 35.394 L 61.576 4.394 Z" fill="rgb(103,51,253)" fill-rule="evenodd"/>
+  </g>
+</svg>`;
+
+/* ==========================================================================
+   ÉTAT
+   ========================================================================== */
+const etat = {
+  base: [],
+  clientId: null,
+  procId: null,
+  edition: false,
+  menu: false,
+  tableau: false,      /* vue tableau d'appoint, pour la saisie en série */
+  zoom: 1,             /* zoom du diagramme (0.4 → 1) */
+  etapeActive: null
+};
+
+/* Index de l'étape en cours de glissement, le temps du drag & drop. */
+let glisse = null;
+
+/* ==========================================================================
+   OUTILS
+   ========================================================================== */
+const e = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const clone = (v) => JSON.parse(JSON.stringify(v));
+
+function slug(txt) {
+  return String(txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'sans-nom';
+}
+
+function idUnique(souhaite, pris) {
+  const racine = slug(souhaite);
+  let id = racine, n = 2;
+  while (pris.includes(id)) id = racine + '-' + n++;
+  return id;
+}
+
+function dateDuJour() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
+/* Renumérote 1..n d'après la position dans le tableau. Jamais de tri ici :
+   la position est la source de vérité, sinon un déplacement serait annulé. */
+function renumeroter(proc) {
+  proc.etapes.forEach((et, i) => { et.ordre = i + 1; });
+}
+
+/* Aligne une fois pour toutes l'ordre du tableau sur le champ `ordre` (au chargement). */
+function trierBase(base) {
+  base.forEach((c) => (c.processus || []).forEach((p) => {
+    p.etapes.sort((a, b) => a.ordre - b.ordre);
+    renumeroter(p);
+  }));
+  return base;
+}
+
+/** Nom d'échelle de temps encore disponible dans le processus. */
+function nomPhaseLibre(proc) {
+  const pris = proc.etapes.map((et) => et.phase || '');
+  const racine = 'Nouvelle échelle';
+  if (!pris.includes(racine)) return racine;
+  let n = 2;
+  while (pris.includes(`${racine} ${n}`)) n++;
+  return `${racine} ${n}`;
+}
+
+function processusVierge(pris) {
+  return {
+    id: idUnique('processus', pris),
+    nom: 'Nouveau processus',
+    soustitre: '',
+    roles: ['RH'],
+    etapes: [],
+    frictions: [],
+    chiffres: []
+  };
+}
+
+/** Nouvelle étape en fin de flux : hérite de la phase de la précédente. */
+function etapeVierge(proc, role) {
+  const derniere = proc.etapes[proc.etapes.length - 1];
+  return {
+    ordre: proc.etapes.length + 1,
+    role: role || '',
+    texte: '',
+    phase: derniere ? (derniere.phase || '') : '',
+    supports: ''
+  };
+}
+
+/* ==========================================================================
+   ACCÈS ET PERSISTANCE
+   ========================================================================== */
+const client = () => etat.base.find((c) => c.id === etat.clientId) || null;
+
+function proc() {
+  const c = client();
+  if (!c) return null;
+  return c.processus.find((p) => p.id === etat.procId) || c.processus[0] || null;
+}
+
+function persister() {
+  try {
+    localStorage.setItem(CLE_BASE, JSON.stringify(etat.base));
+    if (etat.clientId) localStorage.setItem(CLE_CLIENT, etat.clientId);
+  } catch (err) { /* navigation privée, quota : on continue sans persistance */ }
+}
+
+/** Modifie la base puis réaffiche. `fn` reçoit { base, client, proc }. */
+function majBase(fn) {
+  const suite = fn({ base: etat.base, client: client(), proc: proc() });
+  if (suite) Object.assign(etat, suite);
+  persister();
+  rendre();
+}
+
+/* ==========================================================================
+   RÔLES ET COULEURS
+   ========================================================================== */
+function rolesGlobaux() {
+  const c = client();
+  if (!c) return [];
+  const out = [];
+  c.processus.forEach((p) => p.roles.forEach((r) => { if (!out.includes(r)) out.push(r); }));
+  c.processus.forEach((p) => p.frictions.forEach((f) => {
+    if (f.role !== 'Transverse' && !out.includes(f.role)) out.push(f.role);
+  }));
+  return out;
+}
+
+function couleursRole(role) {
+  const roles = rolesGlobaux();
+  const i = Math.max(0, roles.indexOf(role));
+  return role === 'Transverse' ? ['#EFEFEF', '#2B2B2B'] : PASTELS[i % PASTELS.length];
+}
+
+function chipRole(role, variante) {
+  const [fond, encre] = couleursRole(role);
+  const suffixe = variante ? ` chip--${variante}` : '';
+  return `<span class="chip${suffixe}" style="--chip-fond:${fond};--chip-encre:${encre}">${e(role)}</span>`;
+}
+
+function selecteurRole(champ, valeur, options) {
+  const liste = options.includes(valeur) ? options : options.concat([valeur]);
+  const opts = liste.map((r) =>
+    `<option value="${e(r)}"${r === valeur ? ' selected' : ''}>${e(r) || '—'}</option>`).join('');
+  return `<select class="selecteur" data-champ="${e(champ)}">${opts}</select>`;
+}
+
+/* ==========================================================================
+   VUES
+   ========================================================================== */
+function vueBarre() {
+  const c = client();
+  return `
+  <header class="barre">
+    <div class="barre__bloc">
+      <button class="burger" data-action="ouvrir-menu" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="barre__logo">${LOGO}</span>
+      <span class="barre__filet"></span>
+      <span class="libelle">Diagnostic OS</span>
+      ${etat.edition ? '<span class="puce-edition">Mode édition</span>' : ''}
+    </div>
+    <div class="barre__bloc">
+      <span class="barre__contexte">
+        <span>${e(c ? c.nom : '—')}</span>
+        ${c && c.site ? `<span>·</span><span>${e(c.site)}</span>` : ''}
+      </span>
+      <button class="bouton ${etat.edition ? 'bouton--sombre' : 'bouton--secondaire'}" data-action="basculer-edition">
+        ${etat.edition ? "Terminer l'édition" : 'Modifier'}
+      </button>
+      <button class="bouton bouton--secondaire" data-action="imprimer">Imprimer / PDF</button>
+      <button class="bouton bouton--primaire" data-action="exporter-json">Exporter en JSON</button>
+    </div>
+  </header>`;
+}
+
+function vueTiroir() {
+  if (!etat.menu) return '';
+  const lignes = etat.base.map((cl) => {
+    const meta = [cl.site, cl.date].filter((x) => x && String(x).trim()).join(' · ');
+    return `
+    <button class="fiche-client${cl.id === etat.clientId ? ' fiche-client--actif' : ''}" data-action="choisir-client" data-id="${e(cl.id)}">
+      <span class="fiche-client__nom">${e(cl.nom)}</span>
+      <span class="fiche-client__meta">${e(meta)}</span>
+    </button>`;
+  }).join('');
+
+  return `
+  <button class="voile" data-action="fermer-menu" aria-label="Fermer le menu"></button>
+  <aside class="tiroir">
+    <div class="tiroir__entete">
+      <span class="libelle">Menu</span>
+      <button class="tiroir__fermer" data-action="fermer-menu" aria-label="Fermer">×</button>
+    </div>
+    <div class="tiroir__corps">
+      <span class="libelle">Client</span>
+      ${lignes}
+      <button class="bouton bouton--mini" data-action="creer-client" style="padding:13px 20px;font-size:15px">+ Nouveau diagnostic</button>
+      <p class="sourdine" style="margin:8px 0 0;font-size:14px;line-height:1.5">
+        Les modifications sont enregistrées dans ce navigateur. Exportez
+        <span class="mono" style="font-size:13px;color:var(--encre)">clients-data.js</span>
+        pour les figer dans le projet.
+      </p>
+    </div>
+    <div class="tiroir__pied">
+      <span class="libelle">Export</span>
+      <button class="bouton bouton--primaire" data-action="exporter-fichier">Exporter clients-data.js</button>
+      <span class="sourdine" style="font-size:14px;line-height:1.5">Tous les clients de la base, au format du fichier source.</span>
+      <button class="bouton bouton--secondaire" data-action="exporter-json">Exporter le client en JSON</button>
+      <button class="bouton" data-action="reinitialiser" style="background:transparent;color:var(--rouge-fonce);font-size:14px;text-align:left">
+        Réinitialiser depuis les données d'origine
+      </button>
+    </div>
+  </aside>`;
+}
+
+function vueEntete(totaux) {
+  const c = client();
+  return `
+  <header class="entete">
+    <div class="entete__titre">
+      <span class="entete__sur-titre">Diagnostic de déploiement — état des lieux</span>
+      <h1>${e(c ? c.nom : '—')}</h1>
+      <div class="rangee">
+        ${c && c.site ? `<span class="pilule pilule--violet">${e(c.site)}</span>` : ''}
+        <span class="pilule pilule--contour"><span>Visite du</span><span>${e(c ? c.date : '')}</span></span>
+      </div>
+    </div>
+    <div class="entete__kpis">
+      <div class="kpi">
+        <span class="kpi__valeur">${totaux.processus}</span>
+        <span class="kpi__libelle">processus cartographiés</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__valeur">${totaux.etapes}</span>
+        <span class="kpi__libelle">étapes relevées</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__valeur kpi__valeur--friction">${totaux.frictions}</span>
+        <span class="kpi__libelle">frictions relevées</span>
+      </div>
+    </div>
+  </header>`;
+}
+
+function vueFicheClient() {
+  const c = client();
+  if (!c) return '';
+  const outils = (c.outils || []).map((o, i) => `
+    <span class="etiquette-outil" style="padding:4px 6px 4px 12px;gap:6px;align-items:center">
+      <input class="champ-nu" value="${e(o)}" data-champ="outil.${i}">
+      <button class="bouton--retirer" data-action="supprimer-outil" data-i="${i}" aria-label="Retirer">×</button>
+    </span>`).join('');
+
+  return `
+  <section class="carte ne-pas-imprimer">
+    <div class="rangee" style="justify-content:space-between">
+      <span class="libelle libelle--large">Fiche client</span>
+      <div class="rangee" style="gap:10px">
+        <span class="mono sourdine" style="font-size:13px">${e(c.id)}</span>
+        <button class="bouton bouton--mini" data-action="regenerer-id">Régénérer l'identifiant</button>
+      </div>
+    </div>
+    <div class="grille-3">
+      <label class="groupe">
+        <span class="libelle">Client</span>
+        <input class="champ" value="${e(c.nom)}" data-champ="client.nom">
+      </label>
+      <label class="groupe">
+        <span class="libelle">Site</span>
+        <input class="champ" value="${e(c.site)}" data-champ="client.site">
+      </label>
+      <label class="groupe">
+        <span class="libelle">Date de la visite</span>
+        <input class="champ" value="${e(c.date)}" data-champ="client.date" placeholder="22.06.2026">
+      </label>
+    </div>
+    <label class="groupe">
+      <span class="libelle">Notes de synthèse</span>
+      <textarea class="zone" rows="2" data-champ="client.notes">${e(c.notes || '')}</textarea>
+    </label>
+    <div class="groupe" style="gap:10px">
+      <span class="libelle">Outils et supports relevés</span>
+      <div class="nuage" style="align-items:center">
+        ${outils}
+        <button class="bouton bouton--mini" data-action="ajouter-outil">+ Outil</button>
+      </div>
+    </div>
+    <div class="rangee rangee--pied">
+      <button class="bouton bouton--secondaire" data-action="dupliquer-client">Dupliquer ce diagnostic</button>
+      <button class="bouton bouton--danger" data-action="supprimer-client">Supprimer ce diagnostic</button>
+      <span class="sourdine pousse-droite" style="font-size:14px">
+        Enregistrement automatique dans le navigateur · ${etat.base.length} diagnostic(s) en base
+      </span>
+    </div>
+  </section>`;
+}
+
+function vueOnglets() {
+  const c = client();
+  if (!c) return '';
+  const p = proc();
+  const onglets = c.processus.map((x) => `
+    <button class="onglet${p && x.id === p.id ? ' onglet--actif' : ''}" data-action="choisir-proc" data-id="${e(x.id)}">
+      ${e(x.nom)}
+    </button>`).join('');
+  return `
+  <div class="onglets">
+    ${onglets}
+    ${etat.edition ? '<button class="bouton bouton--mini ne-pas-imprimer" data-action="ajouter-processus">+ Processus</button>' : ''}
+  </div>`;
+}
+
+/* Le nom du processus, son sous-titre, et rien de plus : les rôles et les étapes
+   s'éditent directement sur le diagramme. */
+function vueCarteProcessus() {
+  const p = proc();
+  if (!p) return '';
+  return `
+  <section class="carte ne-pas-imprimer" style="gap:16px">
+    <div class="grille-1-2">
+      <label class="groupe">
+        <span class="libelle">Processus — nom de l'onglet</span>
+        <input class="champ" value="${e(p.nom)}" data-champ="proc.nom">
+      </label>
+      <label class="groupe">
+        <span class="libelle">Sous-titre</span>
+        <input class="champ" value="${e(p.soustitre || '')}" data-champ="proc.soustitre">
+      </label>
+    </div>
+    <div class="rangee">
+      <button class="bouton bouton--danger" data-action="supprimer-processus">Supprimer ce processus</button>
+      <span class="sourdine pousse-droite" style="font-size:14px">
+        ${p.etapes.length} étape(s) · ${p.roles.length} rôle(s) · ${p.frictions.length} friction(s)
+      </span>
+    </div>
+  </section>`;
+}
+
+/* Badges de support : pastille à la couleur officielle de la marque + initiale
+   du produit, à la façon des badges de type de fichier. Simple Icons ne contient
+   plus aucune icône Microsoft et les fichiers officiels ne sont pas
+   redistribuables : ces badges sont donc dessinés ici, sans reproduire
+   l'artwork des marques, mais avec leurs couleurs pour être reconnus d'un œil. */
+const BADGES_SUPPORT = [
+  { motifs: ['excel', 'tableur', 'xls', 'csv', 'sheet', 'tableau', 'matrice'],
+    fond: '#217346', lettre: 'X' },
+  { motifs: ['powerpoint', 'ppt', 'slide', 'presentation', 'diaporama'],
+    fond: '#C43E1C', lettre: 'P' },
+  { motifs: ['sharepoint', 'onedrive', 'drive', 'teams', 'intranet', 'partage', 'serveur', 'reseau', 'cloud'],
+    fond: '#038387', lettre: 'S' },
+  { motifs: ['word', 'papier', 'imprime', 'livret', 'carton', 'formulaire', 'checklist',
+             'fiche', 'feuille', 'attestation', 'classeur', 'dossier', 'registre', 'cahier'],
+    fond: '#2B579A', glyphe: '<rect x="4.2" y="3.4" width="7.6" height="9.2" rx="1" fill="#fff"/><path d="M5.9 5.8h4.2M5.9 8h4.2M5.9 10.2h2.8" stroke="#2B579A" stroke-width="1.1" stroke-linecap="round"/>' },
+  { motifs: ['mail', 'email', 'courriel', 'outlook', 'messagerie'],
+    fond: '#0F6CBD', glyphe: '<rect x="3" y="4.6" width="10" height="6.8" rx="1" fill="#fff"/><path d="M3.6 5.4L8 8.7l4.4-3.3" stroke="#0F6CBD" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' },
+  { motifs: ['video', 'film', 'tuto', 'e-learning', 'elearning'],
+    fond: '#D13438', glyphe: '<path d="M6.4 5.1l4.6 2.9-4.6 2.9z" fill="#fff"/>' },
+  { motifs: ['oral', 'reunion', 'brief', 'entretien', 'verbal', 'telephone', 'point'],
+    fond: '#CA8A04', glyphe: '<path d="M12.6 8.5a2.3 2.3 0 0 1-2.3 2.3H6.9L4.2 12.4V5.6a2.3 2.3 0 0 1 2.3-2.3h3.8a2.3 2.3 0 0 1 2.3 2.3z" fill="#fff"/>' }
+];
+/* Défaut : fenêtre de navigateur — la plupart des supports nommés sont des applis web. */
+const BADGE_DEFAUT = {
+  fond: '#5A6ACF',
+  glyphe: '<rect x="3" y="4" width="10" height="8" rx="1.2" fill="#fff"/><path d="M3 6.5h10" stroke="#5A6ACF" stroke-width="1.1"/><circle cx="4.7" cy="5.25" r=".55" fill="#5A6ACF"/>'
+};
+
+function badgeSupport(nom) {
+  const clef = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || BADGE_DEFAUT;
+  const dedans = b.glyphe
+    ? b.glyphe
+    : `<text x="8" y="11.4" text-anchor="middle" fill="#fff"
+             font-family="Overpass, sans-serif" font-size="9.5" font-weight="700">${e(b.lettre)}</text>`;
+  return `<svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+    <rect width="16" height="16" rx="3.6" fill="${b.fond}"/>${dedans}</svg>`;
+}
+
+/** Découpe la chaîne « Excel, SharePoint » en étiquettes affichables. */
+function listeSupports(brut) {
+  return String(brut || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+/** Supports de l'étape, en rangée à cheval sur la bordure haute de la carte. */
+function bandeauSupports(liste) {
+  if (!liste.length) return '';
+  const montrees = liste.slice(0, 4);
+  const reste = liste.length - montrees.length;
+  return `<span class="supports-bordure" title="${e(liste.join(' · '))}">
+    ${montrees.map((sup) => badgeSupport(sup)).join('')}
+    ${reste ? `<span class="supports-bordure__reste">+${reste}</span>` : ''}
+  </span>`;
+}
+
+/** Jalon « J-7 », « J1 », « S+2 », « M+3 » → décalage en jours, ou null. */
+function jalonEnJours(txt) {
+  const m = String(txt || '').trim().match(/^([JSM])\s*([+-]?\d+)?$/i);
+  if (!m) return null;
+  const n = m[2] ? Number(m[2]) : 0;
+  const unite = m[1].toUpperCase();
+  return unite === 'J' ? n : unite === 'S' ? n * 7 : n * 30;
+}
+
+/** Écart entre deux jalons, dans l'unité la plus lisible. */
+function ecartLisible(depuis, vers) {
+  if (depuis == null || vers == null) return '';
+  const j = vers - depuis;
+  if (j === 0) return '';
+  const signe = j > 0 ? '+' : '−';
+  const a = Math.abs(j);
+  if (a % 30 === 0) return `${signe}${a / 30} mois`;
+  if (a % 7 === 0) return `${signe}${a / 7} sem`;
+  return `${signe}${a} j`;
+}
+
+/** Couloirs affichés : les rôles du processus, dédoublonnés, avec leur index réel. */
+function rolesCouloirs(p) {
+  const out = [];
+  p.roles.forEach((r, i) => { if (p.roles.indexOf(r) === i) out.push({ nom: r, iRole: i }); });
+  return out;
+}
+
+/* Nature du lien entre deux étapes — couleur et style de la flèche. */
+const LIENS = {
+  '':       { couleur: '#C7B4FE', tirets: '',    marqueur: 'pointe-neutre', libelle: 'non qualifié' },
+  'auto':   { couleur: '#6733FD', tirets: '',    marqueur: 'pointe-auto',   libelle: 'automatique' },
+  'manuel': { couleur: '#CE6700', tirets: '5 4', marqueur: 'pointe-manuel', libelle: 'manuel' }
+};
+const ORDRE_LIENS = ['', 'manuel', 'auto'];
+
+/* Barre verticale pointillée : le même signe que la séparation de phase du diagramme. */
+const ICONE_COUPURE = `<svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor"
+  stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M6 1.5v9" stroke-dasharray="2 2"/></svg>`;
+
+/** Badges retirables, à cheval sur la bordure haute de la carte. */
+function bandeauSupportsEdition(j, supports) {
+  if (!supports.length) return '';
+  return `<span class="supports-bordure supports-bordure--edition">
+    ${supports.map((sup, k) => `
+      <span class="support-modif" title="${e(sup)}">
+        ${badgeSupport(sup)}
+        <button class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
+                title="Retirer ${e(sup)}">×</button>
+      </span>`).join('')}
+  </span>`;
+}
+
+/** Liste déroulante d'ajout, alimentée par les outils déjà relevés sur le site. */
+function vueChoixSupport(j, supports) {
+  const c = client();
+  const outils = (c && c.outils ? c.outils : []).filter((o) => o && !supports.includes(o));
+  const options = ['<option value="">＋ support…</option>']
+    .concat(outils.map((o) => `<option value="${e(o)}">${e(o)}</option>`))
+    .concat(['<option value="__autre__">Autre outil…</option>']);
+  return `<select class="carte__support-choix" data-champ="support-ajout.${j}"
+                  title="Choisir le support ou l'outil utilisé pour cette étape">${options.join('')}</select>`;
+}
+
+function vueFlux() {
+  const p = proc();
+  const n = p ? p.etapes.length : 0;
+  const ed = etat.edition;
+
+  const zoom = `
+    <div class="flux__zoom ne-pas-imprimer">
+      <button class="bouton bouton--mini" data-action="zoom-ajuster" title="Régler le zoom pour tout afficher">Ajuster</button>
+      <input type="range" min="40" max="100" step="5" value="${Math.round(etat.zoom * 100)}"
+             data-champ="zoom" aria-label="Zoom du diagramme">
+      <span class="flux__zoom-valeur">${Math.round(etat.zoom * 100)} %</span>
+    </div>`;
+
+  const entete = `
+    <div class="flux__entete">
+      <span class="libelle libelle--large">Diagramme de flux — l'existant</span>
+      <div class="rangee" style="gap:14px">
+        ${n ? zoom : ''}
+        ${ed ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
+          etat.tableau ? 'Masquer la vue tableau' : 'Vue tableau'}</button>` : ''}
+      </div>
+    </div>`;
+
+  if (!n) {
+    return `
+    <div class="carte carte--flux">
+      ${entete}
+      <div class="vide">
+        <span class="vide__titre">Aucune étape pour ce processus</span>
+        <span class="sourdine">${ed
+          ? 'Ajoutez la première étape avec le bouton ci-dessous.'
+          : 'Passez en mode édition et ajoutez la première étape du flux.'}</span>
+        ${ed ? '<button class="bouton bouton--mini" data-action="ajouter-etape">+ Première étape</button>' : ''}
+      </div>
+    </div>`;
+  }
+
+  const roles = rolesCouloirs(p);
+  const R = roles.length;
+  const rangDe = (nom) => {
+    const i = roles.findIndex((r) => r.nom === nom);
+    return i < 0 ? 0 : i;
+  };
+
+  /* Une étape partagée reste dans le couloir de son rôle principal et garde sa
+     taille ; elle est simplement décalée pour se centrer sur la frontière avec
+     le couloir du second rôle. `cheval` vaut +1 (vers le bas) ou -1 (vers le haut). */
+  const emprise = p.etapes.map((et) => {
+    const a = rangDe(et.role);
+    if (!et.role2 || et.role2 === et.role) return { ligne: a, cheval: 0 };
+    return { ligne: a, cheval: rangDe(et.role2) > a ? 1 : -1 };
+  });
+
+  /* --- frise temporelle : un bandeau par groupe de phase --- */
+  const groupes = [];
+  p.etapes.forEach((et, i) => {
+    const lab = et.phase || '';
+    const dernier = groupes[groupes.length - 1];
+    if (dernier && dernier.label === lab) dernier.span += 1;
+    else groupes.push({ label: lab, span: 1, debut: i });
+  });
+  const coupures = groupes.slice(1).map((g) => g.debut);
+  /* Écart déduit du libellé lui-même s'il est codé (J-7, J1, S+2, M+3). */
+  const jours = groupes.map((g) => jalonEnJours(g.label));
+
+  const frise = groupes.map((g, i) => {
+    const ecart = i > 0 ? ecartLisible(jours[i - 1], jours[i]) : '';
+    const corps = ed
+      ? `<div class="flux__phase-edition">
+           <input class="flux__phase-champ" value="${e(g.label)}" data-champ="phase.${g.debut}.${g.span}"
+                  placeholder="nommer cette échelle" title="Renomme l'échelle de temps des ${g.span} étape(s) de ce groupe">
+           <button class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
+                   data-i="${g.debut}" data-span="${g.span}" data-role="supprimer"
+                   title="Supprimer cette échelle de temps — ses ${g.span} étape(s) rejoignent l'échelle voisine">×</button>
+         </div>`
+      : `<span class="flux__phase-libelle">${e(g.label)}</span>`;
+    return `
+      <div class="flux__phase${g.label || ed ? '' : ' flux__phase--vide'}${i > 0 ? ' flux__phase--coupe' : ''}"
+           style="grid-row:1;grid-column:${2 + g.debut} / span ${g.span}">
+        ${ecart ? `<span class="flux__ecart">${e(ecart)}</span>` : ''}
+        ${corps}
+      </div>`;
+  }).join('');
+
+  /* --- fonds de couloir, tirés sur toute la largeur --- */
+  const bandes = roles.map((r, i) => `
+    <div class="flux__bande${i % 2 ? ' flux__bande--paire' : ''}" style="grid-row:${2 + i};grid-column:1 / -1"></div>`).join('');
+
+  /* --- étiquettes de rôle --- */
+  const etiquettes = roles.map(({ nom: role, iRole }, i) => {
+    const [fond, encre] = couleursRole(role);
+    const fondBande = i % 2 ? 'var(--blanc-casse)' : 'var(--blanc)';
+    const corps = ed
+      ? `<input class="flux__role-champ" value="${e(role)}" data-champ="role.${iRole}" title="Renommer le rôle"
+                style="--chip-fond:${fond};--chip-encre:${encre}">
+         <div class="flux__role-outils">
+           <button class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="Monter la ligne">↑</button>
+           <button class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="Descendre la ligne">↓</button>
+           <button class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="Supprimer le rôle">×</button>
+         </div>`
+      : chipRole(role);
+    return `
+      <div class="flux__etiquette${ed ? ' flux__etiquette--edition' : ''}"
+           style="grid-row:${2 + i};grid-column:1;background:${fondBande}">${corps}</div>`;
+  }).join('');
+
+  /* --- cellules et cartes --- */
+  const cellules = [];
+  roles.forEach((r, i) => {
+    for (let j = 0; j < n; j++) {
+      const coupe = coupures.includes(j) ? ' flux__cellule--coupe' : '';
+      const pos = `grid-row:${2 + i};grid-column:${2 + j}`;
+      const em = emprise[j];
+
+      if (em.ligne === i) {
+        const et = p.etapes[j];
+        const cible = ed ? ` data-cellule="${j}" data-role-nom="${e(r.nom)}"` : '';
+        const supports = listeSupports(et.supports);
+        const partage = em.cheval ? ' flux__carte--cheval' : '';
+        const cellCheval = em.cheval ? ' flux__cellule--cheval' : '';
+        const marqueCheval = em.cheval ? ` data-cheval="${em.cheval}"` : '';
+
+        if (!ed) {
+          cellules.push(`
+            <div class="flux__cellule${coupe}${cellCheval}" style="${pos}">
+              <div class="flux__carte${partage}" data-etape="${et.ordre}"${marqueCheval}>
+                ${bandeauSupports(supports)}
+                <span class="flux__carte-texte">${e(et.texte)}</span>
+              </div>
+            </div>`);
+        } else {
+          cellules.push(`
+            <div class="flux__cellule${coupe}${cellCheval}" style="${pos}"${cible}>
+              <div class="flux__carte flux__carte--edition${partage}${etat.etapeActive === et.ordre ? ' flux__carte--actif' : ''}"
+                   data-etape="${et.ordre}" data-index="${j}"${marqueCheval}>
+                ${bandeauSupportsEdition(j, supports)}
+                <div class="carte__tete">
+                  <span class="carte__poignee" draggable="true" data-poignee="${j}"
+                        title="Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés">⠿</span>
+                </div>
+                <textarea class="carte__texte" rows="1" data-champ="etape.${j}.texte"
+                          placeholder="Action relevée…">${e(et.texte || '')}</textarea>
+                ${vueChoixSupport(j, supports)}
+                <div class="carte__outils">
+                  <button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="Décaler à gauche">←</button>
+                  <button class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="Décaler à droite">→</button>
+                  <button class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="Insérer une étape après">+</button>
+                  <button class="bouton--puce" data-action="couper-phase" data-i="${j}"
+                          title="Commencer une nouvelle échelle de temps à partir de cette étape">${ICONE_COUPURE}</button>
+                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="Supprimer l'étape">×</button>
+                </div>
+              </div>
+            </div>`);
+        }
+      } else {
+        cellules.push(`<div class="flux__cellule${coupe}" style="${pos}"${
+          ed ? ` data-cellule="${j}" data-role-nom="${e(r.nom)}"` : ''}></div>`);
+      }
+
+      /* Bande de dépôt sur la frontière avec le couloir suivant. */
+      if (ed && i < R - 1) {
+        cellules.push(`<div class="flux__frontiere" style="grid-row:${2 + i};grid-column:${2 + j}"
+          data-frontiere="${j}" data-role-haut="${e(r.nom)}" data-role-bas="${e(roles[i + 1].nom)}"
+          title="Déposer ici : les deux rôles sont concernés"></div>`);
+      }
+    }
+
+    /* colonne d'ajout en fin de couloir */
+    if (ed) {
+      cellules.push(`
+        <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + n}" data-cellule="${n}" data-role-nom="${e(r.nom)}">
+          <button class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${e(r.nom)}"
+                  title="Ajouter une étape sur cette ligne">+ Étape</button>
+        </div>`);
+    }
+  });
+
+  const gabarit = `var(--couloir) repeat(${n}, fit-content(var(--colonne-max)))${ed ? ' 150px' : ''}`;
+
+  const legende = `
+    <div class="flux__legende">
+      ${['auto', 'manuel', ''].map((k) => `
+        <span class="flux__legende-item">
+          <span class="flux__legende-trait" style="border-top-color:${LIENS[k].couleur};border-top-style:${LIENS[k].tirets ? 'dashed' : 'solid'}"></span>
+          ${LIENS[k].libelle}
+        </span>`).join('')}
+      ${ed ? '<span class="sourdine" style="font-size:13px">— cliquez une flèche pour changer</span>' : ''}
+    </div>`;
+
+  return `
+  <div class="carte carte--flux">
+    ${entete}
+    <div class="flux-defile">
+      <div class="flux${ed ? ' flux--edition' : ''}"
+           style="grid-template-columns:${gabarit};zoom:${etat.zoom}">
+        <svg class="flux-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg class="flux-svg flux-svg--cibles" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div style="grid-row:1;grid-column:1"></div>
+        ${bandes}
+        ${frise}
+        ${ed ? `<button class="flux__phase-ajout" data-action="ajouter-phase"
+                        style="grid-row:1;grid-column:${2 + n}"
+                        title="Ajouter une échelle de temps en fin de frise">+ Échelle</button>` : ''}
+        ${etiquettes}
+        ${cellules.join('')}
+      </div>
+    </div>
+    <div class="flux__pied">
+      ${legende}
+      ${ed ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function vueTableEtapes() {
+  const p = proc();
+  if (!p) return '';
+  const roles = p.roles.filter((r, i) => p.roles.indexOf(r) === i);
+
+  const lignes = p.etapes.map((et, i) => `
+    <span class="table-etapes__num${etat.etapeActive === et.ordre ? ' table-etapes__num--actif' : ''}">${et.ordre}</span>
+    ${selecteurRole(`etape.${i}.role`, et.role || '', roles)}
+    <input class="champ" value="${e(et.phase || '')}" data-champ="etape.${i}.phase" placeholder="—">
+    <textarea class="zone" rows="2" data-champ="etape.${i}.texte">${e(et.texte || '')}</textarea>
+    <input class="champ" value="${e(et.supports || '')}" data-champ="etape.${i}.supports" placeholder="Excel, papier…">
+    <div class="table-etapes__actions">
+      <button class="bouton bouton--carre" data-action="gauche-etape" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Vers la gauche">←</button>
+      <button class="bouton bouton--carre" data-action="droite-etape" data-i="${i}" ${i === p.etapes.length - 1 ? 'disabled' : ''} aria-label="Vers la droite">→</button>
+      <button class="bouton bouton--carre" data-action="supprimer-etape" data-role="supprimer" data-i="${i}" aria-label="Supprimer">×</button>
+    </div>`).join('');
+
+  return `
+  <section class="carte ne-pas-imprimer" style="gap:18px">
+    <div class="rangee" style="justify-content:space-between;align-items:baseline">
+      <span class="libelle libelle--large">Vue tableau — saisie en série</span>
+      <span class="sourdine" style="font-size:14px">
+        Pratique pour saisir beaucoup d'étapes d'affilée. Le diagramme reste modifiable directement.
+      </span>
+    </div>
+    <div class="table-etapes">
+      <span class="libelle">N°</span>
+      <span class="libelle">Rôle</span>
+      <span class="libelle">Phase</span>
+      <span class="libelle">Action relevée</span>
+      <span class="libelle">Supports</span>
+      <span class="libelle">Ordre</span>
+      ${lignes}
+    </div>
+    <button class="bouton bouton--mini" data-action="ajouter-etape" style="align-self:flex-start">+ Étape</button>
+  </section>`;
+}
+
+function vueFrictions() {
+  const p = proc();
+  if (!p) return '';
+
+  let corps;
+  if (etat.edition) {
+    const options = p.roles.filter((r, i) => p.roles.indexOf(r) === i).concat(['Transverse']);
+    const lignes = p.frictions.map((f, i) => `
+      ${selecteurRole(`friction.${i}.role`, f.role || 'Transverse', options)}
+      <textarea class="zone zone--claire" rows="2" data-champ="friction.${i}.texte">${e(f.texte || '')}</textarea>
+      <button class="bouton bouton--clair" data-action="supprimer-friction" data-i="${i}" aria-label="Supprimer">×</button>`).join('');
+    corps = `
+      <div class="grille-frictions">${lignes}</div>
+      <button class="bouton bouton--ajout-clair" data-action="ajouter-friction">+ Friction</button>`;
+  } else {
+    const ordre = p.roles.concat(['Transverse']);
+    const rang = (r) => { const i = ordre.indexOf(r); return i < 0 ? 99 : i; };
+    const paquets = {};
+    p.frictions.forEach((f) => { (paquets[f.role] = paquets[f.role] || []).push(f); });
+    corps = Object.keys(paquets).sort((a, b) => rang(a) - rang(b)).map((role) => `
+      <div class="friction-groupe">
+        ${chipRole(role)}
+        <div class="friction-groupe__items">
+          ${paquets[role].map((f) => `<span class="friction">${e(f.texte)}</span>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  return `
+  <div class="panneau panneau--frictions">
+    <span class="panneau__titre">Frictions par rôle</span>
+    ${corps}
+  </div>`;
+}
+
+function vueChiffres() {
+  const p = proc();
+  if (!p) return '';
+
+  let corps;
+  if (etat.edition) {
+    const lignes = p.chiffres.map((ch, i) => `
+      <input class="champ champ--valeur" value="${e(ch.valeur)}" data-champ="chiffre.${i}.valeur" placeholder="5 ans">
+      <input class="champ" value="${e(ch.libelle)}" data-champ="chiffre.${i}.libelle" placeholder="ce que mesure ce chiffre">
+      <button class="bouton bouton--clair" data-action="supprimer-chiffre" data-i="${i}" aria-label="Supprimer">×</button>`).join('');
+    corps = `
+      <div class="grille-chiffres">${lignes}</div>
+      <button class="bouton bouton--ajout-clair" data-action="ajouter-chiffre">+ Chiffre clé</button>`;
+  } else {
+    corps = p.chiffres.map((ch) => `
+      <div class="chiffre">
+        <span class="chiffre__valeur">${e(ch.valeur)}</span>
+        <span class="chiffre__libelle">${e(ch.libelle)}</span>
+      </div>`).join('');
+  }
+
+  return `
+  <div class="panneau panneau--chiffres">
+    <span class="panneau__titre">Chiffres clés</span>
+    ${corps}
+  </div>`;
+}
+
+/* ==========================================================================
+   ENVIRONNEMENT IT — logigramme des échanges entre outils
+   Les nœuds sont les outils du site ; les échanges sont déduits des processus
+   (une étape sur un outil suivie d'une étape sur un autre = un passage), puis
+   ajustables. Dès la première retouche, la liste déduite est figée dans
+   `client.si.liens` et devient la source de vérité — un bouton permet de
+   la re-déduire depuis les processus.
+   ========================================================================== */
+
+/* Domaines fonctionnels : on regroupe les outils par utilité, comme dans les
+   slides d'écosystème IT. La devinette par mots-clés ne sert qu'à proposer un
+   classement de départ — il est ensuite ajustable outil par outil. */
+const DOMAINES_DEFAUT = [
+  { nom: 'SIRH & GTA', motifs: ['workday', 'sirh', 'gta', 'kronos', 'cronos', 'horoquartz', 'adp', 'paie', 'pointage', 'badgeage'] },
+  { nom: 'Planification', motifs: ['planning', 'myplan', 'ordo', 's&op', 'pdp', 'gpao', 'ordonnancement'] },
+  { nom: 'Formations', motifs: ['boost', 'formation', 'sowesign', 'lms', 'learning', 'moodle', 'livret'] },
+  { nom: 'Suivi médical', motifs: ['padoa', 'gaia', 'medical', 'medecine', 'visite', 'aptitude'] },
+  { nom: 'Qualité', motifs: ['qms', 'qualite', 'r43', 'audit', 'controle'] },
+  { nom: 'Production & maintenance', motifs: ['mes', 'production', 'gmao', 'maintenance', 'ligne'] },
+  { nom: 'GED & partage', motifs: ['ged', 'sharepoint', 'drive', 'onedrive', 'teams', 'intranet', 'serveur', 'reseau'] },
+  { nom: 'ERP', motifs: ['erp', 'sap', 'oracle'] },
+  { nom: 'Bureautique & papier', motifs: ['excel', 'word', 'ppt', 'powerpoint', 'mail', 'outlook', 'courriel',
+                                          'papier', 'imprime', 'carton', 'formulaire', 'checklist', 'fiche',
+                                          'tableur', 'oral', 'reunion'] }
+];
+const DOMAINE_AUTRE = 'Non classé';
+const COULEURS_DOMAINE = ['#2F5D62', '#C0392B', '#5B2333', '#B9761F', '#5B4B8A', '#8E3B5E', '#1F6F6B', '#7A4E2D', '#3E5C8A'];
+
+function domaineDevine(nom) {
+  const clef = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const d = DOMAINES_DEFAUT.find((x) => x.motifs.some((m) => clef.includes(m)));
+  return d ? d.nom : DOMAINE_AUTRE;
+}
+
+function couleurDomaine(nom, domaines) {
+  const i = domaines.indexOf(nom);
+  return COULEURS_DOMAINE[(i < 0 ? 0 : i) % COULEURS_DOMAINE.length];
+}
+
+/** Domaine de chaque outil : classement choisi, sinon devinette. */
+function classementEffectif(c) {
+  const manuel = (c.si && c.si.classement) || {};
+  const map = {};
+  outilsDuSite(c).forEach((o) => { map[o] = manuel[o] || domaineDevine(o); });
+  return map;
+}
+
+/** Missions proposées pour un domaine : les processus où ses outils apparaissent.
+    C'est le signal le plus proche présent dans les données ; les libellés fins
+    (« Absences », « Roulements horaire ») se saisissent ensuite à la main. */
+function missionsDerivees(c) {
+  const classement = classementEffectif(c);
+  const parDomaine = {};
+  c.processus.forEach((proc) => {
+    const outilsDuProcessus = [];
+    proc.etapes.forEach((et) => listeSupports(et.supports).forEach((o) => {
+      if (!outilsDuProcessus.includes(o)) outilsDuProcessus.push(o);
+    }));
+    outilsDuProcessus.forEach((o) => {
+      const dom = classement[o];
+      if (!dom) return;
+      parDomaine[dom] = parDomaine[dom] || [];
+      if (!parDomaine[dom].includes(proc.nom)) parDomaine[dom].push(proc.nom);
+    });
+  });
+  return parDomaine;
+}
+
+/** Missions effectives : celles saisies si elles existent, sinon les déduites. */
+function missionsEffectives(c) {
+  const saisies = (c.si && c.si.missions) || null;
+  if (saisies) return saisies;
+  return missionsDerivees(c);
+}
+
+/** Domaines à afficher, dans l'ordre : celui choisi, sinon l'ordre de référence. */
+function domainesEffectifs(c) {
+  const classement = classementEffectif(c);
+  const utilises = [];
+  Object.keys(classement).forEach((o) => {
+    const d = classement[o];
+    if (!utilises.includes(d)) utilises.push(d);
+  });
+  if (c.si && Array.isArray(c.si.domaines) && c.si.domaines.length) {
+    const out = c.si.domaines.slice();          /* garde aussi les domaines encore vides */
+    utilises.forEach((d) => { if (!out.includes(d)) out.push(d); });
+    return out;
+  }
+  const ordre = DOMAINES_DEFAUT.map((d) => d.nom).concat([DOMAINE_AUTRE]);
+  return ordre.filter((d) => utilises.includes(d));
+}
+
+/** Tous les outils du site : ceux déclarés, plus ceux relevés sur les étapes. */
+function outilsDuSite(c) {
+  const vus = [];
+  const noter = (o) => { const v = String(o || '').trim(); if (v && !vus.includes(v)) vus.push(v); };
+  (c.outils || []).forEach(noter);
+  c.processus.forEach((p) => p.etapes.forEach((et) => listeSupports(et.supports).forEach(noter)));
+  return vus;
+}
+
+/** Nombre d'étapes qui reposent sur chaque outil. */
+function usageOutils(c) {
+  const n = {};
+  c.processus.forEach((p) => p.etapes.forEach((et) => {
+    listeSupports(et.supports).forEach((s) => { n[s] = (n[s] || 0) + 1; });
+  }));
+  return n;
+}
+
+/** Échanges déduits : enchaînement d'étapes sur des outils différents. */
+function deriverEchanges(c) {
+  const compte = {};
+  c.processus.forEach((p) => {
+    for (let i = 0; i < p.etapes.length - 1; i++) {
+      const a = listeSupports(p.etapes[i].supports);
+      const b = listeSupports(p.etapes[i + 1].supports);
+      a.forEach((de) => b.forEach((vers) => {
+        if (de === vers) return;
+        const clef = de + '→' + vers;
+        if (!compte[clef]) compte[clef] = { de, vers, nature: '', libelle: '', nb: 0 };
+        compte[clef].nb += 1;
+      }));
+    }
+  });
+  return Object.keys(compte).map((k) => compte[k]).sort((x, y) => y.nb - x.nb);
+}
+
+function echangesEffectifs(c) {
+  if (c && c.si && Array.isArray(c.si.liens)) return { liens: c.si.liens, ajuste: true };
+  return { liens: c ? deriverEchanges(c) : [], ajuste: false };
+}
+
+/** Fige le classement proposé et les échanges déduits, avant la 1re retouche. */
+function assurerSI(c) {
+  if (!c.si || !Array.isArray(c.si.liens)) {
+    c.si = {
+      domaines: domainesEffectifs(c),
+      classement: classementEffectif(c),
+      missions: missionsDerivees(c),
+      liens: deriverEchanges(c)
+    };
+  }
+  c.si.domaines = c.si.domaines || domainesEffectifs(c);
+  c.si.classement = c.si.classement || classementEffectif(c);
+  c.si.missions = c.si.missions || missionsDerivees(c);
+  return c.si;
+}
+
+function selecteurOutil(champ, valeur, outils) {
+  const liste = outils.includes(valeur) ? outils : outils.concat([valeur]);
+  return `<select class="selecteur selecteur--compact" data-champ="${e(champ)}">${
+    liste.map((o) => `<option value="${e(o)}"${o === valeur ? ' selected' : ''}>${e(o)}</option>`).join('')
+  }</select>`;
+}
+
+/** Échanges agrégés au niveau des blocs. Un échange interne à un domaine ne
+    donne pas de flèche : elle boucherait sur elle-même sans rien apprendre. */
+function echangesBlocs(c) {
+  const classement = classementEffectif(c);
+  const { liens } = echangesEffectifs(c);
+  const agg = {};
+  liens.forEach((l) => {
+    const a = classement[l.de], b = classement[l.vers];
+    if (!a || !b || a === b) return;
+    const k = a + '\u2192' + b;
+    if (!agg[k]) agg[k] = { de: a, vers: b, nb: 0, natures: [] };
+    agg[k].nb += 1;
+    agg[k].natures.push(l.nature || '');
+  });
+  return Object.keys(agg).map((k) => {
+    const x = agg[k];
+    const uniques = x.natures.filter((n, i) => x.natures.indexOf(n) === i);
+    return { de: x.de, vers: x.vers, nb: x.nb, nature: uniques.length === 1 ? uniques[0] : '' };
+  });
+}
+
+/** Ordre des blocs : on place d'abord le domaine le plus connecté, puis à côté
+    celui qui échange le plus avec les précédents. Raccourcit les flèches et
+    limite les croisements. */
+function ordonnerDomaines(domaines, liensBlocs) {
+  const poids = {};
+  domaines.forEach((d) => { poids[d] = 0; });
+  liensBlocs.forEach((l) => {
+    if (poids[l.de] != null) poids[l.de] += l.nb;
+    if (poids[l.vers] != null) poids[l.vers] += l.nb;
+  });
+  const restants = domaines.slice().sort((a, b) => (poids[b] - poids[a]) || domaines.indexOf(a) - domaines.indexOf(b));
+  const ordre = [];
+  while (restants.length) {
+    let choix = 0;
+    if (ordre.length) {
+      let meilleur = -1;
+      restants.forEach((d, i) => {
+        const score = liensBlocs.reduce((n, l) => n + (
+          ((l.de === d && ordre.indexOf(l.vers) > -1) || (l.vers === d && ordre.indexOf(l.de) > -1)) ? l.nb : 0), 0);
+        if (score > meilleur) { meilleur = score; choix = i; }
+      });
+    }
+    ordre.push(restants.splice(choix, 1)[0]);
+  }
+  return ordre;
+}
+
+function selecteurDomaine(champ, valeur, domaines) {
+  const liste = domaines.includes(valeur) ? domaines : domaines.concat([valeur]);
+  return `<select class="si__noeud-domaine" data-champ="${e(champ)}" title="Changer le domaine de cet outil">${
+    liste.map((d) => `<option value="${e(d)}"${d === valeur ? ' selected' : ''}>${e(d)}</option>`).join('')
+  }</select>`;
+}
+
+function selecteurNature(champ, valeur) {
+  const choix = [['', 'Non qualifié'], ['auto', 'Automatique'], ['manuel', 'Manuel']];
+  return `<select class="selecteur selecteur--compact" data-champ="${e(champ)}">${
+    choix.map(([v, l]) => `<option value="${v}"${v === valeur ? ' selected' : ''}>${l}</option>`).join('')
+  }</select>`;
+}
+
+function vueEnvironnementIT() {
+  const c = client();
+  if (!c) return '';
+  const ed = etat.edition;
+  const outils = outilsDuSite(c);
+  const usage = usageOutils(c);
+  const { liens, ajuste } = echangesEffectifs(c);
+
+  if (!outils.length) {
+    return `
+    <section class="section section--si">
+      <div class="groupe" style="gap:6px">
+        <span class="libelle libelle--large">Environnement IT</span>
+        <h2>Échanges entre les outils</h2>
+      </div>
+      <div class="vide" style="margin:0">
+        <span class="vide__titre">Aucun outil relevé</span>
+        <span class="sourdine">Renseignez les supports sur les étapes : le logigramme se construira tout seul.</span>
+      </div>
+    </section>`;
+  }
+
+  /* --- blocs par domaine fonctionnel, en mosaïque --- */
+  const classement = classementEffectif(c);
+  const missions = missionsEffectives(c);
+  const domainesBruts = domainesEffectifs(c);
+  const liensBlocs = echangesBlocs(c);
+  const domaines = ordonnerDomaines(domainesBruts, liensBlocs);
+
+  const grille = domaines.map((dom) => {
+    const dedans = outils.filter((o) => classement[o] === dom);
+    const couleur = couleurDomaine(dom, domainesBruts);
+    const iDom = domainesBruts.indexOf(dom);
+    const mis = missions[dom] || [];
+    const titre = ed
+      ? `<span class="si__bloc-titre" style="background:${couleur}">
+           <input class="si__bloc-champ" value="${e(dom)}" data-champ="dom.${iDom}" title="Renommer ce domaine"
+                  style="width:${Math.max(8, Math.min(24, dom.length + 1))}ch">
+           <button class="bouton--retirer" data-action="supprimer-domaine" data-i="${iDom}"
+                   title="Supprimer ce domaine — ses outils repassent en « ${DOMAINE_AUTRE} »">×</button>
+         </span>`
+      : `<span class="si__bloc-titre" style="background:${couleur}">${e(dom)}</span>`;
+    return `
+      <div class="si__bloc" data-domaine="${e(dom)}" style="--c:${couleur}">
+        <div class="si__bloc-entete">
+          ${titre}
+          ${dedans.length ? `<span class="si__bloc-outils">${dedans.map((o) => `
+            <span class="si__outil${dedans.length > 2 ? ' si__outil--compact' : ''}"
+                  title="${e(o)} — ${usage[o] || 0} étape(s)">${badgeSupport(o)}${
+              dedans.length > 2 ? '' : e(o)}</span>`).join('')}
+          </span>` : ''}
+        </div>
+        <div class="si__bloc-missions">
+          ${mis.map((m, k) => ed
+            ? `<span class="si__mission si__mission--modif">
+                 <input class="si__mission-champ" value="${e(m)}" data-champ="mission.${iDom}.${k}"
+                        style="width:${Math.max(8, Math.min(28, String(m).length + 1))}ch"
+                        placeholder="mission">
+                 <button class="bouton--retirer" data-action="supprimer-mission"
+                         data-i="${iDom}" data-k="${k}" title="Retirer cette mission">×</button>
+               </span>`
+            : `<span class="si__mission">${e(m)}</span>`).join('')}
+          ${!mis.length && !ed
+            ? `<span class="si__bloc-vide">${dedans.length ? 'Aucune mission relevée' : 'Aucun outil — bloc à alimenter'}</span>`
+            : ''}
+          ${ed ? `<button class="si__mission-ajout" data-action="ajouter-mission" data-i="${iDom}"
+                          title="Ajouter une mission à ce domaine">+ mission</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  /* --- classement des outils, en édition : une liste plutôt que des menus
+         dans chaque bloc, plus simple à parcourir quand on en reclasse plusieurs --- */
+  const listeClassement = ed ? `
+    <div class="carte ne-pas-imprimer" style="gap:12px">
+      <span class="libelle libelle--large">Classement des outils</span>
+      <div class="si__classement">
+        ${outils.map((o) => `
+          <div class="si__classement-ligne">
+            <span class="si__outil">${badgeSupport(o)}${e(o)}</span>
+            ${selecteurDomaine(`classe.${o}`, classement[o], domainesBruts)}
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  /* --- liste des échanges, éditable --- */
+  const lignes = liens.map((l, i) => ed
+    ? `<div class="si__ligne">
+         ${selecteurOutil(`si.${i}.de`, l.de, outils)}
+         <span class="si__fleche-texte">→</span>
+         ${selecteurOutil(`si.${i}.vers`, l.vers, outils)}
+         ${selecteurNature(`si.${i}.nature`, l.nature || '')}
+         <input class="champ" value="${e(l.libelle || '')}" data-champ="si.${i}.libelle"
+                placeholder="ce qui passe (ex. dates de recyclage)">
+         <button class="bouton bouton--carre" data-action="supprimer-echange" data-role="supprimer" data-i="${i}"
+                 title="Supprimer cet échange">×</button>
+       </div>`
+    : `<div class="si__ligne si__ligne--lecture">
+         <span class="si__paire">${badgeSupport(l.de)}<span>${e(l.de)}</span></span>
+         <span class="si__fleche-texte" style="color:${LIENS[l.nature || ''].couleur}">→</span>
+         <span class="si__paire">${badgeSupport(l.vers)}<span>${e(l.vers)}</span></span>
+         <span class="si__nature" style="color:${LIENS[l.nature || ''].couleur}">${LIENS[l.nature || ''].libelle}</span>
+         <span class="sourdine">${e(l.libelle || '')}</span>
+       </div>`).join('');
+
+  const legende = `
+    <div class="flux__legende">
+      ${['auto', 'manuel', ''].map((k) => `
+        <span class="flux__legende-item">
+          <span class="flux__legende-trait" style="border-top-color:${LIENS[k].couleur};border-top-style:${LIENS[k].tirets ? 'dashed' : 'solid'}"></span>
+          ${LIENS[k].libelle}
+        </span>`).join('')}
+    </div>`;
+
+  return `
+  <section class="section section--si">
+    <div class="rangee" style="justify-content:space-between;align-items:flex-end">
+      <div class="groupe" style="gap:6px">
+        <span class="libelle libelle--large">Environnement IT</span>
+        <h2>Échanges entre les outils</h2>
+      </div>
+      <div class="rangee" style="gap:12px">
+        <span class="sourdine" style="font-size:14px;text-align:right">
+          ${domaines.length} domaine(s) · ${outils.length} outil(s) · ${liens.length} échange(s)<br>
+          ${ajuste ? 'Classement et échanges ajustés à la main' : 'Classement proposé, échanges déduits des processus'}
+        </span>
+        ${ed ? '<button class="bouton bouton--mini" data-action="ajouter-domaine">+ Domaine</button>' : ''}
+      </div>
+    </div>
+
+    <div class="carte" style="gap:0;padding:24px 0 8px">
+      <div class="si-defile">
+        <div class="si__grille">
+          <svg class="si-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          ${grille}
+        </div>
+      </div>
+      <div class="flux__pied">${legende}</div>
+    </div>
+
+    ${listeClassement}
+
+    <div class="carte" style="gap:14px">
+      <div class="rangee" style="justify-content:space-between">
+        <span class="libelle libelle--large">Détail des échanges</span>
+        ${ed ? `<div class="rangee" style="gap:8px">
+          <button class="bouton bouton--mini" data-action="ajouter-echange">+ Échange</button>
+          <button class="bouton bouton--secondaire" style="font-size:13px;padding:9px 16px"
+                  data-action="rederiver-echanges" title="Repart des enchaînements d'étapes et écrase les ajustements">
+            Re-déduire des processus
+          </button>
+        </div>` : ''}
+      </div>
+      ${lignes || '<span class="sourdine">Aucun échange relevé pour le moment.</span>'}
+    </div>
+  </section>`;
+}
+
+function vueSynthese(totaux) {
+  const c = client();
+  if (!c) return '';
+
+  const cartes = c.processus.map((p) => `
+    <div class="carte-synthese">
+      <span class="carte-synthese__nom">${e(p.nom)}</span>
+      <div class="carte-synthese__mesure">
+        <span class="carte-synthese__nombre">${p.etapes.length}</span>
+        <span class="kpi__libelle">étapes</span>
+      </div>
+      <div class="carte-synthese__mesure">
+        <span class="carte-synthese__nombre carte-synthese__nombre--friction">${p.frictions.length}</span>
+        <span class="kpi__libelle">frictions</span>
+      </div>
+      <span>${p.roles.length} rôles impliqués</span>
+    </div>`).join('');
+
+  return `
+  <section class="section section--synthese">
+    <div class="groupe" style="gap:6px">
+      <span class="libelle libelle--large">Synthèse globale</span>
+      <h2>État des lieux du site</h2>
+    </div>
+    <div class="synthese-grille" style="--np:${Math.max(1, Math.min(4, c.processus.length))}">${cartes}</div>
+    <div class="grille-bilan">
+      <div class="carte-inventaire">
+        <span class="libelle libelle--large">Rôles cartographiés</span>
+        <div class="nuage">${rolesGlobaux().map((r) => chipRole(r, 'large')).join('')}</div>
+        <span class="libelle libelle--large">Outils et supports relevés</span>
+        <div class="nuage">${(c.outils || []).map((o) => `<span class="etiquette-outil">${e(o)}</span>`).join('')}</div>
+        <span class="sourdine" style="line-height:1.5;text-wrap:pretty">${e(c.notes || '')}</span>
+      </div>
+      <div class="total-frictions">
+        <span class="panneau__titre" style="color:var(--rouge-fonce);display:flex;align-items:center;gap:10px">
+          <span style="width:10px;height:10px;border-radius:100px;background:var(--rouge)"></span>
+          Total frictions relevées
+        </span>
+        <span class="total-frictions__nombre">${totaux.frictions}</span>
+        <span class="total-frictions__legende">
+          irritants identifiés sur les&nbsp;${totaux.processus}&nbsp;processus cartographiés
+          lors de la visite du&nbsp;${e(c ? c.date : '')}
+        </span>
+      </div>
+    </div>
+  </section>`;
+}
+
+function vue() {
+  const c = client();
+  const p = proc();
+  const totaux = {
+    processus: c ? c.processus.length : 0,
+    etapes: c ? c.processus.reduce((n, x) => n + x.etapes.length, 0) : 0,
+    frictions: c ? c.processus.reduce((n, x) => n + x.frictions.length, 0) : 0
+  };
+
+  return `
+  ${vueBarre()}
+  ${vueTiroir()}
+  <main class="principal">
+    ${vueEntete(totaux)}
+    ${etat.edition ? vueFicheClient() : ''}
+    <section class="section">
+      ${vueOnglets()}
+      <div class="section">
+        ${etat.edition ? '' : `
+          <div class="groupe" style="gap:6px">
+            <h2>${e(p ? p.nom : '')}</h2>
+            <span class="sourdine" style="font-size:16px">${e(p ? p.soustitre : '')}</span>
+          </div>`}
+        ${etat.edition ? vueCarteProcessus() : ''}
+        ${vueFlux()}
+        ${etat.edition && etat.tableau ? vueTableEtapes() : ''}
+        <div class="grille-analyse">
+          ${vueFrictions()}
+          ${vueChiffres()}
+        </div>
+      </div>
+    </section>
+    ${vueEnvironnementIT()}
+    ${vueSynthese(totaux)}
+  </main>`;
+}
+
+/* ==========================================================================
+   FLÈCHES DU FLUX — mesurées après coup, une fois la grille posée.
+   On lit offsetLeft/offsetTop (coordonnées de mise en page) et non
+   getBoundingClientRect : ainsi le tracé reste juste quand le diagramme
+   est dézoomé (CSS zoom), puisque le SVG vit dans le même repère.
+   ========================================================================== */
+function tracerFleches() {
+  const zone = document.querySelector('.flux');
+  const svg = document.querySelector('.flux-svg');
+  if (!zone || !svg) return;
+
+  const cibles = document.querySelector('.flux-svg--cibles');
+  const p = proc();
+  const cartes = Array.from(zone.querySelectorAll('[data-etape]'))
+    .sort((a, b) => Number(a.dataset.etape) - Number(b.dataset.etape));
+  const chemins = [];
+  const zonesClic = [];
+
+  /* Cumule les offsets jusqu'au diagramme : on ne dépend ainsi d'aucun
+     choix de positionnement CSS dans les niveaux intermédiaires. */
+  const boite = (el) => {
+    let x = 0, y = 0, cur = el;
+    while (cur && cur !== zone) { x += cur.offsetLeft; y += cur.offsetTop; cur = cur.offsetParent; }
+    /* offsetTop ignore les transform : on rajoute le décalage des cartes à cheval. */
+    y += Number(el.dataset.decalage || 0);
+    return { x, y, l: el.offsetWidth, h: el.offsetHeight };
+  };
+
+  for (let i = 0; i < cartes.length - 1; i++) {
+    const a = boite(cartes[i]), b = boite(cartes[i + 1]);
+    const x1 = a.x + a.l + 2;
+    const y1 = a.y + a.h / 2;
+    const x2 = b.x - 3;
+    const y2 = b.y + b.h / 2;
+    const mx = x1 + (x2 - x1) / 2;
+    const r = Math.max(2, Math.min(9, (x2 - x1) / 2 - 2));
+    const s = y2 > y1 ? 1 : -1;
+    const d = Math.abs(y1 - y2) < 2
+      ? `M${x1},${y1} L${x2},${y1}`
+      : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
+
+    /* Le lien est porté par l'étape qui reçoit la flèche. */
+    const nature = (p && p.etapes[i + 1] && p.etapes[i + 1].lien) || '';
+    const style = LIENS[nature] || LIENS[''];
+
+    if (etat.edition) {
+      zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien" data-i="${i + 1}" d="${d}"
+        fill="none" stroke="transparent" stroke-width="16"><title>Lien ${style.libelle} — cliquer pour changer</title></path>`);
+    }
+    chemins.push(`<path d="${d}" fill="none" stroke="${style.couleur}" stroke-width="1.5"${
+      style.tirets ? ` stroke-dasharray="${style.tirets}"` : ''} marker-end="url(#${style.marqueur})"/>`);
+  }
+
+  const pointe = (id, couleur) =>
+    `<marker id="${id}" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto">
+       <path d="M0,0 L6,3 L0,6 z" fill="${couleur}"></path>
+     </marker>`;
+
+  const largeur = zone.scrollWidth + 'px';
+  const hauteur = zone.offsetHeight + 'px';
+  svg.style.width = largeur;
+  svg.style.height = hauteur;
+  svg.innerHTML = `
+    <defs>
+      ${pointe('pointe-neutre', '#A485FE')}
+      ${pointe('pointe-auto', '#6733FD')}
+      ${pointe('pointe-manuel', '#CE6700')}
+    </defs>${chemins.join('')}`;
+
+  if (cibles) {
+    cibles.style.width = largeur;
+    cibles.style.height = hauteur;
+    cibles.innerHTML = zonesClic.join('');
+  }
+}
+
+/* ==========================================================================
+   RENDU — reconstruit tout, puis restitue focus, caret et défilement
+   ========================================================================== */
+const racine = document.getElementById('racine');
+
+function rendre() {
+  const actif = document.activeElement;
+  const cle = actif && actif.dataset ? actif.dataset.champ : null;
+  let selDebut = null, selFin = null;
+  try {
+    if (actif && 'selectionStart' in actif) { selDebut = actif.selectionStart; selFin = actif.selectionEnd; }
+  } catch (err) { /* input type=range : pas de sélection */ }
+  const defileur = document.querySelector('.flux-defile');
+  const defileX = defileur ? defileur.scrollLeft : 0;
+  const y = window.scrollY;
+
+  racine.innerHTML = vue();
+
+  const nouveauDefileur = document.querySelector('.flux-defile');
+  if (nouveauDefileur) nouveauDefileur.scrollLeft = defileX;
+  window.scrollTo(0, y);
+
+  if (cle) {
+    const champ = racine.querySelector(`[data-champ="${cle}"]`);
+    if (champ) {
+      champ.focus();
+      if (selDebut != null && champ.setSelectionRange) {
+        try { champ.setSelectionRange(selDebut, selFin); } catch (err) { /* select : non applicable */ }
+      }
+    }
+  }
+
+  ajusterZones();
+  placerCartesACheval();
+  tracerFleches();
+  tracerEchanges();
+}
+
+/** Les zones de texte des cartes s'ajustent à leur contenu (pas d'ascenseur). */
+function ajusterZones() {
+  racine.querySelectorAll('.carte__texte').forEach((z) => {
+    z.style.height = 'auto';
+    z.style.height = z.scrollHeight + 'px';
+  });
+}
+
+/** Centre les cartes « à cheval » sur la frontière entre leurs deux couloirs.
+    Le décalage est mémorisé sur la carte pour que les flèches le suivent. */
+function placerCartesACheval() {
+  racine.querySelectorAll('[data-cheval]').forEach((carte) => {
+    const sens = Number(carte.dataset.cheval);
+    const cellule = carte.parentElement;
+    const marge = 12;   /* padding vertical de la cellule */
+    const decal = sens > 0
+      ? cellule.offsetHeight - carte.offsetHeight / 2 - marge
+      : -carte.offsetHeight / 2 - marge;
+    carte.style.transform = `translateY(${decal}px)`;
+    carte.dataset.decalage = String(decal);
+  });
+}
+
+/** Relie les blocs du logigramme IT en accrochant les bords les plus proches :
+    de gauche à droite si le bloc cible est à droite, de bord à bord sinon,
+    et par le dessous quand la flèche revient en arrière. */
+function tracerEchanges() {
+  const grille = document.querySelector('.si__grille');
+  const svg = document.querySelector('.si-svg');
+  if (!grille || !svg) return;
+
+  const c = client();
+  if (!c) return;
+  const liens = echangesBlocs(c);
+  const boite = (nom) => {
+    const el = grille.querySelector('[data-domaine="' + String(nom).replace(/"/g, '\\"') + '"]');
+    if (!el) return null;
+    let x = 0, y = 0, cur = el;
+    while (cur && cur !== grille) { x += cur.offsetLeft; y += cur.offsetTop; cur = cur.offsetParent; }
+    return { g: x, d: x + el.offsetWidth, h: y, b: y + el.offsetHeight,
+             mx: x + el.offsetWidth / 2, my: y + el.offsetHeight / 2 };
+  };
+
+  const chemins = [];
+  liens.forEach((l) => {
+    const a = boite(l.de), b = boite(l.vers);
+    if (!a || !b) return;
+    const style = LIENS[l.nature || ''] || LIENS[''];
+    let d;
+    if (b.g > a.d + 10) {                       /* cible à droite */
+      const k = Math.max(24, (b.g - a.d) / 2);
+      d = `M${a.d},${a.my} C${a.d + k},${a.my} ${b.g - k},${b.my} ${b.g},${b.my}`;
+    } else if (b.d < a.g - 10) {                /* cible à gauche */
+      const k = Math.max(24, (a.g - b.d) / 2);
+      d = `M${a.g},${a.my} C${a.g - k},${a.my} ${b.d + k},${b.my} ${b.d},${b.my}`;
+    } else if (b.h > a.b) {                     /* cible dessous */
+      const k = Math.max(20, (b.h - a.b) / 2);
+      d = `M${a.mx},${a.b} C${a.mx},${a.b + k} ${b.mx},${b.h - k} ${b.mx},${b.h}`;
+    } else {                                    /* cible dessus */
+      const k = Math.max(20, (a.h - b.b) / 2);
+      d = `M${a.mx},${a.h} C${a.mx},${a.h - k} ${b.mx},${b.b + k} ${b.mx},${b.b}`;
+    }
+    chemins.push(`<path d="${d}" fill="none" stroke="${style.couleur}" stroke-width="1.8"${
+      style.tirets ? ` stroke-dasharray="${style.tirets}"` : ''} marker-end="url(#si-${style.marqueur})">
+      <title>${e(l.de)} → ${e(l.vers)} · ${l.nb} échange(s) · ${style.libelle}</title></path>`);
+  });
+
+  const pointe = (id, couleur) =>
+    `<marker id="si-${id}" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto">
+       <path d="M0,0 L6,3 L0,6 z" fill="${couleur}"></path></marker>`;
+
+  svg.style.width = grille.scrollWidth + 'px';
+  svg.style.height = grille.offsetHeight + 'px';
+  svg.innerHTML = `<defs>
+      ${pointe('pointe-neutre', '#A485FE')}
+      ${pointe('pointe-auto', '#6733FD')}
+      ${pointe('pointe-manuel', '#CE6700')}
+    </defs>${chemins.join('')}`;
+}
+
+/* ==========================================================================
+   SAISIE — un seul point d'entrée, piloté par data-champ
+   ========================================================================== */
+racine.addEventListener('input', (ev) => {
+  const champ = ev.target.dataset && ev.target.dataset.champ;
+  if (!champ) return;
+  appliquerChamp(champ, ev.target.value);
+});
+
+racine.addEventListener('change', (ev) => {
+  const champ = ev.target.dataset && ev.target.dataset.champ;
+  if (!champ || ev.target.tagName !== 'SELECT') return;
+  appliquerChamp(champ, ev.target.value);
+});
+
+function appliquerChamp(champ, valeur) {
+  const [type, a, b] = champ.split('.');
+
+  /* Le zoom est un réglage d'affichage : rien à enregistrer dans la base. */
+  if (type === 'zoom') {
+    etat.zoom = Math.min(1, Math.max(0.4, Number(valeur) / 100));
+    rendre();
+    return;
+  }
+
+  /* Ajout d'un support à une étape, choisi dans la liste des outils du site.
+     « Autre outil… » demande le nom et l'ajoute aussi aux outils du client,
+     pour qu'il soit ensuite proposé sur les autres étapes. */
+  if (type === 'support-ajout') {
+    if (!valeur) return;
+    let nom = valeur;
+    let aInscrire = false;
+    if (valeur === '__autre__') {
+      nom = (window.prompt('Nom du support ou de l\'outil :') || '').trim();
+      if (!nom) { rendre(); return; }
+      aInscrire = true;
+    }
+    majBase(({ client: c, proc: p }) => {
+      const et = p.etapes[Number(a)];
+      if (!et) return;
+      const liste = listeSupports(et.supports);
+      if (!liste.includes(nom)) liste.push(nom);
+      et.supports = liste.join(', ');
+      if (aInscrire) {
+        c.outils = c.outils || [];
+        if (!c.outils.includes(nom)) c.outils.push(nom);
+      }
+    });
+    return;
+  }
+
+  majBase(({ client: c, proc: p }) => {
+    if (type === 'client') { c[a] = valeur; return; }
+    if (type === 'outil') { c.outils[Number(a)] = valeur; return; }
+    if (type === 'proc') { p[a] = valeur; return; }
+
+    if (type === 'role') {
+      const i = Number(a);
+      const avant = p.roles[i];
+      p.roles[i] = valeur;
+      p.etapes.forEach((et) => {
+        if (et.role === avant) et.role = valeur;
+        if (et.role2 === avant) et.role2 = valeur;
+      });
+      p.frictions.forEach((f) => { if (f.role === avant) f.role = valeur; });
+      return;
+    }
+    /* Bandeau de phases : renomme la phase des `span` étapes du groupe d'un coup. */
+    if (type === 'phase') {
+      const debut = Number(a), span = Number(b);
+      for (let k = debut; k < debut + span && k < p.etapes.length; k++) p.etapes[k].phase = valeur;
+      return;
+    }
+    /* Renommage d'un domaine : le classement des outils suit. */
+    if (type === 'dom') {
+      const si = assurerSI(c);
+      const i = Number(a);
+      const avant = si.domaines[i];
+      si.domaines[i] = valeur;
+      Object.keys(si.classement).forEach((o) => {
+        if (si.classement[o] === avant) si.classement[o] = valeur;
+      });
+      if (si.missions && si.missions[avant] !== undefined && avant !== valeur) {
+        si.missions[valeur] = si.missions[avant];
+        delete si.missions[avant];
+      }
+      return;
+    }
+
+    /* Renommage d'une mission. */
+    if (type === 'mission') {
+      const si = assurerSI(c);
+      const dom = si.domaines[Number(a)];
+      if (!dom) return;
+      si.missions[dom] = si.missions[dom] || [];
+      si.missions[dom][Number(b)] = valeur;
+      return;
+    }
+
+    /* Changement de domaine d'un outil. Le nom d'outil peut contenir des points,
+       on le relit donc depuis la clé complète plutôt que du découpage. */
+    if (type === 'classe') {
+      const si = assurerSI(c);
+      si.classement[champ.slice('classe.'.length)] = valeur;
+      return;
+    }
+
+    /* Échanges du logigramme IT : la liste déduite est figée à la 1re retouche. */
+    if (type === 'si') {
+      const si = assurerSI(c);
+      const lien = si.liens[Number(a)];
+      if (lien) lien[b] = valeur;
+      return;
+    }
+    if (type === 'etape') { p.etapes[Number(a)][b] = valeur; return; }
+    if (type === 'friction') { p.frictions[Number(a)][b] = valeur; return; }
+    if (type === 'chiffre') { p.chiffres[Number(a)][b] = valeur; return; }
+  });
+}
+
+/* ==========================================================================
+   GLISSER-DÉPOSER — déplacer une étape de couloir et/ou de colonne
+   La poignée seule est draggable : le texte des champs reste sélectionnable.
+   ========================================================================== */
+racine.addEventListener('dragstart', (ev) => {
+  const poignee = ev.target.closest('[data-poignee]');
+  if (!poignee) return;
+  const carte = poignee.closest('[data-index]');
+  glisse = Number(poignee.dataset.poignee);
+  ev.dataTransfer.effectAllowed = 'move';
+  ev.dataTransfer.setData('text/plain', String(glisse));
+  if (carte) {
+    ev.dataTransfer.setDragImage(carte, 24, 20);
+    carte.classList.add('flux__carte--glissee');
+  }
+  const flux = racine.querySelector('.flux');
+  if (flux) flux.classList.add('flux--glisse');
+});
+
+racine.addEventListener('dragend', () => {
+  glisse = null;
+  const flux = racine.querySelector('.flux');
+  if (flux) flux.classList.remove('flux--glisse');
+  racine.querySelectorAll('.flux__carte--glissee').forEach((el) => el.classList.remove('flux__carte--glissee'));
+  racine.querySelectorAll('.flux__cellule--cible, .flux__frontiere--cible')
+    .forEach((el) => el.classList.remove('flux__cellule--cible', 'flux__frontiere--cible'));
+});
+
+racine.addEventListener('dragover', (ev) => {
+  if (glisse === null) return;
+  const frontiere = ev.target.closest('[data-frontiere]');
+  const zone = frontiere || ev.target.closest('[data-cellule]');
+  if (!zone) return;
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  racine.querySelectorAll('.flux__cellule--cible, .flux__frontiere--cible').forEach((el) => {
+    if (el !== zone) el.classList.remove('flux__cellule--cible', 'flux__frontiere--cible');
+  });
+  zone.classList.add(frontiere ? 'flux__frontiere--cible' : 'flux__cellule--cible');
+});
+
+racine.addEventListener('dragleave', (ev) => {
+  const zone = ev.target.closest('[data-frontiere]') || ev.target.closest('[data-cellule]');
+  if (zone && !zone.contains(ev.relatedTarget)) {
+    zone.classList.remove('flux__cellule--cible', 'flux__frontiere--cible');
+  }
+});
+
+racine.addEventListener('drop', (ev) => {
+  const frontiere = ev.target.closest('[data-frontiere]');
+  const cellule = frontiere || ev.target.closest('[data-cellule]');
+  if (!cellule || glisse === null) return;
+  ev.preventDefault();
+
+  const source = glisse;
+  const colonne = Number(frontiere ? frontiere.dataset.frontiere : cellule.dataset.cellule);
+  const role = frontiere ? frontiere.dataset.roleHaut : cellule.dataset.roleNom;
+  const role2 = frontiere ? frontiere.dataset.roleBas : '';
+  glisse = null;
+
+  majBase(({ proc: p }) => {
+    const etape = p.etapes[source];
+    if (!etape) return;
+    if (role != null) etape.role = role;
+    /* Déposée sur un couloir : un seul rôle. Sur une frontière : les deux. */
+    etape.role2 = role2 && role2 !== role ? role2 : '';
+    p.etapes.splice(source, 1);
+    /* La cellule d'ajout en fin de couloir vaut « à la fin ». */
+    const destination = Math.min(colonne, p.etapes.length);
+    p.etapes.splice(destination, 0, etape);
+    /* L'étape adopte la phase de sa nouvelle place : sans cela, un simple
+       déplacement fragmenterait le bandeau (« Avant J1 | J1 | Avant J1 »). */
+    const voisin = p.etapes[destination - 1] || p.etapes[destination + 1];
+    if (voisin) etape.phase = voisin.phase || '';
+    renumeroter(p);
+    return { etapeActive: etape.ordre };
+  });
+});
+
+/* ==========================================================================
+   ACTIONS — un seul point d'entrée, piloté par data-action
+   ========================================================================== */
+racine.addEventListener('click', (ev) => {
+  const cible = ev.target.closest('[data-action]');
+  if (!cible) return;
+  const action = cible.dataset.action;
+  const i = cible.dataset.i != null ? Number(cible.dataset.i) : null;
+  const id = cible.dataset.id;
+  const actions = ACTIONS[action];
+  if (actions) actions(i, id, cible);
+});
+
+const ACTIONS = {
+  'ouvrir-menu': () => { etat.menu = true; rendre(); },
+  'fermer-menu': () => { etat.menu = false; rendre(); },
+  'basculer-edition': () => { etat.edition = !etat.edition; etat.etapeActive = null; rendre(); },
+  'basculer-tableau': () => { etat.tableau = !etat.tableau; rendre(); },
+  'imprimer': () => window.print(),
+
+  /* Règle le zoom pour que tout le diagramme tienne dans la largeur disponible. */
+  'zoom-ajuster': () => {
+    const flux = document.querySelector('.flux');
+    const defile = document.querySelector('.flux-defile');
+    if (!flux || !defile) return;
+    const naturelle = flux.getBoundingClientRect().width / (etat.zoom || 1);
+    const dispo = defile.clientWidth - 4;
+    if (naturelle <= 0) return;
+    etat.zoom = Math.min(1, Math.max(0.4, Math.floor((dispo / naturelle) * 20) / 20));
+    rendre();
+  },
+
+  /* Nature du lien entrant : non qualifié → manuel → automatique → … */
+  'basculer-lien': (i) => majBase(({ proc: p }) => {
+    const etape = p.etapes[i];
+    if (!etape) return;
+    const rang = ORDRE_LIENS.indexOf(etape.lien || '');
+    etape.lien = ORDRE_LIENS[(rang + 1) % ORDRE_LIENS.length];
+  }),
+
+  'choisir-client': (i, id) => {
+    const cl = etat.base.find((x) => x.id === id);
+    if (!cl) return;
+    etat.clientId = cl.id;
+    etat.procId = cl.processus[0] ? cl.processus[0].id : null;
+    etat.menu = false;
+    etat.etapeActive = null;
+    persister();
+    rendre();
+  },
+  'choisir-proc': (i, id) => { etat.procId = id; etat.etapeActive = null; rendre(); },
+  'selectionner-etape': (i, id, cible) => {
+    etat.etapeActive = Number(cible.dataset.ordre);
+    rendre();
+  },
+
+  /* --- client --- */
+  'creer-client': () => majBase(({ base }) => {
+    const id = idUnique('nouveau client', base.map((x) => x.id));
+    const p = processusVierge([]);
+    base.push({ id, nom: 'Nouveau client', site: '', date: dateDuJour(), processus: [p], outils: [], notes: '' });
+    return { clientId: id, procId: p.id, menu: false, edition: true, etapeActive: null };
+  }),
+  'dupliquer-client': () => majBase(({ base, client: c }) => {
+    const copie = clone(c);
+    copie.id = idUnique(c.id + ' copie', base.map((x) => x.id));
+    copie.nom = c.nom + ' (copie)';
+    base.push(copie);
+    return { clientId: copie.id, procId: copie.processus[0] ? copie.processus[0].id : null, etapeActive: null };
+  }),
+  'supprimer-client': () => {
+    const c = client();
+    if (!c) return;
+    if (etat.base.length < 2) {
+      alert('La base garde au moins un diagnostic. Créez-en un autre avant de supprimer celui-ci.');
+      return;
+    }
+    if (!confirm(`Supprimer définitivement le diagnostic « ${c.nom} » de la base locale ?`)) return;
+    majBase(({ base }) => {
+      const i = base.findIndex((x) => x.id === c.id);
+      base.splice(i, 1);
+      const suivant = base[Math.min(i, base.length - 1)];
+      return {
+        clientId: suivant.id,
+        procId: suivant.processus[0] ? suivant.processus[0].id : null,
+        etapeActive: null
+      };
+    });
+  },
+  'regenerer-id': () => {
+    const c = client();
+    if (!c) return;
+    const pris = etat.base.filter((x) => x.id !== c.id).map((x) => x.id);
+    const nouveau = idUnique(c.nom + ' ' + (c.site || ''), pris);
+    majBase(({ client: cl }) => { cl.id = nouveau; return { clientId: nouveau }; });
+  },
+  'ajouter-outil': () => majBase(({ client: c }) => { c.outils = (c.outils || []).concat(['Nouvel outil']); }),
+  'supprimer-outil': (i) => majBase(({ client: c }) => { c.outils.splice(i, 1); }),
+
+  /* --- processus --- */
+  'ajouter-processus': () => majBase(({ client: c }) => {
+    const p = processusVierge(c.processus.map((x) => x.id));
+    c.processus.push(p);
+    return { procId: p.id, etapeActive: null };
+  }),
+  'supprimer-processus': () => {
+    const c = client(), p = proc();
+    if (!c || !p) return;
+    if (c.processus.length < 2) { alert('Un diagnostic garde au moins un processus.'); return; }
+    if (!confirm(`Supprimer le processus « ${p.nom} » et ses ${p.etapes.length} étape(s) ?`)) return;
+    majBase(({ client: cl }) => {
+      const i = cl.processus.findIndex((x) => x.id === p.id);
+      cl.processus.splice(i, 1);
+      const suivant = cl.processus[Math.min(i, cl.processus.length - 1)];
+      return { procId: suivant.id, etapeActive: null };
+    });
+  },
+
+  /* --- rôles --- */
+  'ajouter-role': () => majBase(({ proc: p }) => { p.roles.push('Rôle ' + (p.roles.length + 1)); }),
+  'monter-role': (i) => majBase(({ proc: p }) => {
+    [p.roles[i - 1], p.roles[i]] = [p.roles[i], p.roles[i - 1]];
+  }),
+  'descendre-role': (i) => majBase(({ proc: p }) => {
+    [p.roles[i + 1], p.roles[i]] = [p.roles[i], p.roles[i + 1]];
+  }),
+  'supprimer-role': (i) => {
+    const p = proc();
+    if (!p) return;
+    if (p.roles.length < 2) {
+      alert('Un processus garde au moins un rôle : renommez celui-ci plutôt que de le supprimer.');
+      return;
+    }
+    const role = p.roles[i];
+    const nb = p.etapes.filter((et) => et.role === role).length;
+    const repli = p.roles.find((r, j) => j !== i);
+    if (nb && !confirm(`${nb} étape(s) sont sur le rôle « ${role} ». Les réaffecter à « ${repli} » et supprimer le rôle ?`)) return;
+    majBase(({ proc: px }) => {
+      px.roles.splice(i, 1);
+      const cible = px.roles[0];
+      px.etapes.forEach((et) => {
+        if (et.role === role) et.role = cible;
+        if (et.role2 === role) et.role2 = '';          /* plus de chevauchement possible */
+        if (et.role2 === et.role) et.role2 = '';
+      });
+      px.frictions.forEach((f) => { if (f.role === role) f.role = 'Transverse'; });
+    });
+  },
+
+  /* --- étapes --- */
+  'ajouter-etape': () => majBase(({ proc: p }) => {
+    p.etapes.push(etapeVierge(p, p.roles[0] || ''));
+    renumeroter(p);
+    return { etapeActive: p.etapes.length };
+  }),
+  /* Ajout depuis le bouton fantôme en fin de couloir : hérite du rôle de la ligne. */
+  'ajouter-etape-role': (i, id, cible) => majBase(({ proc: p }) => {
+    p.etapes.push(etapeVierge(p, cible.dataset.roleNom || p.roles[0] || ''));
+    renumeroter(p);
+    return { etapeActive: p.etapes.length };
+  }),
+  /* Insertion juste après l'étape visée, même rôle et même phase. */
+  'inserer-etape': (i) => majBase(({ proc: p }) => {
+    const source = p.etapes[i];
+    p.etapes.splice(i + 1, 0, {
+      ordre: 0,
+      role: source ? source.role : (p.roles[0] || ''),
+      texte: '',
+      phase: source ? (source.phase || '') : '',
+      supports: ''
+    });
+    renumeroter(p);
+    return { etapeActive: i + 2 };
+  }),
+  'gauche-etape': (i) => majBase(({ proc: p }) => {
+    [p.etapes[i - 1], p.etapes[i]] = [p.etapes[i], p.etapes[i - 1]];
+    renumeroter(p);
+    return { etapeActive: i };
+  }),
+  'droite-etape': (i) => majBase(({ proc: p }) => {
+    [p.etapes[i + 1], p.etapes[i]] = [p.etapes[i], p.etapes[i + 1]];
+    renumeroter(p);
+    return { etapeActive: i + 2 };
+  }),
+  'supprimer-etape': (i) => majBase(({ proc: p }) => {
+    p.etapes.splice(i, 1);
+    renumeroter(p);
+    return { etapeActive: null };
+  }),
+
+  'supprimer-support': (i, id, cible) => majBase(({ proc: p }) => {
+    const et = p.etapes[i];
+    if (!et) return;
+    const liste = listeSupports(et.supports);
+    liste.splice(Number(cible.dataset.s), 1);
+    et.supports = liste.join(', ');
+  }),
+
+  /* --- environnement IT --- */
+  'ajouter-mission': (i) => majBase(({ client: c }) => {
+    const si = assurerSI(c);
+    const dom = si.domaines[i];
+    if (!dom) return;
+    si.missions[dom] = (si.missions[dom] || []).concat(['Nouvelle mission']);
+  }),
+  'supprimer-mission': (i, id, cible) => majBase(({ client: c }) => {
+    const si = assurerSI(c);
+    const dom = si.domaines[i];
+    if (!dom || !si.missions[dom]) return;
+    si.missions[dom].splice(Number(cible.dataset.k), 1);
+  }),
+  'ajouter-domaine': () => majBase(({ client: c }) => {
+    const si = assurerSI(c);
+    let nom = 'Nouveau domaine', n = 2;
+    while (si.domaines.includes(nom)) nom = `Nouveau domaine ${n++}`;
+    si.domaines.push(nom);
+  }),
+  'supprimer-domaine': (i) => majBase(({ client: c }) => {
+    const si = assurerSI(c);
+    const nom = si.domaines[i];
+    si.domaines.splice(i, 1);
+    Object.keys(si.classement).forEach((o) => {
+      if (si.classement[o] === nom) si.classement[o] = DOMAINE_AUTRE;
+    });
+    if (!si.domaines.includes(DOMAINE_AUTRE)) si.domaines.push(DOMAINE_AUTRE);
+  }),
+  'ajouter-echange': () => majBase(({ client: c }) => {
+    const si = assurerSI(c);
+    const outils = outilsDuSite(c);
+    si.liens.push({ de: outils[0] || '', vers: outils[1] || outils[0] || '', nature: '', libelle: '' });
+  }),
+  'supprimer-echange': (i) => majBase(({ client: c }) => {
+    const si = assurerSI(c);
+    si.liens.splice(i, 1);
+  }),
+  'rederiver-echanges': () => {
+    if (!confirm("Repartir des enchaînements d'étapes des processus ? Vos ajustements sur les échanges seront perdus.")) return;
+    majBase(({ client: c }) => { c.si = { liens: deriverEchanges(c) }; });
+  },
+
+  /* --- échelles de temps (phases) --- */
+  /* Ajouter en bout de frise. Une échelle n'existe que si elle couvre au moins
+     une étape : on en crée donc une, vide, prête à être remplie ou à recevoir
+     des étapes existantes par glisser-déposer. */
+  'ajouter-phase': () => majBase(({ proc: p }) => {
+    const etape = etapeVierge(p, p.roles[0] || '');
+    etape.phase = nomPhaseLibre(p);
+    p.etapes.push(etape);
+    renumeroter(p);
+    return { etapeActive: p.etapes.length };
+  }),
+  /* Créer : l'étape visée démarre une nouvelle échelle, qui court jusqu'à la fin
+     du groupe auquel elle appartenait. */
+  'couper-phase': (i) => {
+    const p = proc();
+    if (!p) return;
+    const et = p.etapes[i];
+    if (!et) return;
+    const ancienne = et.phase || '';
+    if (i === 0 || (p.etapes[i - 1].phase || '') !== ancienne) {
+      window.alert("Cette étape ouvre déjà une échelle de temps. Choisissez-en une autre pour couper.");
+      return;
+    }
+    const nom = nomPhaseLibre(p);
+    majBase(({ proc: px }) => {
+      for (let k = i; k < px.etapes.length && (px.etapes[k].phase || '') === ancienne; k++) {
+        px.etapes[k].phase = nom;
+      }
+    });
+  },
+  /* Supprimer : les étapes du groupe rejoignent l'échelle précédente (ou la suivante). */
+  'supprimer-phase': (i, id, cible) => {
+    const span = Number(cible.dataset.span);
+    majBase(({ proc: p }) => {
+      const avant = i > 0 ? (p.etapes[i - 1].phase || '') : null;
+      const apres = (i + span) < p.etapes.length ? (p.etapes[i + span].phase || '') : null;
+      const reprise = avant != null ? avant : (apres != null ? apres : '');
+      for (let k = i; k < i + span && k < p.etapes.length; k++) p.etapes[k].phase = reprise;
+    });
+  },
+
+  /* --- frictions et chiffres --- */
+  'ajouter-friction': () => majBase(({ proc: p }) => { p.frictions.push({ role: 'Transverse', texte: '' }); }),
+  'supprimer-friction': (i) => majBase(({ proc: p }) => { p.frictions.splice(i, 1); }),
+  'ajouter-chiffre': () => majBase(({ proc: p }) => { p.chiffres.push({ valeur: '', libelle: '' }); }),
+  'supprimer-chiffre': (i) => majBase(({ proc: p }) => { p.chiffres.splice(i, 1); }),
+
+  /* --- exports --- */
+  'exporter-json': () => {
+    const c = client();
+    if (!c) return;
+    const data = {
+      client: c.nom, site: c.site, date_visite: c.date,
+      exporte_le: new Date().toISOString(),
+      totaux: {
+        processus: c.processus.length,
+        etapes: c.processus.reduce((n, p) => n + p.etapes.length, 0),
+        frictions: c.processus.reduce((n, p) => n + p.frictions.length, 0)
+      },
+      processus: c.processus, outils: c.outils || [], notes: c.notes || ''
+    };
+    telecharger(`diagnostic-${c.id}.json`, JSON.stringify(data, null, 2), 'application/json');
+  },
+  'exporter-fichier': () => telecharger('clients-data.js', genererFichier(), 'text/javascript'),
+  'reinitialiser': () => {
+    if (!confirm("Abandonner toutes les modifications locales et repartir des données d'origine ?")) return;
+    try { localStorage.removeItem(CLE_BASE); localStorage.removeItem(CLE_CLIENT); } catch (err) {}
+    etat.base = trierBase(clone(BASE_SOURCE));
+    const premier = etat.base[0];
+    etat.clientId = premier ? premier.id : null;
+    etat.procId = premier && premier.processus[0] ? premier.processus[0].id : null;
+    etat.menu = false;
+    etat.etapeActive = null;
+    rendre();
+  }
+};
+
+/* ==========================================================================
+   EXPORTS
+   ========================================================================== */
+function telecharger(nom, contenu, type) {
+  const blob = new Blob([contenu], { type: type || 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nom;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/** Régénère clients-data.js dans le format du fichier source. */
+function genererFichier() {
+  const s = (v) => JSON.stringify(v == null ? '' : String(v));
+  const enLigne = (o, cles) => '{ ' + cles
+    .filter((k) => o[k] !== undefined)
+    .map((k) => k + ': ' + (typeof o[k] === 'number' ? o[k] : s(o[k])))
+    .join(', ') + ' }';
+  const bloc = (items, cles, marge) => items.map((it, i) =>
+    marge + enLigne(it, cles) + (i < items.length - 1 ? ',' : ''));
+
+  const L = [
+    '// Base locale des diagnostics — un objet par client.',
+    '// Chaque étape : { ordre, role, texte, phase, supports }  → ordre = colonne dans le diagramme de flux.',
+    '// supports : chaîne libre, séparée par des virgules (« Excel, papier »).',
+    '// role2 : second rôle impliqué → la carte chevauche les deux couloirs.',
+    '// lien : nature de la flèche entrante — "auto", "manuel" ou vide.',
+    '// Chaque friction : { role, texte }  → "Transverse" si la friction ne porte pas sur un rôle unique.',
+    '// Généré par diagnostic-os.html (Menu → Exporter clients-data.js).',
+    '',
+    'export const CLIENTS = ['
+  ];
+
+  etat.base.forEach((c, ci) => {
+    L.push('  {');
+    L.push('    id: ' + s(c.id) + ',');
+    L.push('    nom: ' + s(c.nom) + ',');
+    L.push('    site: ' + s(c.site) + ',');
+    L.push('    date: ' + s(c.date) + ',');
+    L.push('    processus: [');
+    c.processus.forEach((p, pi) => {
+      L.push('      {');
+      L.push('        id: ' + s(p.id) + ',');
+      L.push('        nom: ' + s(p.nom) + ',');
+      L.push('        soustitre: ' + s(p.soustitre) + ',');
+      L.push('        roles: [' + p.roles.map(s).join(', ') + '],');
+      L.push('        etapes: [');
+      L.push(...bloc(p.etapes, ['ordre', 'role', 'role2', 'texte', 'phase', 'supports', 'lien'], '          '));
+      L.push('        ],');
+      L.push('        frictions: [');
+      L.push(...bloc(p.frictions, ['role', 'texte'], '          '));
+      L.push('        ],');
+      L.push('        chiffres: [');
+      L.push(...bloc(p.chiffres, ['valeur', 'libelle'], '          '));
+      L.push('        ]');
+      L.push('      }' + (pi < c.processus.length - 1 ? ',' : ''));
+    });
+    L.push('    ],');
+    L.push('    outils: [' + (c.outils || []).map(s).join(', ') + '],');
+    if (c.si && Array.isArray(c.si.liens)) {
+      L.push('    si: {');
+      L.push('      domaines: [' + (c.si.domaines || []).map(s).join(', ') + '],');
+      L.push('      classement: ' + JSON.stringify(c.si.classement || {}) + ',');
+      L.push('      missions: ' + JSON.stringify(c.si.missions || {}) + ',');
+      L.push('      liens: [');
+      L.push(...bloc(c.si.liens, ['de', 'vers', 'nature', 'libelle'], '        '));
+      L.push('      ]');
+      L.push('    },');
+    }
+    L.push('    notes: ' + s(c.notes || ''));
+    L.push('  }' + (ci < etat.base.length - 1 ? ',' : ''));
+  });
+  L.push('];');
+  return L.join('\n') + '\n';
+}
+
+/* ==========================================================================
+   DÉMARRAGE
+   ========================================================================== */
+(function demarrer() {
+  let base = clone(BASE_SOURCE);
+  try {
+    const brut = localStorage.getItem(CLE_BASE);
+    if (brut) {
+      const lu = JSON.parse(brut);
+      if (Array.isArray(lu) && lu.length) base = lu;
+    }
+  } catch (err) { /* données locales illisibles : on repart de la source */ }
+
+  etat.base = trierBase(base);
+
+  let id = null;
+  try { id = localStorage.getItem(CLE_CLIENT); } catch (err) {}
+  const c = etat.base.find((x) => x.id === id) || etat.base[0];
+  etat.clientId = c ? c.id : null;
+  etat.procId = c && c.processus[0] ? c.processus[0].id : null;
+
+  rendre();
+})();
+
+function redessinerTraces() { tracerFleches(); tracerEchanges(); }
+window.addEventListener('resize', redessinerTraces);
+document.fonts && document.fonts.ready.then(redessinerTraces);
+</script>
+</body>
+</html>
