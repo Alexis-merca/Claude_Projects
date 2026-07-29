@@ -425,10 +425,11 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       ${ed ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
     </div>`;
 
-  return `
-  <div class="carte carte--flux">
-    ${avecEntete ? entete : ''}
-    <div class="flux-defile">
+  /* Le corps seul, sans enveloppe : l'hôte React possède la carte et fournit
+     son propre en-tête, sinon les deux se dupliqueraient. Le chemin par défaut
+     reste rigoureusement identique à l'original, indentation comprise — c'est
+     ce que vérifie la comparaison stricte. */
+  const corps = `<div class="flux-defile">
       <div class="flux${ed ? ' flux--edition' : ''}" data-proc="${echapper(p.id)}"
            style="grid-template-columns:${gabaritColonnes(n, ed)};zoom:${zoomApplique}">
         <svg class="flux-svg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -442,7 +443,14 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
         ${etiquettes}
         ${cellules.join('')}
       </div>
-    </div>
+    </div>`;
+
+  if (options.enveloppe === false) return corps;
+
+  return `
+  <div class="carte carte--flux">
+    ${avecEntete ? entete : ''}
+    ${corps}
     ${avecEntete ? pied : ''}
   </div>`;
 }

@@ -1,0 +1,362 @@
+/* ============================================================================
+   Diagramme de flux — feuille de style du moteur
+   ============================================================================
+
+   Extraite de diagnostic-os.html, où elle vivait mêlée au reste de
+   l'application. Le moteur produit un balisage qui dépend entièrement de ces
+   règles : sans elles, le diagramme s'affiche en blocs empilés, sans couloirs
+   ni colonnes.
+
+   Les règles retenues sont celles dont le sélecteur cite une classe réellement
+   émise par le moteur — relevée sur sa sortie, pas devinée.
+
+   Les variables sont résolues transitivement depuis :root, à partir de deux
+   amorces : celles citées par les règles retenues, et celles citées par le
+   balisage lui-même. Les secondes n'apparaissent nulle part dans le CSS —
+   `--couloir` et `--colonne-max` sont écrites dans l'attribut style par
+   gabaritColonnes(). Les omettre donnait des colonnes à 150 px au lieu de 122,
+   donc un retour à la ligne différent et des cartes plus courtes.
+
+   Portée : affichage écran. La mise à l'échelle à la feuille reste à l'hôte.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+   Socle — deux réglages que le mono-fichier posait globalement, sur `*` et
+   `body`. Aucun sélecteur de classe ne les cite, ils étaient donc invisibles à
+   l'extraction, et leur absence ne se voyait pas : le diagramme s'affichait,
+   simplement faux.
+
+   `box-sizing` est le plus traître. `.flux__cellule` combine min-width: 150px
+   et padding: 12px 14px : en border-box la carte fait 122 px, en content-box
+   elle fait 150. Vingt-huit pixels d'écart par colonne, un retour à la ligne
+   différent, et des cartes plus courtes — donc des flèches ailleurs.
+
+   La typographie compte autant : la largeur du texte fixe la hauteur des
+   cartes, que les flèches suivent.
+
+   Portés sur `.carte--flux` et non sur `*` : ce sont les réglages du
+   diagramme, ils n'ont pas à s'imposer à l'application hôte.
+   ------------------------------------------------------------------------- */
+.carte--flux, .carte--flux *, .carte--flux *::before, .carte--flux *::after {
+  box-sizing: border-box;
+}
+.carte--flux {
+  color: var(--encre);
+  font: 400 15px/1.4 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --anneau: inset 0 0 0 1px var(--bord);
+  --blanc: #FFFFFF;
+  --blanc-casse: #FCFCFD;
+  --bord: #D5D5D5;
+  --colonne-max: 300px;
+  --couloir: 200px;
+  --encre: #2B2B2B;
+  --filet: #EFEFEF;
+  --gris: #7B7B7B;
+  --mono: 'Roboto Mono', ui-monospace, monospace;
+  --ombre: 0 2px 8px rgba(0, 0, 0, .08);
+  --page: #F7F9FA;
+  --r-carte: 12px;
+  --r-chip: 4px;
+  --r-petit: 8px;
+  --r-pilule: 100px;
+  --rouge-clair: #FFD9D1;
+  --rouge-fonce: #AD0101;
+  --ui: 'Overpass', system-ui, -apple-system, sans-serif;
+  --violet: #6733FD;
+  --violet-150: #D1C2FE;
+  --violet-200: #C7B4FE;
+  --violet-400: #A485FE;
+  --violet-50: #F0EBFF;
+  --violet-800: #2A146A;
+}
+
+.libelle {
+  font: 600 12px/1 var(--ui);
+  color: var(--gris);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.libelle--large { font-size: 13px; letter-spacing: .14em; }
+.sourdine { color: var(--gris); }
+.bouton {
+  border: none;
+  border-radius: var(--r-pilule);
+  font: 600 15px/1 var(--ui);
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+.bouton--mini {
+  background: var(--violet-50);
+  color: var(--violet);
+  font-size: 13px;
+  padding: 9px 16px;
+}
+.bouton--mini:hover { background: var(--violet-150); }
+.bouton--retirer {
+  width: 22px; height: 22px; padding: 0;
+  background: transparent;
+  color: var(--gris);
+  font: 400 15px/1 var(--ui);
+  border-radius: var(--r-pilule);
+  border: none;
+  cursor: pointer;
+}
+.bouton--retirer:hover { background: var(--rouge-clair); color: var(--rouge-fonce); }
+.carte {
+  background: var(--blanc);
+  border-radius: var(--r-carte);
+  box-shadow: var(--ombre);
+  padding: 28px 30px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.carte--flux { padding: 24px 0 8px; gap: 0; }
+.rangee { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pousse-droite { margin-left: auto; }
+.flux__entete {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px 16px; gap: 16px; flex-wrap: wrap;
+}
+.flux-defile { overflow-x: auto; padding: 14px 24px 16px 0; }
+.flux {
+  min-width: min-content;
+  display: grid;
+  position: relative;
+  align-items: stretch;
+}
+.flux__bande { z-index: 0; background: var(--blanc); border-top: 1px solid var(--filet); }
+.flux__bande--paire { background: var(--blanc-casse); }
+.flux-svg {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; overflow: visible;
+}
+.flux-svg--cibles { z-index: 5; }
+.flux__phase {
+  position: relative;
+  margin: 0 0 10px; padding: 7px 12px;
+  border-radius: var(--r-petit);
+  background: var(--violet-50); color: var(--violet-800);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  z-index: 3;
+}
+.flux__phase--coupe { border-left: 1px dashed var(--violet-200); }
+.flux__phase-libelle {
+  font: 600 12px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; text-align: center;
+}
+.flux__phase-ajout {
+  margin: 0 0 10px; padding: 7px 10px;
+  border: 1px dashed var(--violet-200); border-radius: var(--r-petit);
+  background: transparent; color: var(--violet);
+  font: 600 12px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; z-index: 3;
+  opacity: .55; transition: opacity .15s, background .15s;
+}
+.flux__phase-ajout:hover { opacity: 1; background: var(--violet-50); }
+.flux__ecart {
+  position: absolute; left: 0; top: -10px; transform: translateX(-50%);
+  background: var(--blanc); box-shadow: inset 0 0 0 1px var(--violet-200);
+  color: var(--violet); font: 600 11px/1 var(--mono);
+  padding: 3px 8px; border-radius: var(--r-pilule);
+  white-space: nowrap; z-index: 4;
+}
+.flux__etiquette {
+  position: sticky; left: 0; z-index: 6;
+  display: flex; align-items: center;
+  padding: 12px 16px 12px 24px;
+}
+.flux__cellule {
+  z-index: 3;
+  padding: 12px 14px;
+  display: flex; align-items: stretch;
+  min-width: 150px;
+}
+.flux__cellule--coupe { border-left: 1px dashed var(--violet-200); }
+.flux__carte {
+  position: relative;   
+  
+  flex: 1 1 auto; min-width: 0; text-align: left;
+  background: var(--blanc); border: none;
+  border-radius: var(--r-carte);
+  box-shadow: var(--anneau);
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.flux__cellule--cheval { align-items: flex-start; }
+.flux__carte--cheval {
+  z-index: 4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .10), inset 0 0 0 1px var(--violet-200);
+}
+.flux__carte--actif { box-shadow: inset 0 0 0 2px var(--violet); }
+.flux__carte-texte { font: 400 15px/1.4 var(--ui); color: var(--encre); text-wrap: pretty; }
+.badge-support { display: block; flex: none; }
+.supports-bordure {
+  position: absolute; top: 0; left: 12px; z-index: 4;
+  transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: calc(100% - 40px);
+}
+.supports-bordure__reste {
+  font: 700 10px/1 var(--mono); color: var(--violet);
+  background: var(--blanc); border-radius: var(--r-pilule); padding: 3px 5px;
+}
+.support-modif {
+  display: inline-flex; align-items: center; gap: 1px;
+  padding: 2px 2px 2px 3px;
+  border-radius: var(--r-petit);
+  background: var(--blanc); box-shadow: var(--anneau);
+}
+.support-modif:hover { box-shadow: inset 0 0 0 1px var(--violet-200); }
+.chip {
+  display: inline-flex; align-items: center; justify-self: start; align-self: start;
+  padding: 5px 12px; border-radius: var(--r-pilule);
+  background: var(--chip-fond, var(--filet)); color: var(--chip-encre, var(--encre));
+  font: 600 14px/1.35 var(--ui); white-space: nowrap;
+}
+.vide {
+  margin: 0 24px 20px; padding: 40px;
+  border-radius: var(--r-carte);
+  background: var(--page); box-shadow: inset 0 0 0 1px var(--filet);
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+.vide__titre { font: 600 17px/1.3 var(--ui); }
+.flux__zoom { display: flex; align-items: center; gap: 10px; }
+.flux__zoom input[type="range"] { width: 120px; accent-color: var(--violet); cursor: pointer; }
+.flux__zoom-valeur {
+  font: 600 13px/1 var(--mono); color: var(--gris); min-width: 40px; text-align: right;
+}
+.flux__legende { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.flux__legende-item {
+  display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1 var(--ui); color: var(--gris);
+}
+.flux__legende-trait { width: 26px; height: 0; border-top-width: 2px; }
+.flux--edition .flux__cellule { min-width: 210px; }
+.flux__phase-edition { display: flex; align-items: center; gap: 2px; width: 100%; }
+.bouton--puce-claire {
+  width: 22px; height: 22px; flex: none; padding: 0;
+  border: none; border-radius: var(--r-pilule);
+  background: rgba(255, 255, 255, .7);
+  color: var(--violet-800); font: 400 13px/1 var(--ui); cursor: pointer;
+  opacity: 0; transition: opacity .15s, background .15s, color .15s;
+}
+.flux__phase:hover .bouton--puce-claire,
+.flux__phase-edition:focus-within .bouton--puce-claire {
+  opacity: 1;
+}
+.bouton--puce-claire:hover { background: var(--blanc); color: var(--rouge-fonce); }
+.flux__phase-champ {
+  width: 100%; min-width: 0; border: none; background: transparent;
+  padding: 2px 4px; outline: none;
+  border-radius: var(--r-chip);
+  text-align: center;
+}
+.flux__phase-champ {
+  font: 600 12px/1.2 var(--ui); color: var(--violet-800);
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.flux__phase-champ:hover { background: rgba(255, 255, 255, .6); }
+.flux__phase-champ:focus { background: var(--blanc); box-shadow: inset 0 0 0 1px var(--violet); }
+.flux__phase-champ::placeholder { color: var(--violet-400); }
+.flux__etiquette--edition {
+  flex-direction: column; align-items: stretch; gap: 6px; padding-right: 12px;
+}
+.flux__role-champ {
+  width: 100%; border: none; border-radius: var(--r-pilule);
+  padding: 5px 12px; outline: none;
+  background: var(--chip-fond, var(--filet));
+  color: var(--chip-encre, var(--encre));
+  font: 600 14px/1.35 var(--ui);
+  text-overflow: ellipsis;
+}
+.flux__role-champ:hover { box-shadow: 0 0 0 1px var(--chip-encre, var(--bord)); }
+.flux__role-champ:focus {
+  background: var(--blanc); color: var(--encre); box-shadow: inset 0 0 0 1px var(--violet);
+}
+.flux__role-outils { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.flux__etiquette--edition:hover .flux__role-outils,
+.flux__etiquette--edition:focus-within .flux__role-outils {
+  opacity: 1;
+}
+.bouton--puce {
+  width: 26px; height: 26px; padding: 0;
+  border: none; border-radius: var(--r-pilule);
+  background: var(--page); box-shadow: var(--anneau);
+  color: var(--gris); font: 400 13px/1 var(--ui); cursor: pointer;
+}
+.bouton--puce:hover:not(:disabled) { background: var(--violet-50); color: var(--violet); }
+.bouton--puce[data-role="supprimer"]:hover {
+  background: var(--rouge-clair); color: var(--rouge-fonce);
+}
+.bouton--puce:disabled { opacity: .3; cursor: default; }
+.bouton--puce svg { display: block; margin: 0 auto; }
+.flux__carte--edition { position: relative; gap: 6px; padding: 10px 12px 8px; }
+.flux__carte--edition:focus-within { box-shadow: inset 0 0 0 2px var(--violet); }
+.carte__tete { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.carte__poignee {
+  cursor: grab; color: var(--bord); font-size: 14px; line-height: 1;
+  padding: 2px 3px; border-radius: var(--r-chip); user-select: none;
+}
+.carte__poignee:hover { color: var(--violet); background: var(--violet-50); }
+.carte__poignee:active { cursor: grabbing; }
+.carte__texte {
+  width: 100%; border: none; background: transparent;
+  padding: 2px 4px; outline: none; overflow: hidden;
+  border-radius: var(--r-chip);
+  font: 400 15px/1.4 var(--ui); color: var(--encre);
+  resize: none;
+}
+.carte__texte:hover { background: var(--page); }
+.carte__texte:focus { background: var(--page); box-shadow: inset 0 0 0 1px var(--violet-200); }
+.carte__texte::placeholder { color: var(--bord); }
+.carte__support-choix {
+  align-self: flex-start;
+  border: none; background: transparent; outline: none; cursor: pointer;
+  padding: 2px 4px; border-radius: var(--r-chip);
+  font: 600 11px/1.3 var(--ui); color: var(--violet);
+  max-width: 100%;
+}
+.carte__support-choix:hover { background: var(--violet-50); }
+.carte__support-choix:focus {
+  background: var(--violet-50); box-shadow: inset 0 0 0 1px var(--violet-200);
+}
+.carte__outils {
+  display: flex; gap: 4px; justify-content: flex-end;
+  opacity: 0; transition: opacity .15s;
+}
+.flux__carte--edition:hover .carte__outils,
+.flux__carte--edition:focus-within .carte__outils {
+  opacity: 1;
+}
+.flux__frontiere {
+  align-self: end; height: 20px; z-index: 5;
+  transform: translateY(10px);
+  pointer-events: none; border-radius: var(--r-pilule);
+  margin: 0 14px;
+}
+.flux--glisse .flux__frontiere {
+  pointer-events: auto;
+  box-shadow: inset 0 0 0 1px var(--violet-200);
+  background: rgba(103, 51, 253, .05);
+}
+.flux__ajout {
+  width: 100%; min-height: 46px;
+  border: 1px dashed var(--bord); border-radius: var(--r-carte);
+  background: transparent; color: var(--gris);
+  font: 600 13px/1 var(--ui); cursor: pointer;
+  opacity: .4; transition: opacity .15s, background .15s, color .15s;
+}
+.flux__cellule:hover .flux__ajout { opacity: 1; }
+.flux__ajout:hover {
+  background: var(--violet-50); border-color: var(--violet-200); color: var(--violet); opacity: 1;
+}
+.flux__pied {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 24px 6px; border-top: 1px solid var(--filet);
+}
+.si__bloc-titre .bouton--retirer { color: rgba(255, 255, 255, .75); }
+.si__bloc-titre .bouton--retirer:hover {
+  background: rgba(255, 255, 255, .22); color: var(--blanc);
+}
