@@ -809,20 +809,67 @@ textarea { resize: vertical; }
 /* =========================================================================
    10. IMPRESSION / PDF — vue de lecture seule
    ========================================================================= */
+/* ==========================================================================
+   IMPRESSION — une page par processus, puis l'IT et la synthèse.
+   Le document d'impression est monté à l'écran avant d'appeler window.print(),
+   à la largeur exacte de la page : les mesures qui servent au zoom de chaque
+   diagramme et au tracé des flèches sont donc déjà celles du papier.
+   273 mm utiles (A4 paysage moins 12 mm de marge de chaque côté) à 96 dpi.
+   ========================================================================== */
+.principal--impression {
+  width: 1450px; max-width: none; margin: 0 auto; padding: 0; gap: 26px;
+}
+/* Aucune marge propre : `scrollHeight` doit rendre la hauteur réelle du
+   contenu, c'est elle qui pilote l'ajustement à la feuille. */
+.page-impression { display: flex; flex-direction: column; gap: 16px; }
+.page-impression__bandeau {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--filet);
+}
+.page-impression__client { font-weight: 600; font-size: 14px; color: var(--encre); }
+.page-impression__sujet {
+  font: 700 11px/1 var(--mono); letter-spacing: .09em;
+  text-transform: uppercase; color: var(--gris); white-space: nowrap;
+}
+.page-impression > .groupe > h2 { margin: 0; }
+
+/* Compaction du bloc d'analyse — le poste le plus lourd de la page : jusqu'à
+   585 px mesurés, pour 701 px utiles. Ce qu'on lui reprend revient au
+   diagramme. Les frictions passent sur deux colonnes : c'est ce qui coupe le
+   plus, sans rien retirer du contenu.
+   Ces règles sont portées par le document d'impression, et non par
+   `@media print` : les mesures qui pilotent le zoom sont prises à l'écran,
+   elles doivent porter sur la mise en page qui sera réellement imprimée. */
+.principal--impression .grille-analyse { gap: 14px; }
+.principal--impression .panneau { padding: 14px 16px; gap: 10px; }
+.principal--impression .friction-groupe { grid-template-columns: 120px 1fr; gap: 10px; }
+.principal--impression .friction-groupe__items { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.principal--impression .friction { padding: 7px 10px; font-size: 11.5px; line-height: 1.32; }
+.principal--impression .chiffre { gap: 10px; }
+.principal--impression .chiffre__valeur { font-size: 20px; min-width: 66px; }
+.principal--impression .chiffre__libelle { font-size: 12px; line-height: 1.3; }
+.principal--impression .page-impression__bandeau { padding-bottom: 6px; }
+.principal--impression h2 { font-size: 24px; }
+
 @media print {
   @page { size: A4 landscape; margin: 12mm; }
   body { background: var(--blanc); }
-  .barre, .tiroir, .voile, .ne-pas-imprimer { display: none !important; }
+  .barre, .tiroir, .voile, .onglets, .ne-pas-imprimer { display: none !important; }
   .principal { max-width: none; padding: 0; gap: 20px; }
+  /* Le canevas de composition (1450 px) ramené à la largeur utile de la
+     feuille (1031 px). Une seule mise à l'échelle, pour tout le document. */
+  .principal--impression { width: 1450px; zoom: 0.711; }
   .carte, .entete, .carte-synthese, .carte-inventaire, .panneau, .total-frictions {
     box-shadow: none;
     border: 1px solid var(--filet);
-    break-inside: avoid;
   }
-  .section, .grille-analyse, .grille-bilan { break-inside: avoid; }
-  .si__bloc { break-inside: avoid; }
-  .si-defile { overflow: visible; }
-  .flux-defile { overflow: visible; }
+  /* La coupe se décide ici et nulle part ailleurs : un `break-inside: avoid`
+     posé sur un conteneur trop large expulsait chaque bloc sur sa propre page. */
+  .principal--impression { gap: 0; }
+  .page-impression { break-after: page; break-inside: avoid; }
+  .page-impression:last-child { break-after: auto; }
+  .carte, .si__bloc { break-inside: avoid; }
+  .si-defile, .flux-defile { overflow: visible; }
   h2 { break-after: avoid; }
 }
 </style>
@@ -1004,7 +1051,8 @@ const etat = {
   procId: null,
   edition: false,
   menu: false,
-  tableau: false,      /* vue tableau d'appoint, pour la saisie en série */
+  tableau: false,      /* saisie rapide d'appoint, pour la saisie en série */
+  impression: false,   /* document d'impression monté : tous les processus rendus */
   zoom: 1,             /* zoom du diagramme (0.4 → 1) */
   etapeActive: null
 };
@@ -1470,10 +1518,12 @@ function vueChoixSupport(j, supports) {
                   title="Choisir le support ou l'outil utilisé pour cette étape">${options.join('')}</select>`;
 }
 
-function vueFlux() {
-  const p = proc();
+/** `pArg` permet de composer le diagramme d'un processus qui n'est pas celui
+    affiché — le document d'impression les rend tous les quatre d'affilée. */
+function vueFlux(pArg) {
+  const p = pArg || proc();
   const n = p ? p.etapes.length : 0;
-  const ed = etat.edition;
+  const ed = etat.edition && !etat.impression;
 
   const zoom = `
     <div class="flux__zoom ne-pas-imprimer">
@@ -1663,8 +1713,8 @@ function vueFlux() {
   <div class="carte carte--flux">
     ${entete}
     <div class="flux-defile">
-      <div class="flux${ed ? ' flux--edition' : ''}"
-           style="grid-template-columns:${gabarit};zoom:${etat.zoom}">
+      <div class="flux${ed ? ' flux--edition' : ''}" data-proc="${e(p.id)}"
+           style="grid-template-columns:${gabarit};zoom:${etat.impression ? 1 : etat.zoom}">
         <svg class="flux-svg" xmlns="http://www.w3.org/2000/svg"></svg>
         <svg class="flux-svg flux-svg--cibles" xmlns="http://www.w3.org/2000/svg"></svg>
         <div style="grid-row:1;grid-column:1"></div>
@@ -1721,12 +1771,12 @@ function vueTableEtapes() {
   </section>`;
 }
 
-function vueFrictions() {
-  const p = proc();
+function vueFrictions(pArg) {
+  const p = pArg || proc();
   if (!p) return '';
 
   let corps;
-  if (etat.edition) {
+  if (etat.edition && !etat.impression) {
     const options = p.roles.filter((r, i) => p.roles.indexOf(r) === i).concat(['Transverse']);
     const lignes = p.frictions.map((f, i) => `
       ${selecteurRole(`friction.${i}.role`, f.role || 'Transverse', options)}
@@ -1756,12 +1806,12 @@ function vueFrictions() {
   </div>`;
 }
 
-function vueChiffres() {
-  const p = proc();
+function vueChiffres(pArg) {
+  const p = pArg || proc();
   if (!p) return '';
 
   let corps;
-  if (etat.edition) {
+  if (etat.edition && !etat.impression) {
     const lignes = p.chiffres.map((ch, i) => `
       <input class="champ champ--valeur" value="${e(ch.valeur)}" data-champ="chiffre.${i}.valeur" placeholder="5 ans">
       <input class="champ" value="${e(ch.libelle)}" data-champ="chiffre.${i}.libelle" placeholder="ce que mesure ce chiffre">
@@ -2005,7 +2055,7 @@ function selecteurNature(champ, valeur) {
 function vueEnvironnementIT() {
   const c = client();
   if (!c) return '';
-  const ed = etat.edition;
+  const ed = etat.edition && !etat.impression;
   const outils = outilsDuSite(c);
   const usage = usageOutils(c);
   const { liens, ajuste } = echangesEffectifs(c);
@@ -2217,6 +2267,8 @@ function vue() {
     frictions: c ? c.processus.reduce((n, x) => n + x.frictions.length, 0) : 0
   };
 
+  if (etat.impression) return vueImpression(c, totaux);
+
   return `
   ${vueBarre()}
   ${vueTiroir()}
@@ -2246,18 +2298,61 @@ function vue() {
 }
 
 /* ==========================================================================
+   DOCUMENT D'IMPRESSION — une page par processus, puis l'IT et la synthèse.
+   Chaque page porte un bandeau d'identification : le client reste lisible
+   sur une feuille détachée du reste du dossier.
+   ========================================================================== */
+function pageImpression(c, sujet, corps) {
+  const meta = [c.site, c.date ? 'visite du ' + c.date : '']
+    .filter((x) => x && String(x).trim()).join(' · ');
+  return `
+  <section class="page-impression">
+    <div class="page-impression__bandeau">
+      <span class="page-impression__client">${e(c.nom)}${meta ? ` <span class="sourdine" style="font-weight:400">— ${e(meta)}</span>` : ''}</span>
+      <span class="page-impression__sujet">${e(sujet)}</span>
+    </div>
+    ${corps}
+  </section>`;
+}
+
+function vueImpression(c, totaux) {
+  const n = c.processus.length;
+
+  const pages = c.processus.map((p, i) => pageImpression(c, `Processus ${i + 1}/${n}`, `
+    <div class="groupe" style="gap:6px">
+      <h2>${e(p.nom)}</h2>
+      <span class="sourdine" style="font-size:16px">${e(p.soustitre || '')}</span>
+    </div>
+    ${vueFlux(p)}
+    <div class="grille-analyse">
+      ${vueFrictions(p)}
+      ${vueChiffres(p)}
+    </div>`)).join('');
+
+  return `
+  <main class="principal principal--impression">
+    ${pages}
+    ${pageImpression(c, 'Environnement IT', vueEnvironnementIT())}
+    ${pageImpression(c, 'Synthèse', vueSynthese(totaux))}
+  </main>`;
+}
+
+/* ==========================================================================
    FLÈCHES DU FLUX — mesurées après coup, une fois la grille posée.
    On lit offsetLeft/offsetTop (coordonnées de mise en page) et non
    getBoundingClientRect : ainsi le tracé reste juste quand le diagramme
    est dézoomé (CSS zoom), puisque le SVG vit dans le même repère.
    ========================================================================== */
-function tracerFleches() {
-  const zone = document.querySelector('.flux');
-  const svg = document.querySelector('.flux-svg');
+/** Trace les flèches d'un diagramme. `zone` est le `.flux` visé et `p` le
+    processus qu'il représente : sans eux on retombe sur celui affiché, mais le
+    document d'impression en contient un par processus et doit les désigner. */
+function tracerFleches(zone, p) {
+  if (!zone) zone = document.querySelector('.flux');
+  const svg = zone && zone.querySelector('.flux-svg');
   if (!zone || !svg) return;
 
-  const cibles = document.querySelector('.flux-svg--cibles');
-  const p = proc();
+  const cibles = zone.querySelector('.flux-svg--cibles');
+  if (!p) p = proc();
   const cartes = Array.from(zone.querySelectorAll('[data-etape]'))
     .sort((a, b) => Number(a.dataset.etape) - Number(b.dataset.etape));
   const chemins = [];
@@ -2290,7 +2385,7 @@ function tracerFleches() {
     const nature = (p && p.etapes[i + 1] && p.etapes[i + 1].lien) || '';
     const style = LIENS[nature] || LIENS[''];
 
-    if (etat.edition) {
+    if (etat.edition && !etat.impression) {
       zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien" data-i="${i + 1}" d="${d}"
         fill="none" stroke="transparent" stroke-width="16"><title>Lien ${style.libelle} — cliquer pour changer</title></path>`);
     }
@@ -2319,6 +2414,17 @@ function tracerFleches() {
     cibles.style.height = hauteur;
     cibles.innerHTML = zonesClic.join('');
   }
+}
+
+/** Tous les diagrammes présents dans la page. À l'écran il n'y en a qu'un ;
+    à l'impression il y en a un par processus, chacun étiqueté `data-proc`. */
+function tracerTousLesFlux() {
+  const c = client();
+  document.querySelectorAll('.flux').forEach((zone) => {
+    const id = zone.dataset.proc;
+    const p = (c && c.processus.find((x) => x.id === id)) || null;
+    tracerFleches(zone, p);
+  });
 }
 
 /* ==========================================================================
@@ -2355,7 +2461,7 @@ function rendre() {
 
   ajusterZones();
   placerCartesACheval();
-  tracerFleches();
+  tracerTousLesFlux();
   tracerEchanges();
 }
 
@@ -2656,7 +2762,7 @@ const ACTIONS = {
   'fermer-menu': () => { etat.menu = false; rendre(); },
   'basculer-edition': () => { etat.edition = !etat.edition; etat.etapeActive = null; rendre(); },
   'basculer-tableau': () => { etat.tableau = !etat.tableau; rendre(); },
-  'imprimer': () => window.print(),
+  'imprimer': () => imprimerDiagnostic(),
 
   /* Règle le zoom pour que tout le diagramme tienne dans la largeur disponible. */
   'zoom-ajuster': () => {
@@ -3088,6 +3194,86 @@ function genererFichier() {
 }
 
 /* ==========================================================================
+   IMPRESSION
+   Le document est monté à l'écran avant d'appeler window.print() : c'est la
+   seule façon de mesurer les diagrammes, puisqu'un conteneur masqué n'a ni
+   largeur ni position. Il est posé à la largeur exacte de la page, donc ce
+   qu'on mesure est déjà ce qui sera imprimé.
+   ========================================================================== */
+
+/* Le document est composé sur un canevas plus large que la feuille, puis réduit
+   d'un seul coup à l'impression. Composer directement à la taille du papier
+   étranglait les diagrammes : ils sont larges, et c'est la largeur qui commande.
+   En donnant 1450 px de large au canevas, chaque diagramme tient à une échelle
+   bien plus lisible, et la réduction finale ramène le tout à la feuille.
+
+   1031 x 701 px = surface utile d'une A4 paysage (297 x 210 mm moins 12 mm de
+   marge) à 96 dpi. Deux pixels de moins en hauteur pour absorber les arrondis
+   plutôt que déborder d'un cheveu sur la page suivante. */
+const LARGEUR_FEUILLE = 1031;
+const HAUTEUR_FEUILLE = 701;
+const LARGEUR_CANEVAS = 1450;
+const ECHELLE_IMPRESSION = LARGEUR_FEUILLE / LARGEUR_CANEVAS;
+const HAUTEUR_CANEVAS = Math.floor(HAUTEUR_FEUILLE / ECHELLE_IMPRESSION);
+
+/** Réduit chaque diagramme jusqu'à ce que sa page tienne dans le canevas.
+    On resserre par mesures successives plutôt que par calcul : la hauteur d'un
+    diagramme dépend du retour à la ligne dans les cartes, qu'un modèle
+    prédirait mal. La page elle-même n'est jamais zoomée — `scrollHeight` ignore
+    le zoom porté par l'élément mesuré, une boucle dessus ne converge pas. */
+function ajusterFluxImpression() {
+  document.querySelectorAll('.principal--impression .page-impression').forEach((page) => {
+    const flux = page.querySelector('.flux');
+    if (!flux) return;
+    const defile = flux.parentElement;
+
+    flux.style.zoom = 1;
+    let z = 1;
+    if (defile && flux.scrollWidth > 0 && flux.scrollWidth > defile.clientWidth) {
+      z = defile.clientWidth / flux.scrollWidth;
+      flux.style.zoom = z;
+    }
+    for (let i = 0; i < 10 && page.scrollHeight > HAUTEUR_CANEVAS && z > 0.25; i++) {
+      z = Math.max(0.25, z * (HAUTEUR_CANEVAS / page.scrollHeight) * 0.99);
+      flux.style.zoom = z;
+    }
+    flux.style.zoom = Math.max(0.25, Math.floor(z * 100) / 100);
+  });
+  tracerTousLesFlux();
+  tracerEchanges();
+}
+
+function entrerImpression() {
+  etat.impression = true;
+  rendre();
+  ajusterFluxImpression();
+}
+
+function sortirImpression() {
+  if (!etat.impression) return;
+  etat.impression = false;
+  rendre();
+}
+
+function imprimerDiagnostic() {
+  if (!client()) return;
+  entrerImpression();
+
+  const fin = () => {
+    window.removeEventListener('afterprint', fin);
+    sortirImpression();
+  };
+  window.addEventListener('afterprint', fin);
+
+  /* Une frame pour laisser la mise en page se poser avant la capture. */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    window.print();
+    /* Safari n'émet pas toujours afterprint : filet de sécurité. */
+    setTimeout(fin, 1000);
+  }));
+}
+
+/* ==========================================================================
    JSON — EXPORT FIDÈLE ET RÉINJECTION
    Le JSON exporté contient le client entier (identifiant, processus, outils,
    notes, environnement IT) : réinjecté, il reconstitue le diagnostic à
@@ -3335,7 +3521,7 @@ function lireFichierJson(surSucces) {
   rendre();
 })();
 
-function redessinerTraces() { tracerFleches(); tracerEchanges(); }
+function redessinerTraces() { tracerTousLesFlux(); tracerEchanges(); }
 window.addEventListener('resize', redessinerTraces);
 document.fonts && document.fonts.ready.then(redessinerTraces);
 </script>
