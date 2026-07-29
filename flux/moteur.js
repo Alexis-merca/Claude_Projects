@@ -247,6 +247,12 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
      le curseur porte `ne-pas-imprimer`. La conserver garde l'équivalence
      stricte ; l'unifier « proprement » aurait fait mentir le curseur sur ce que
      l'utilisateur a réglé dès qu'il rouvre le panneau après une impression. */
+  /* Commandes émises. Absent : tout est émis, et la sortie reste identique à
+     l'original. Présent : seules les clés à `true` le sont — un bouton qui
+     n'est pas traité par l'hôte ne doit pas apparaître, un contrôle inerte
+     étant pire que son absence. */
+  const cmd = (nom) => !options.commandes || options.commandes[nom] === true;
+
   const zoomAffiche = options.zoom == null ? 1 : options.zoom;
   const zoomApplique = options.impression ? 1 : zoomAffiche;
   const palette = options.paletteRoles || p.roles || [];
@@ -265,7 +271,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       <span class="libelle libelle--large">Diagramme de flux — l'existant</span>
       <div class="rangee" style="gap:14px">
         ${n ? zoom : ''}
-        ${ed ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
+        ${ed && cmd('tableau') ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
           options.tableauVisible ? 'Masquer la saisie rapide' : 'Saisie rapide'}</button>` : ''}
       </div>
     </div>`;
@@ -279,7 +285,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
         <span class="sourdine">${ed
           ? 'Ajoutez la première étape avec le bouton ci-dessous.'
           : 'Passez en mode édition et ajoutez la première étape du flux.'}</span>
-        ${ed ? '<button class="bouton bouton--mini" data-action="ajouter-etape">+ Première étape</button>' : ''}
+        ${ed && cmd('etapes') ? '<button class="bouton bouton--mini" data-action="ajouter-etape">+ Première étape</button>' : ''}
       </div>
     </div>`;
   }
@@ -296,7 +302,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
 
   const frise = groupes.map((g, i) => {
     const ecart = i > 0 ? ecartLisible(jours[i - 1], jours[i]) : '';
-    const corps = ed
+    const corps = ed && cmd('phases')
       ? `<div class="flux__phase-edition">
            <input class="flux__phase-champ" value="${echapper(g.label)}" data-champ="phase.${g.debut}.${g.span}"
                   placeholder="nommer cette échelle" title="Renomme l'échelle de temps des ${g.span} étape(s) de ce groupe">
@@ -321,7 +327,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
   const etiquettes = couloirs.map(({ nom: role, iRole }, i) => {
     const [fond, encre] = couleursRole(role, palette);
     const fondBande = i % 2 ? 'var(--blanc-casse)' : 'var(--blanc)';
-    const corps = ed
+    const corps = ed && cmd('roles')
       ? `<input class="flux__role-champ" value="${echapper(role)}" data-champ="role.${iRole}" title="Renommer le rôle"
                 style="--chip-fond:${fond};--chip-encre:${encre}">
          <div class="flux__role-outils">
@@ -364,21 +370,21 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
             <div class="flux__cellule${coupe}${cellCheval}" style="${pos}"${cible}>
               <div class="flux__carte flux__carte--edition${partage}${options.etapeActive === et.ordre ? ' flux__carte--actif' : ''}"
                    data-etape="${et.ordre}" data-index="${j}"${marqueCheval}>
-                ${bandeauSupportsEdition(j, supports)}
+                ${cmd('supports') ? bandeauSupportsEdition(j, supports) : bandeauSupports(supports)}
                 <div class="carte__tete">
-                  <span class="carte__poignee" draggable="true" data-poignee="${j}"
-                        title="Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés">⠿</span>
+                  ${cmd('deplacement') ? `<span class="carte__poignee" draggable="true" data-poignee="${j}"
+                        title="Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés">⠿</span>` : ''}
                 </div>
                 <textarea class="carte__texte" rows="1" data-champ="etape.${j}.texte"
                           placeholder="Action relevée…">${echapper(et.texte || '')}</textarea>
-                ${vueChoixSupport(j, supports, options.outils)}
+                ${cmd('supports') ? vueChoixSupport(j, supports, options.outils) : ''}
                 <div class="carte__outils">
-                  <button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="Décaler à gauche">←</button>
+                  ${cmd('etapes') ? `<button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="Décaler à gauche">←</button>
                   <button class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="Décaler à droite">→</button>
                   <button class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="Insérer une étape après">+</button>
-                  <button class="bouton--puce" data-action="couper-phase" data-i="${j}"
-                          title="Commencer une nouvelle échelle de temps à partir de cette étape">${ICONE_COUPURE}</button>
-                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="Supprimer l'étape">×</button>
+                  ` : ''}${cmd('phases') ? `<button class="bouton--puce" data-action="couper-phase" data-i="${j}"
+                          title="Commencer une nouvelle échelle de temps à partir de cette étape">${ICONE_COUPURE}</button>` : ''}${cmd('etapes') ? `
+                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="Supprimer l'étape">×</button>` : ''}
                 </div>
               </div>
             </div>`);
@@ -389,7 +395,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       }
 
       /* Bande de dépôt sur la frontière avec le couloir suivant. */
-      if (ed && i < R - 1) {
+      if (ed && cmd('deplacement') && i < R - 1) {
         cellules.push(`<div class="flux__frontiere" style="grid-row:${2 + i};grid-column:${2 + j}"
           data-frontiere="${j}" data-role-haut="${echapper(r.nom)}" data-role-bas="${echapper(couloirs[i + 1].nom)}"
           title="Déposer ici : les deux rôles sont concernés"></div>`);
@@ -397,7 +403,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
     }
 
     /* colonne d'ajout en fin de couloir */
-    if (ed) {
+    if (ed && cmd('etapes')) {
       cellules.push(`
         <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + n}" data-cellule="${n}" data-role-nom="${echapper(r.nom)}">
           <button class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${echapper(r.nom)}"
@@ -422,7 +428,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
      échouerait — c'est exactement ce qu'elle est là pour attraper. */
   const pied = `<div class="flux__pied">
       ${legende}
-      ${ed ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
+      ${ed && cmd('roles') ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
     </div>`;
 
   /* Le corps seul, sans enveloppe : l'hôte React possède la carte et fournit
@@ -437,7 +443,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
         <div style="grid-row:1;grid-column:1"></div>
         ${bandes}
         ${frise}
-        ${ed ? `<button class="flux__phase-ajout" data-action="ajouter-phase"
+        ${ed && cmd('phases') ? `<button class="flux__phase-ajout" data-action="ajouter-phase"
                         style="grid-row:1;grid-column:${2 + n}"
                         title="Ajouter une échelle de temps en fin de frise">+ Échelle</button>` : ''}
         ${etiquettes}

@@ -2,6 +2,8 @@
    est partagé avec le mono-fichier, qui ne compile pas. */
 
 export interface EtapeFlux {
+  /** Clé technique en base. Absente pour une étape pas encore insérée. */
+  id?: string;
   ordre: number;
   role: string;
   role2?: string | null;
@@ -32,6 +34,12 @@ export interface OptionsFlux {
   /** `false` pour ne renvoyer que le corps, sans l'enveloppe `carte--flux` :
       c'est alors l'hôte qui la porte, et les deux ne se dupliquent pas. */
   enveloppe?: boolean;
+  /** Commandes d'édition émises. Absent : toutes. Présent : seules celles à
+      `true` — un contrôle que l'hôte ne traite pas ne doit pas apparaître. */
+  commandes?: {
+    texte?: boolean; phases?: boolean; deplacement?: boolean;
+    supports?: boolean; roles?: boolean; etapes?: boolean; tableau?: boolean;
+  };
 }
 
 export function baliserFlux(arg: {

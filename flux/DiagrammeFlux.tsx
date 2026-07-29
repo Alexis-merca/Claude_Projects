@@ -27,9 +27,19 @@
    ========================================================================= */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { DragEvent, FormEvent, MouseEvent } from "react";
 import { acheverRendu, baliserFlux, LIENS, tracerFleches } from "./moteur.js";
 import type { EtapeFlux, ProcessusFlux } from "./moteur.js";
+import {
+  ajouterEchelle, changerTexte, couperEchelle, cyclerLien,
+  deposerEtape, renommerEchelle, supprimerEchelle,
+} from "./mutations.js";
+import type { Mutation } from "./mutations.js";
 import "./moteur.css";
+
+/* Seules ces commandes sont traitées ici. Le moteur n'émet donc que celles-là :
+   un bouton visible mais inerte est pire que son absence. */
+const COMMANDES = { texte: true, phases: true, deplacement: true } as const;
 
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 1;
@@ -45,6 +55,11 @@ export interface DiagrammeFluxProps {
   etapeActive?: number | null;
   /** Titre et légende, fournis par le composant. `false` pour s'en passer. */
   entete?: boolean;
+  /** Appelé pour chaque interaction d'édition. Le composant ne parle pas à la
+      base : il dit ce qu'il faut écrire, l'hôte décide comment. `ordre` doit
+      passer par `reordonner_etapes()` — jamais par des écritures ligne à
+      ligne, ni par un upsert partiel qui viderait les colonnes absentes. */
+  onMutation?: (m: Mutation) => void;
 }
 
 export function DiagrammeFlux({
@@ -55,6 +70,7 @@ export function DiagrammeFlux({
   edition = false,
   etapeActive = null,
   entete = true,
+  onMutation,
 }: DiagrammeFluxProps) {
   const hote = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -73,6 +89,7 @@ export function DiagrammeFlux({
           zoom: 1,
           entete: false,
           enveloppe: false,
+          commandes: COMMANDES,
         },
       }),
     [processus, etapes, paletteRoles, outils, edition, etapeActive],
@@ -139,6 +156,112 @@ export function DiagrammeFlux({
     };
   }, [etapes, edition]);
 
+  /* Les étapes changent à chaque frappe ; une ref évite de recréer tous les
+     gestionnaires, et surtout d'en attacher un par rendu. */
+  const vues = useRef(etapes);
+  vues.current = etapes;
+  const emettre = useRef(onMutation);
+  emettre.current = onMutation;
+
+  const appliquer = useCallback((m: Mutation) => {
+    if (!m) return;
+    if (m.refus || m.creation || m.ordre || m.ecritures.length) emettre.current?.(m);
+  }, []);
+
+  /* Un seul gestionnaire délégué par type d'évènement, posé sur l'hôte : le
+     sous-arbre est réécrit à chaque rendu, des écouteurs individuels seraient
+     perdus. */
+  const surClic = useCallback((ev: MouseEvent) => {
+    const cible = (ev.target as HTMLElement).closest?.("[data-action]") as HTMLElement | null;
+    if (!cible) return;
+    const et = vues.current;
+    const i = cible.dataset.i != null ? Number(cible.dataset.i) : null;
+    switch (cible.dataset.action) {
+      case "basculer-lien":
+        if (i != null) appliquer(cyclerLien(et, i));
+        break;
+      case "couper-phase":
+        if (i != null) appliquer(couperEchelle(et, i));
+        break;
+      case "supprimer-phase":
+        if (i != null) appliquer(supprimerEchelle(et, i, Number(cible.dataset.span)));
+        break;
+      case "ajouter-phase":
+        appliquer(ajouterEchelle(et, processus.roles[0] || ""));
+        break;
+    }
+  }, [appliquer, processus.roles]);
+
+  /* `change` et non `input` : on écrit à la sortie du champ, pas à chaque
+     frappe. Une écriture par caractère saturerait le réseau et ferait avancer
+     la version du processus en continu, rejetant les collègues sans raison. */
+  const surChangement = useCallback((ev: FormEvent) => {
+    const champ = (ev.target as HTMLElement).dataset?.champ;
+    if (!champ) return;
+    const valeur = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
+    const [type, a, b] = champ.split(".");
+    if (type === "etape" && b === "texte") appliquer(changerTexte(vues.current, Number(a), valeur));
+    else if (type === "phase") appliquer(renommerEchelle(vues.current, Number(a), Number(b), valeur));
+  }, [appliquer]);
+
+  /* Glisser-déposer. L'index source vit dans une ref : le sous-arbre est
+     réécrit entre le `dragstart` et le `drop`, un état React serait perdu. */
+  const glisse = useRef<number | null>(null);
+
+  const surDebutGlisse = useCallback((ev: DragEvent) => {
+    const poignee = (ev.target as HTMLElement).closest?.("[data-poignee]") as HTMLElement | null;
+    if (!poignee) return;
+    glisse.current = Number(poignee.dataset.poignee);
+    ev.dataTransfer.effectAllowed = "move";
+    ev.dataTransfer.setData("text/plain", String(glisse.current));
+    const carte = poignee.closest("[data-index]");
+    if (carte) {
+      ev.dataTransfer.setDragImage(carte, 24, 20);
+      carte.classList.add("flux__carte--glissee");
+    }
+    fluxNode()?.classList.add("flux--glisse");
+  }, []);
+
+  const nettoyerGlisse = useCallback(() => {
+    glisse.current = null;
+    const n = hote.current;
+    if (!n) return;
+    fluxNode()?.classList.remove("flux--glisse");
+    n.querySelectorAll(".flux__carte--glissee")
+      .forEach((el) => el.classList.remove("flux__carte--glissee"));
+    n.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible")
+      .forEach((el) => el.classList.remove("flux__cellule--cible", "flux__frontiere--cible"));
+  }, []);
+
+  const surSurvol = useCallback((ev: DragEvent) => {
+    if (glisse.current === null) return;
+    const t = ev.target as HTMLElement;
+    const frontiere = t.closest?.("[data-frontiere]") as HTMLElement | null;
+    const zone = frontiere || (t.closest?.("[data-cellule]") as HTMLElement | null);
+    if (!zone) return;
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = "move";
+    hote.current?.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible")
+      .forEach((el) => {
+        if (el !== zone) el.classList.remove("flux__cellule--cible", "flux__frontiere--cible");
+      });
+    zone.classList.add(frontiere ? "flux__frontiere--cible" : "flux__cellule--cible");
+  }, []);
+
+  const surDepot = useCallback((ev: DragEvent) => {
+    const t = ev.target as HTMLElement;
+    const frontiere = t.closest?.("[data-frontiere]") as HTMLElement | null;
+    const zone = frontiere || (t.closest?.("[data-cellule]") as HTMLElement | null);
+    const source = glisse.current;
+    if (!zone || source === null) return;
+    ev.preventDefault();
+    const colonne = Number(frontiere ? frontiere.dataset.frontiere : zone.dataset.cellule);
+    const role = frontiere ? frontiere.dataset.roleHaut : zone.dataset.roleNom;
+    const role2 = frontiere ? frontiere.dataset.roleBas : "";
+    nettoyerGlisse();
+    appliquer(deposerEtape(vues.current, source, colonne, role || "", role2));
+  }, [appliquer, nettoyerGlisse]);
+
   /** Règle le zoom pour que tout le diagramme tienne dans la largeur offerte.
       Le pas de 5 % évite un curseur à valeur illisible. */
   const ajuster = useCallback(() => {
@@ -180,7 +303,16 @@ export function DiagrammeFlux({
       {/* Le moteur produit du HTML : React lui cède ce sous-arbre et n'y
           touche plus. C'est ce qui permet au tracé d'écrire dans les SVG sans
           que la réconciliation l'efface. */}
-      <div ref={hote} dangerouslySetInnerHTML={{ __html: html }} />
+      <div
+        ref={hote}
+        onClick={edition ? surClic : undefined}
+        onChange={edition ? surChangement : undefined}
+        onDragStart={edition ? surDebutGlisse : undefined}
+        onDragEnd={edition ? nettoyerGlisse : undefined}
+        onDragOver={edition ? surSurvol : undefined}
+        onDrop={edition ? surDepot : undefined}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
 
       {etapes.length > 0 ? (
         <div className="flux__pied">

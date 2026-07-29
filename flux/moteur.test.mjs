@@ -290,5 +290,62 @@ ok('couloirs dédoublonnés en gardant l\'index réel',
 }
 
 
+/* ==========================================================================
+   9. Filtrage des commandes — aucun bouton inerte
+   Le moteur émet tout par défaut ; quand l'hôte déclare ce qu'il traite, le
+   reste doit disparaître. Un contrôle visible mais sans effet est pire que son
+   absence : l'utilisateur clique, rien ne se passe, et il ne sait pas pourquoi.
+   ========================================================================== */
+{
+  const p = { id: 'x', roles: ['RH', 'EHS'] };
+  const etapes = [
+    { ordre: 1, role: 'RH', texte: 'a', phase: 'J1', supports: 'Excel' },
+    { ordre: 2, role: 'EHS', texte: 'b', phase: 'J2' }
+  ];
+  const base = { paletteRoles: p.roles, outils: ['Excel', 'Papier'], edition: true, zoom: 1 };
+  const tout = baliserFlux({ processus: p, etapes, options: base });
+  const filtre = baliserFlux({ processus: p, etapes,
+    options: { ...base, commandes: { texte: true, phases: true, deplacement: true } } });
+
+  const retires = [
+    ['data-action="gauche-etape"', 'décaler à gauche'],
+    ['data-action="droite-etape"', 'décaler à droite'],
+    ['data-action="inserer-etape"', 'insérer une étape'],
+    ['data-action="supprimer-etape"', "supprimer l'étape"],
+    ['data-action="ajouter-etape-role"', '+ Étape en fin de couloir'],
+    ['data-action="monter-role"', 'monter un rôle'],
+    ['data-action="descendre-role"', 'descendre un rôle'],
+    ['data-action="supprimer-role"', 'supprimer un rôle'],
+    ['data-action="ajouter-role"', '+ Rôle'],
+    ['data-action="supprimer-support"', 'retirer un support'],
+    ['carte__support-choix', 'sélecteur de support'],
+    ['flux__role-champ', 'renommer un rôle'],
+    ['data-action="basculer-tableau"', 'saisie rapide']
+  ];
+  for (const [marque, nom] of retires) {
+    ok(`filtrage · ${nom} retiré`, tout.includes(marque) && !filtre.includes(marque),
+      tout.includes(marque) ? 'encore présent' : 'absent même sans filtre — la marque est fausse');
+  }
+
+  const gardes = [
+    ['data-poignee', 'poignée de déplacement'],
+    ['data-frontiere', 'frontière de dépôt'],
+    ['flux__phase-champ', 'renommer une échelle'],
+    ['data-action="supprimer-phase"', 'supprimer une échelle'],
+    ['data-action="couper-phase"', 'couper une échelle'],
+    ['data-action="ajouter-phase"', '+ Échelle'],
+    ['carte__texte', 'saisie du texte']
+  ];
+  for (const [marque, nom] of gardes) {
+    ok(`filtrage · ${nom} conservé`, filtre.includes(marque));
+  }
+
+  /* Les supports restent visibles, mais en lecture : on ne perd pas
+     l'information, on retire seulement le moyen de la modifier. */
+  ok('filtrage · supports affichés sans être modifiables',
+    filtre.includes('supports-bordure') && !filtre.includes('supports-bordure--edition'));
+}
+
+
 console.log(ko ? `\n${ko} ÉCHEC(S)\n` : '\nMOTEUR CONFORME À L\'ORIGINAL — balisage identique au caractère près\n');
 process.exit(ko ? 1 : 0);
