@@ -640,7 +640,7 @@ textarea { resize: vertical; }
    ========================================================================= */
 .table-etapes {
   display: grid;
-  grid-template-columns: 44px 190px 130px 1fr 190px 128px;
+  grid-template-columns: 44px 190px 1fr 190px 128px;
   gap: 10px 12px; align-items: center;
 }
 .table-etapes__num { font: 700 15px/1 var(--mono); color: var(--gris); text-align: center; }
@@ -1489,7 +1489,7 @@ function vueFlux() {
       <div class="rangee" style="gap:14px">
         ${n ? zoom : ''}
         ${ed ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
-          etat.tableau ? 'Masquer la vue tableau' : 'Vue tableau'}</button>` : ''}
+          etat.tableau ? 'Masquer la saisie rapide' : 'Saisie rapide'}</button>` : ''}
       </div>
     </div>`;
 
@@ -1692,7 +1692,6 @@ function vueTableEtapes() {
   const lignes = p.etapes.map((et, i) => `
     <span class="table-etapes__num${etat.etapeActive === et.ordre ? ' table-etapes__num--actif' : ''}">${et.ordre}</span>
     ${selecteurRole(`etape.${i}.role`, et.role || '', roles)}
-    <input class="champ" value="${e(et.phase || '')}" data-champ="etape.${i}.phase" placeholder="—">
     <textarea class="zone" rows="2" data-champ="etape.${i}.texte">${e(et.texte || '')}</textarea>
     <input class="champ" value="${e(et.supports || '')}" data-champ="etape.${i}.supports" placeholder="Excel, papier…">
     <div class="table-etapes__actions">
@@ -1704,15 +1703,15 @@ function vueTableEtapes() {
   return `
   <section class="carte ne-pas-imprimer" style="gap:18px">
     <div class="rangee" style="justify-content:space-between;align-items:baseline">
-      <span class="libelle libelle--large">Vue tableau — saisie en série</span>
+      <span class="libelle libelle--large">Saisie rapide</span>
       <span class="sourdine" style="font-size:14px">
-        Pratique pour saisir beaucoup d'étapes d'affilée. Le diagramme reste modifiable directement.
+        Pratique pour saisir beaucoup d'étapes d'affilée. L'échelle de temps se règle
+        sur les bandeaux du diagramme, qui reste modifiable directement.
       </span>
     </div>
     <div class="table-etapes">
       <span class="libelle">N°</span>
       <span class="libelle">Rôle</span>
-      <span class="libelle">Phase</span>
       <span class="libelle">Action relevée</span>
       <span class="libelle">Supports</span>
       <span class="libelle">Ordre</span>
