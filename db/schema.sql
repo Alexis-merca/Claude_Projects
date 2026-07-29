@@ -299,7 +299,12 @@ end $$;
 -- ============================================================================
 create or replace function reordonner_etapes(p_processus uuid, p_ids uuid[])
 returns integer
-language plpgsql as $$
+language plpgsql
+-- Chemin de recherche figé : sans lui, un schéma placé devant `public` par
+-- l'appelant pourrait substituer sa propre table `etapes`. Le linter Supabase
+-- le signale à juste titre.
+set search_path = public
+as $$
 declare
   n_base integer;
   n_fournis integer := coalesce(array_length(p_ids, 1), 0);
