@@ -277,3 +277,58 @@ begin
       'acces_consultants_' || t, t);
   end loop;
 end $$;
+
+-- ============================================================================
+-- Réordonnancement des étapes
+--
+-- Deux raisons de passer par une fonction plutôt que par des écritures directes.
+--
+-- 1. `etapes_ordre_unique` est différée, donc vérifiée au commit — mais
+--    PostgREST met CHAQUE requête HTTP dans sa propre transaction. Déplacer une
+--    étape en enchaînant plusieurs UPDATE échoue dès la première collision
+--    d'ordre. Ici tout tient dans un seul appel, donc une seule transaction.
+--
+-- 2. Le contournement tentant — envoyer toutes les lignes en un `upsert` — est
+--    pire que le mal. PostgREST remplit les colonnes absentes du corps par leur
+--    DEFAULT : un upsert `{id, ordre}` remet `texte`, `role`, `phase` et
+--    `supports` à la chaîne vide, sur toutes les lignes, sans rien signaler.
+--    Cette fonction ne touche que `ordre`, elle ne peut pas effacer un contenu.
+--
+-- `p_ids` est la liste complète des étapes du processus, dans l'ordre voulu.
+-- Toute liste partielle est refusée : elle laisserait des trous ou des doublons.
+-- ============================================================================
+create or replace function reordonner_etapes(p_processus uuid, p_ids uuid[])
+returns integer
+language plpgsql as $$
+declare
+  n_base integer;
+  n_fournis integer := coalesce(array_length(p_ids, 1), 0);
+  n_touchees integer;
+begin
+  select count(*) into n_base from etapes where processus_id = p_processus;
+
+  if n_base <> n_fournis then
+    raise exception
+      'reordonner_etapes : % étape(s) en base, % fournie(s) — la liste doit être complète',
+      n_base, n_fournis using errcode = 'check_violation';
+  end if;
+
+  /* `with ordinality` : l'ordre du tableau fait foi. Sans lui, l'ordre de
+     `unnest` n'est pas garanti et le classement serait arbitraire. */
+  update etapes e
+     set ordre = v.rang
+    from unnest(p_ids) with ordinality as v(id, rang)
+   where e.id = v.id and e.processus_id = p_processus;
+
+  get diagnostics n_touchees = row_count;
+
+  if n_touchees <> n_fournis then
+    raise exception
+      'reordonner_etapes : % ligne(s) touchée(s) pour % identifiant(s) — un identifiant est inconnu ou appartient à un autre processus',
+      n_touchees, n_fournis using errcode = 'check_violation';
+  end if;
+
+  return n_touchees;
+end $$;
+
+grant execute on function reordonner_etapes(uuid, uuid[]) to authenticated;
