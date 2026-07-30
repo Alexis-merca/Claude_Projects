@@ -145,6 +145,61 @@ internes serait une observation fausse. En revanche la ligne peut être ajoutée
 
 ---
 
+## Le schéma des échanges
+
+Décidé le 30/07, en remplacement des flèches entre blocs du mono-fichier.
+
+**Les blocs ne portent plus de flèches.** Un bloc n'échange pas avec un bloc :
+ce sont les outils qui échangent, et l'agrégation au niveau des blocs perdait
+cette information. Le `<h2>` de la section devient `Les outils du site`.
+
+Sous les blocs, une carte `Échanges entre les outils` : une boîte par outil, une
+flèche par échange — Excel envoie de l'information à SAP, donc une flèche
+d'Excel vers SAP.
+
+**Disposition en graphe libre** : le plus connecté au centre, les autres autour,
+en plaçant près d'un outil déjà posé celui qui échange le plus avec lui.
+
+> **Le placement doit être déterministe.** Mêmes données, même image, à chaque
+> chargement et sur chaque poste. Cette page est capturée en écran et imprimée
+> dans des restitutions client : un graphe qui se replace à chaque visite est
+> inutilisable. Donc aucun `Math.random()`, aucune simulation animée qui
+> converge en un temps variable — un nombre fixe d'itérations, en synchrone —
+> et un ordre de parcours des outils explicitement trié.
+
+**Épaisseur du trait = fréquence**, soit le nombre d'enchaînements d'étapes qui
+ont produit l'échange : 1,5 px pour le moins fréquent, 6 px pour le plus
+fréquent, linéaire entre les deux ; tous au plus fin si toutes les fréquences
+sont égales. L'épaisseur ne code jamais la nature.
+
+**Couleur et style = nature**, avec la convention du diagramme de flux
+(`LIENS` de `src/flux/moteur.js`, en lecture seule) : automatique, manuel, non
+qualifié. Même légende, plus une mention de ce que code l'épaisseur.
+
+**Échange réciproque** : une seule ligne à deux pointes, pas deux traits
+parallèles.
+
+**Outils sans échange** : dans une bande `Sans échange relevé` sous le schéma,
+et non flottants dans le graphe. Ils restent visibles — un outil qui ne
+communique avec rien est un constat d'audit, pas un vide à masquer.
+
+### Le schéma remplace la carte « Détail des échanges »
+
+La liste texte disparaît ; tout se pilote sur le schéma :
+
+- **clic sur une flèche** : la nature avance d'un cran, non qualifié → manuel →
+  automatique → non qualifié — trois clics reviennent au départ, comme dans le
+  diagramme
+- **tirer d'un outil vers un autre** : crée l'échange dans ce sens
+- **flèche sélectionnée** : un éditeur inline donne la nature, le libellé
+  « ce qui passe » et la suppression. C'est désormais le seul endroit où ce
+  libellé se saisit.
+- **déplacer une boîte** : la position est enregistrée sur le client et survit
+  au rechargement ; `Replacer automatiquement` revient au placement calculé, en
+  annonçant qu'il écrase.
+
+---
+
 ## Logos disponibles
 
 Le moteur du diagramme reconnaît : tableur (Excel), présentation (PowerPoint),
