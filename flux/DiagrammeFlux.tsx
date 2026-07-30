@@ -24,10 +24,20 @@
    3. LES POLICES ARRIVENT APRÈS. La largeur du texte fixe la hauteur des
       cartes, que les flèches suivent. Tracer avant `document.fonts.ready`
       donne des flèches décalées de quelques pixels, sans rien signaler.
+
+   4. LES ÉVÈNEMENTS SONT POSÉS À LA MAIN, PAS PAR `onClick` / `onChange`.
+      React reconstruit le chemin de propagation à partir de la fibre la plus
+      proche de la cible ; pour un nœud injecté par `dangerouslySetInnerHTML`
+      il n'y en a pas, et c'est celle de l'hôte qui sert. Les évènements
+      simples — clic, glisser — survivent à cette substitution. `change` non :
+      son greffon exige que la cible elle-même porte une fibre et un suivi de
+      valeur, faute de quoi il abandonne SANS RIEN SIGNALER. Le sélecteur de
+      support et la saisie des cartes restaient donc muets. Un écouteur natif
+      sur l'hôte n'a pas cette exigence ; tout passe par là, pour que le
+      fonctionnement ne dépende pas de la catégorie d'évènement.
    ========================================================================= */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { DragEvent, FormEvent, MouseEvent } from "react";
 import { acheverRendu, baliserFlux, LIENS, tracerFleches } from "./moteur.js";
 import type { EtapeFlux, ProcessusFlux } from "./moteur.js";
 import {
@@ -170,7 +180,8 @@ export function DiagrammeFlux({
 
   /* Un seul gestionnaire délégué par type d'évènement, posé sur l'hôte : le
      sous-arbre est réécrit à chaque rendu, des écouteurs individuels seraient
-     perdus. */
+     perdus. Ce sont des évènements du DOM, pas les synthétiques de React —
+     voir le point 4 en tête de fichier. */
   const surClic = useCallback((ev: MouseEvent) => {
     const cible = (ev.target as HTMLElement).closest?.("[data-action]") as HTMLElement | null;
     if (!cible) return;
@@ -198,7 +209,7 @@ export function DiagrammeFlux({
   /* `change` et non `input` : on écrit à la sortie du champ, pas à chaque
      frappe. Une écriture par caractère saturerait le réseau et ferait avancer
      la version du processus en continu, rejetant les collègues sans raison. */
-  const surChangement = useCallback((ev: FormEvent) => {
+  const surChangement = useCallback((ev: Event) => {
     const champ = (ev.target as HTMLElement).dataset?.champ;
     if (!champ) return;
     const valeur = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
@@ -224,13 +235,14 @@ export function DiagrammeFlux({
 
   const surDebutGlisse = useCallback((ev: DragEvent) => {
     const poignee = (ev.target as HTMLElement).closest?.("[data-poignee]") as HTMLElement | null;
-    if (!poignee) return;
+    const paquet = ev.dataTransfer;
+    if (!poignee || !paquet) return;
     glisse.current = Number(poignee.dataset.poignee);
-    ev.dataTransfer.effectAllowed = "move";
-    ev.dataTransfer.setData("text/plain", String(glisse.current));
+    paquet.effectAllowed = "move";
+    paquet.setData("text/plain", String(glisse.current));
     const carte = poignee.closest("[data-index]");
     if (carte) {
-      ev.dataTransfer.setDragImage(carte, 24, 20);
+      paquet.setDragImage(carte, 24, 20);
       carte.classList.add("flux__carte--glissee");
     }
     fluxNode()?.classList.add("flux--glisse");
@@ -254,7 +266,7 @@ export function DiagrammeFlux({
     const zone = frontiere || (t.closest?.("[data-cellule]") as HTMLElement | null);
     if (!zone) return;
     ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = "move";
     hote.current?.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible")
       .forEach((el) => {
         if (el !== zone) el.classList.remove("flux__cellule--cible", "flux__frontiere--cible");
@@ -275,6 +287,24 @@ export function DiagrammeFlux({
     nettoyerGlisse();
     appliquer(deposerEtape(vues.current, source, colonne, role || "", role2));
   }, [appliquer, nettoyerGlisse]);
+
+  /* Pose des écouteurs. Hors édition on n'en pose aucun : le diagramme est
+     alors une image, et un `dragstart` qui traîne suffirait à donner
+     l'impression qu'on peut déplacer une carte. */
+  useEffect(() => {
+    const n = hote.current;
+    if (!n || !edition) return;
+    const paires = [
+      ["click", surClic],
+      ["change", surChangement],
+      ["dragstart", surDebutGlisse],
+      ["dragend", nettoyerGlisse],
+      ["dragover", surSurvol],
+      ["drop", surDepot],
+    ] as const;
+    paires.forEach(([nom, fn]) => n.addEventListener(nom, fn as EventListener));
+    return () => paires.forEach(([nom, fn]) => n.removeEventListener(nom, fn as EventListener));
+  }, [edition, surClic, surChangement, surDebutGlisse, nettoyerGlisse, surSurvol, surDepot]);
 
   /** Règle le zoom pour que tout le diagramme tienne dans la largeur offerte.
       Le pas de 5 % évite un curseur à valeur illisible. */
@@ -317,16 +347,7 @@ export function DiagrammeFlux({
       {/* Le moteur produit du HTML : React lui cède ce sous-arbre et n'y
           touche plus. C'est ce qui permet au tracé d'écrire dans les SVG sans
           que la réconciliation l'efface. */}
-      <div
-        ref={hote}
-        onClick={edition ? surClic : undefined}
-        onChange={edition ? surChangement : undefined}
-        onDragStart={edition ? surDebutGlisse : undefined}
-        onDragEnd={edition ? nettoyerGlisse : undefined}
-        onDragOver={edition ? surSurvol : undefined}
-        onDrop={edition ? surDepot : undefined}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <div ref={hote} dangerouslySetInnerHTML={{ __html: html }} />
 
       {etapes.length > 0 ? (
         <div className="flux__pied">
