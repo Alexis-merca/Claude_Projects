@@ -95,33 +95,35 @@ Chaque ligne : la valeur en gros, en Roboto Mono violet, puis son libellé.
 
 ## 7. Environnement IT
 
-Sur-titre `Environnement IT`, `<h2>` : `Échanges entre les outils`.
-À droite, en gris : `<n> domaine(s) · <n> outil(s) · <n> échange(s)` et
-`Classement proposé, échanges déduits des processus`.
+**Voir `ENVIRONNEMENT-IT.md`, qui fait foi.** Le besoin a changé depuis ce
+document : le mono-fichier classait les outils par domaine et étiquetait chaque
+bloc avec les noms de processus, on veut désormais trois niveaux —
+`bloc → étape → outil`. Ce qui suit ne décrit plus la cible.
 
-Un bloc par domaine fonctionnel, chacun avec sa couleur, contenant les outils du
-domaine en badges et la liste de ses missions. Des flèches relient les blocs.
+Reste valable : le sur-titre `Environnement IT`, le `<h2>` `Échanges entre les
+outils`, le compteur en gris à droite, et la carte `Détail des échanges` sous
+les blocs, listant chaque échange outil → outil avec sa nature (automatique /
+manuel / non qualifié).
 
-> **Cette section a sa propre logique de tracé**, comme le diagramme. Ne pas la
-> réimplémenter en Tailwind : la traiter comme le diagramme, en important le
-> code d'origine. À faire dans un second temps — elle peut rester absente d'une
-> première livraison, mais il faut le dire, pas la laisser manquer en silence.
-
-Sous les blocs, une carte `Détail des échanges` listant chaque échange
-outil → outil avec sa nature (automatique / manuel / non qualifié).
+> **Le tracé des flèches entre blocs a sa propre logique**, comme le diagramme
+> — `tracerEchanges`, `echangesBlocs`, `ordonnerDomaines`. Ne pas la
+> réimplémenter : l'importer depuis le mono-fichier. Le classement, lui, est à
+> refaire selon `ENVIRONNEMENT-IT.md`.
 
 ## 8. Synthèse
 
 Sur-titre `Synthèse globale`, `<h2>` : `État des lieux du site`.
 
-- Une carte par processus : son nom, son nombre d'étapes (violet), son nombre de
-  frictions (rouge), et `<n> rôles impliqués`.
-- Dessous, deux blocs côte à côte :
-  - **Rôles cartographiés** (puces colorées) et **Outils et supports relevés**
-    (puces neutres), plus les notes de synthèse du client en gris.
-  - **Total frictions relevées** : le nombre en très gros rouge, sur fond rouge
-    clair, avec `irritants identifiés sur les <n> processus cartographiés lors
-    de la visite du <date>`.
+Le contenu a été redéfini le 30/07 et ne correspond plus au mono-fichier :
+
+- **Une ou deux phrases par processus**, résumant le workflow et ses frictions.
+- **Un bloc « Frictions transverses »** regroupant les irritants qui se
+  retrouvent sur plusieurs processus. C'est ce croisement qui a de la valeur en
+  restitution : une friction isolée est un incident, la même sur trois
+  processus est un problème d'organisation.
+
+Les compteurs par processus et le total de frictions du mono-fichier ne sont
+plus demandés ici.
 
 ---
 
