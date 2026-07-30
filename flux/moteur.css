@@ -360,3 +360,33 @@
 .si__bloc-titre .bouton--retirer:hover {
   background: rgba(255, 255, 255, .22); color: var(--blanc);
 }
+
+
+/* ---------------------------------------------------------------------------
+   Classes posées à l'exécution, pas par le balisage
+   ---------------------------------------------------------------------------
+   Ces règles manquaient. L'extraction relevait les classes sur la sortie de
+   `baliserFlux` — mais celles-ci sont ajoutées après coup, par `tracerFleches`
+   pour les zones de clic des flèches, et par le glisser-déposer pour les cibles
+   de dépôt. Aucune ne pouvait donc être vue.
+
+   Leur absence ne se voyait pas non plus : le diagramme s'affichait
+   correctement, mais deux interactions étaient mortes.
+
+   `.fleche-cible` porte `pointer-events: stroke` alors que `.flux-svg` porte
+   `pointer-events: none` — sans elle, aucun clic n'atteint jamais une flèche.
+   `.flux--glisse .flux__frontiere` rend les frontières entre couloirs
+   survolables et visibles pendant un glisser : sans elle, déposer une étape à
+   cheval sur deux rôles est impossible, et rien ne l'indique.
+   ------------------------------------------------------------------------- */
+.fleche-cible { pointer-events: stroke; cursor: pointer; }
+.flux__carte--glissee { opacity: .35; }
+.flux__cellule--cible {
+  background: var(--violet-50); box-shadow: inset 0 0 0 2px var(--violet-200); border-radius: var(--r-carte);
+}
+.flux--glisse .flux__frontiere {
+  pointer-events: auto; box-shadow: inset 0 0 0 1px var(--violet-200); background: rgba(103, 51, 253, .05);
+}
+.flux--glisse .flux__frontiere--cible {
+  background: var(--violet-50); box-shadow: inset 0 0 0 2px var(--violet);
+}

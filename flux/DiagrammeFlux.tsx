@@ -31,15 +31,15 @@ import type { DragEvent, FormEvent, MouseEvent } from "react";
 import { acheverRendu, baliserFlux, LIENS, tracerFleches } from "./moteur.js";
 import type { EtapeFlux, ProcessusFlux } from "./moteur.js";
 import {
-  ajouterEchelle, changerTexte, couperEchelle, cyclerLien,
-  deposerEtape, renommerEchelle, supprimerEchelle,
+  ajouterEchelle, ajouterSupport, changerTexte, couperEchelle, cyclerLien,
+  deposerEtape, renommerEchelle, retirerSupport, supprimerEchelle,
 } from "./mutations.js";
 import type { Mutation } from "./mutations.js";
 import "./moteur.css";
 
 /* Seules ces commandes sont traitées ici. Le moteur n'émet donc que celles-là :
    un bouton visible mais inerte est pire que son absence. */
-const COMMANDES = { texte: true, phases: true, deplacement: true } as const;
+const COMMANDES = { texte: true, phases: true, deplacement: true, supports: true } as const;
 
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 1;
@@ -189,6 +189,9 @@ export function DiagrammeFlux({
       case "ajouter-phase":
         appliquer(ajouterEchelle(et, processus.roles[0] || ""));
         break;
+      case "supprimer-support":
+        if (i != null) appliquer(retirerSupport(et, i, Number(cible.dataset.s)));
+        break;
     }
   }, [appliquer, processus.roles]);
 
@@ -202,6 +205,17 @@ export function DiagrammeFlux({
     const [type, a, b] = champ.split(".");
     if (type === "etape" && b === "texte") appliquer(changerTexte(vues.current, Number(a), valeur));
     else if (type === "phase") appliquer(renommerEchelle(vues.current, Number(a), Number(b), valeur));
+    else if (type === "support-ajout") {
+      /* `__autre__` : l'outil est saisi à la main et rejoint la liste du site,
+         sinon chacun le retaperait avec une orthographe différente. */
+      const saisi = valeur === "__autre__";
+      const nom = saisi
+        ? (window.prompt("Nom du support ou de l'outil :") || "").trim()
+        : valeur;
+      /* Le sélecteur revient à vide : il sert à ajouter, pas à porter un état. */
+      (ev.target as HTMLSelectElement).value = "";
+      if (nom) appliquer(ajouterSupport(vues.current, Number(a), nom, saisi));
+    }
   }, [appliquer]);
 
   /* Glisser-déposer. L'index source vit dans une ref : le sous-arbre est

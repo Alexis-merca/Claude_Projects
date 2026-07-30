@@ -17,7 +17,7 @@
    évidentes — celle du dépôt qui fait adopter la phase du voisin, notamment.
    ========================================================================= */
 
-import { ORDRE_LIENS } from './moteur.js';
+import { listeSupports, ORDRE_LIENS } from './moteur.js';
 
 const RIEN = { ecritures: [], ordre: null };
 
@@ -57,6 +57,40 @@ export function changerTexte(etapes, index, texte) {
   const et = etapes[index];
   if (!et || (et.texte || '') === texte) return RIEN;
   return { ecritures: [{ id: et.id, champs: { texte } }], ordre: null };
+}
+
+/* ---------------------------------------------------------------------------
+   Supports et outils
+   ------------------------------------------------------------------------- */
+
+/** Retire le k-ième support d'une étape. */
+export function retirerSupport(etapes, index, k) {
+  const et = etapes[index];
+  if (!et) return RIEN;
+  const liste = listeSupports(et.supports);
+  if (k < 0 || k >= liste.length) return RIEN;
+  liste.splice(k, 1);
+  return { ecritures: [{ id: et.id, champs: { supports: liste.join(', ') } }], ordre: null };
+}
+
+/**
+ * Ajoute un support à une étape.
+ *
+ * `inscrireAuClient` vaut pour un outil saisi à la main : il rejoint la liste
+ * des outils du site, sinon il ne serait proposé nulle part ailleurs et chacun
+ * le retaperait avec une orthographe différente. L'appelant reçoit alors
+ * `outilClient` — une écriture sur le client, pas sur l'étape.
+ */
+export function ajouterSupport(etapes, index, nom, inscrireAuClient) {
+  const et = etapes[index];
+  const propre = (nom || '').trim();
+  if (!et || !propre) return RIEN;
+  const liste = listeSupports(et.supports);
+  if (liste.includes(propre)) return RIEN;
+  liste.push(propre);
+  const m = { ecritures: [{ id: et.id, champs: { supports: liste.join(', ') } }], ordre: null };
+  if (inscrireAuClient) m.outilClient = propre;
+  return m;
 }
 
 /* ---------------------------------------------------------------------------

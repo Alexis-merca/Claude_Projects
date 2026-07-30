@@ -20,6 +20,9 @@ export interface Mutation {
   creation?: Omit<EtapeFlux, 'id'>;
   /** Interaction sans effet, avec sa raison — à montrer à l'utilisateur. */
   refus?: string;
+  /** Outil à inscrire dans `clients.outils` : une écriture sur le client, pas
+      sur l'étape. Émis quand un support est saisi à la main. */
+  outilClient?: string;
 }
 
 export function cyclerLien(etapes: EtapeFlux[], index: number): Mutation;
@@ -33,4 +36,8 @@ export function renommerEchelle(
 export function couperEchelle(etapes: EtapeFlux[], index: number): Mutation;
 export function supprimerEchelle(etapes: EtapeFlux[], debut: number, span: number): Mutation;
 export function ajouterEchelle(etapes: EtapeFlux[], roleParDefaut?: string): Mutation;
+export function retirerSupport(etapes: EtapeFlux[], index: number, k: number): Mutation;
+export function ajouterSupport(
+  etapes: EtapeFlux[], index: number, nom: string, inscrireAuClient?: boolean
+): Mutation;
 export function nomEchelleLibre(etapes: EtapeFlux[]): string;
