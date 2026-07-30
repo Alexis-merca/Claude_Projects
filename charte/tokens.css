@@ -1,0 +1,110 @@
+/* ============================================================================
+   Charte Mercateam — jetons de design pour l'application React
+   ============================================================================
+
+   Valeurs relevées dans diagnostic-os.html, pas de mémoire. Ce fichier remplace
+   le bloc `:root` de `src/index.css`.
+
+   Il fait deux choses, et la première compte plus que la seconde :
+
+   1. IL RETARGE LES JETONS DE shadcn/ui. Ses composants — boutons, champs,
+      onglets, cartes — lisent `--primary`, `--border`, `--radius` et compagnie.
+      Les redéfinir suffit à ce que TOUT le catalogue adopte la charte d'un
+      coup, sans toucher à un seul composant. C'est le levier ; restyler les
+      boutons un par un serait à la fois plus long et plus fragile.
+
+   2. IL EXPOSE LA CHARTE EN CLAIR, sous les mêmes noms que le mono-fichier
+      (`--violet`, `--encre`, `--r-carte`…), pour les cas que shadcn ne couvre
+      pas : pastels de rôle, panneau des frictions, KPI.
+
+   shadcn attend des triplets HSL sans `hsl()`. Le format n'est pas cosmétique :
+   il permet `hsl(var(--primary) / 0.5)` dans les classes Tailwind. Les valeurs
+   hexadécimales d'origine sont en commentaire de fin de ligne.
+   ========================================================================= */
+
+@layer base {
+  :root {
+    /* ---- Jetons shadcn/ui, retargés sur la charte ------------------------ */
+    --background:            200 23% 97%;   /* #F7F9FA — fond de page */
+    --foreground:            0 0% 17%;      /* #2B2B2B — encre */
+
+    --card:                  0 0% 100%;     /* #FFFFFF */
+    --card-foreground:       0 0% 17%;
+    --popover:               0 0% 100%;
+    --popover-foreground:    0 0% 17%;
+
+    --primary:               255 98% 60%;   /* #6733FD — violet Mercateam */
+    --primary-foreground:    0 0% 100%;
+
+    --secondary:             255 100% 96%;  /* #F0EBFF — violet 50 */
+    --secondary-foreground:  255 68% 25%;   /* #2A146A — violet 800 */
+
+    --muted:                 0 0% 94%;      /* #EFEFEF — filet */
+    --muted-foreground:      0 0% 48%;      /* #7B7B7B — gris */
+
+    --accent:                182 66% 48%;   /* #2AC6CC — turquoise */
+    --accent-foreground:     0 0% 100%;
+
+    --destructive:           0 99% 46%;     /* #E90101 — rouge */
+    --destructive-foreground: 0 0% 100%;
+
+    --border:                0 0% 84%;      /* #D5D5D5 — bord */
+    --input:                 0 0% 84%;
+    --ring:                  255 98% 60%;   /* focus violet */
+
+    /* 12px, le rayon des cartes. shadcn dérive les autres de celui-ci. */
+    --radius: 0.75rem;
+
+    /* ---- Charte en clair, mêmes noms que le mono-fichier ----------------- */
+    --violet:       #6733FD;
+    --violet-300:   #8C63FD;
+    --violet-400:   #A485FE;
+    --violet-200:   #C7B4FE;
+    --violet-150:   #D1C2FE;
+    --violet-50:    #F0EBFF;
+    --violet-800:   #2A146A;
+    --turquoise:    #2AC6CC;
+
+    --encre:        #2B2B2B;
+    --gris:         #7B7B7B;
+    --bord:         #D5D5D5;
+    --filet:        #EFEFEF;
+    --page:         #F7F9FA;
+    --blanc:        #FFFFFF;
+    --blanc-casse:  #FCFCFD;
+
+    --rouge:        #E90101;
+    --rouge-fonce:  #AD0101;
+    --rouge-clair:  #FFD9D1;
+    --rouge-anneau: #FFB3A3;
+
+    --r-chip:   4px;
+    --r-petit:  8px;
+    --r-carte:  12px;
+    --r-pilule: 100px;
+
+    --ombre:    0 2px 8px rgba(0, 0, 0, .08);
+    --ombre-lg: 0 8px 32px rgba(0, 0, 0, .12);
+    --anneau:   inset 0 0 0 1px var(--bord);
+
+    --ui:    'Overpass', system-ui, -apple-system, sans-serif;
+    --titre: 'General Sans', 'Overpass', system-ui, sans-serif;
+    --mono:  'Roboto Mono', ui-monospace, monospace;
+  }
+
+  body {
+    background: var(--page);
+    color: var(--encre);
+    font: 400 15px/1.4 var(--ui);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Les titres sont en General Sans 600, jamais en 700 : c'est la seule graisse
+     chargée depuis Fontshare, demander plus gras donnerait une fausse graisse
+     synthétisée par le navigateur. */
+  h1, h2, h3 { font-family: var(--titre); font-weight: 600; letter-spacing: -0.01em; }
+
+  /* Les nombres sont en Roboto Mono : dans les KPI et les chiffres clés, ils
+     doivent s'aligner verticalement d'une ligne à l'autre. */
+  .chiffre-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+}
