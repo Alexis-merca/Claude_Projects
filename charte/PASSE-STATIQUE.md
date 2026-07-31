@@ -268,3 +268,64 @@ Le reste des points tenus :
 - `O4`/`O5`, focus et curseur pendant la frappe : sans objet ici, React ne
   réécrit pas la page entière. Mais `ChampEnPlace` valide au `blur` : reste à
   voir si la saisie est fluide et si une valeur non validée peut se perdre.
+
+---
+
+## 6. Vérification après correctifs — 31/07
+
+Relecture des fichiers touchés. Même réserve qu'en tête de document : ceci dit
+ce que le code fait, pas qu'il marche.
+
+**Les onze points sont traités.**
+
+| Point | État | Preuve dans le code |
+|---|---|---|
+| 1.1 glissement | corrigé | `glisse` en état local, `onPositions` appelé dans `finir` seulement |
+| 1.2 suppression client | corrigé | `AlertDialog` nommant le client, décompte par `compterContenuClient` |
+| 1.3 suppression processus | corrigé | `AlertDialog` chiffré + refus si `processus.length <= 1` |
+| 1.4 synthèse | supprimée | `Synthese.tsx` et `lib/synthese.ts` absents de l'arborescence |
+| 1.5 import/export | corrigé | `lib/echange-json.ts`, `client_json` réécrite, `importer_client_json` |
+| 1.6 rôles | corrigé | `monterRole` / `descendreRole` + `lib/roles.ts` |
+| 1.7 dernier rôle | corrigé | `if (p.roles.length <= 1) throw`, création avec `roles: ["Rôle 1"]` |
+| 1.8 virgule | corrigé | deux `.eq()` séparés, le `.or()` concaténé a disparu |
+| 1.9 motif `mes` | corrigé | retiré, avec le commentaire qui dit pourquoi |
+| 1.10 décalage | corrigé | `etapes[i + 1].lien`, commentaire citant `tracerFleches` |
+| 1.11 clic sur flèche | corrigé | `onClick={() => setSelection(a.clef)}`, `suivante` supprimée |
+
+### Deux solutions qui méritent d'être notées
+
+`lib/roles.ts` résout la couleur sans toucher au moteur. Celui-ci calcule
+`PASTELS[paletteRoles.indexOf(role) % 8]` : plutôt que de le modifier, on lui
+passe une **palette de places** où l'index d'un rôle vaut la pastille qu'on lui
+a attribuée par empreinte de son nom, les trous bouchés par des jetons inertes.
+La contrainte « ne pas écrire dans `src/flux/` » est tenue sans contournement.
+
+`echange-json.ts` ajoute une précaution qui n'était pas demandée : à la lecture,
+le rôle d'une étape est vidé s'il ne figure pas parmi les couloirs déclarés du
+processus. Cela désamorce en amont la contrainte de base qui aurait fait échouer
+l'import, et la fonction SQL refait la même vérification de son côté.
+
+### Résidus
+
+**La stabilité des couleurs n'est pas absolue.** Elle l'est contre le
+réordonnancement — c'était l'objectif, et il est atteint : la palette est
+calculée sur l'ensemble trié des noms, donc indifférente à l'ordre. Mais si
+deux rôles tombent sur la même pastille, le départage dépend de l'ensemble
+présent : supprimer le premier des deux fait glisser le second sur la pastille
+libérée. Le critère « zéro changement à l'ajout et à la suppression » n'est
+donc tenu qu'en l'absence de collision. C'est inhérent à huit pastilles et une
+empreinte ; seule une attribution persistée serait exacte. À accepter ou à
+traiter plus tard.
+
+**Un point que la lecture ne tranche pas.** En mode injection,
+`importer_client_json` fait `delete from public.processus where client_id = ...`
+et compte sur un `ON DELETE CASCADE` vers les étapes, frictions et chiffres. Les
+définitions de clés étrangères que j'ai lues n'exposent pas la règle de
+suppression. Si la cascade manque, l'injection échouera sur une violation de
+contrainte — la transaction annulera tout, donc sans dégât, mais la fonction
+sera inutilisable. Le premier essai d'injection le dira.
+
+**Deux traces obsolètes**, cosmétiques. Le `head` de la route
+`clients.$code.tsx` annonce encore « chiffres clés et synthèse du site » dans sa
+description, et le commentaire au-dessus de `palette` affirme toujours que la
+teinte d'un rôle est son index. Ni l'un ni l'autre ne change le comportement.
