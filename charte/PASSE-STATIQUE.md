@@ -592,3 +592,47 @@ rajouter si vos audits en rencontrent.
 Le câblage des composants. J'ai lu la couche modèle et le contrat des
 mutations, pas `EnvironnementIT.tsx` ni les boutons du diagramme. Que les
 fonctions existent et soient justes ne dit pas qu'elles sont appelées.
+
+### Les deux correctifs — vérifiés
+
+**Le gel des échanges est levé.** `siSansCorrections` remet désormais
+`echanges` à `null` en plus d'effacer les corrections, et laisse `positions`
+intact — les réglages d'affichage ne sont pas des données de constat.
+
+**Et la confirmation ne ment pas**, ce qui était la moitié de la demande :
+
+> Recalculer efface les corrections de classement des outils et les ajustements
+> d'échanges (natures, ajouts, suppressions de flèches). Les positions des
+> boîtes du schéma sont conservées. Continuer ?
+
+Le libellé du bouton suit — « Recalculer (efface corrections et échanges) ».
+
+**Le bloc Qualité & QHSE est rétabli**, entre Maintenance et GED, avec ses trois
+activités. La trame compte treize blocs. Les entrées `qms`, `qualite`,
+`non-conformite`, `r43` en table A et `qualite`, `audit`, `conformite` en table B
+sont placées **en dernier**, chacune avec le commentaire qui dit pourquoi : un
+outil médical ou d'habilitation dont le nom contient un mot qualité doit tomber
+dans son domaine propre, pas dans Qualité.
+
+### Un choix que je n'avais pas spécifié, et qui est juste
+
+Les outils du bandeau de titre d'un bloc ne sont plus retirables. Le commentaire
+l'explique : ce bandeau est la **réunion** des outils des lignes, donc une
+valeur dérivée. Un outil se déplace ligne à ligne ; le retirer du bandeau
+n'aurait eu aucun sens et aurait produit une correction incohérente.
+
+Le compteur d'avancement est en place et masqué à l'impression, et le composant
+reçoit une propriété `impression` qui déclenche `sansLignesVides`.
+
+### Deux points de vigilance, sans gravité
+
+Le motif `visite` de la table B envoie vers `Suivi médical`. C'est juste dans un
+contexte industriel — une visite y est médicale neuf fois sur dix — mais un
+processus nommé « Visite de sécurité » ou « Visite client » y tomberait aussi.
+Même famille que le motif `mes` qui attrapait « Messagerie », en moins probable.
+
+**La trame est capturée à la première retouche.** Dès qu'un bloc est renommé ou
+qu'une activité est ajoutée, `structure` est enregistrée. Un enrichissement
+ultérieur de `TRAME` — un quatorzième bloc — n'atteindra donc pas les
+diagnostics déjà édités. C'est inhérent au modèle et acceptable ; il faut juste
+le savoir avant de s'étonner qu'un nouveau bloc n'apparaisse pas partout.
