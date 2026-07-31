@@ -523,3 +523,72 @@ version toujours à 1, donc jamais écrit.
 La chaîne export → fichier → import est vérifiée de bout en bout, par
 l'exécution et non par la lecture. Le point `1.5` est clos, ainsi que la
 réserve sur la cascade.
+
+---
+
+## 10. Trame de blocs et insertion d'étape — vérification du 31/07
+
+Lecture de `lib/environnement-it.ts` et de `flux/mutations.d.ts`, plus l'état
+réel de la base.
+
+### Ce qui est tenu
+
+**La trame** : douze blocs, dans l'ordre demandé, avec leurs activités. Table A
+réalignée — `padoa` → `suivi-medical / Visites médicales`, `caces` →
+`habilitation / Habilitations et recyclages`, `sap` → `erp / Données de
+référence`. Table B suit, et le motif `medical` a été retiré de la ligne
+`habilitation` pour ne pas entrer en concurrence avec le nouveau bloc.
+
+**La séparation structure / contenu / corrections**, qui était le cœur du
+sujet. `EnvITStock` n'enregistre que la structure, les corrections, les
+échanges et les positions — **jamais les outils**. `calculEnvIT` ne lit que les
+supports des étapes ; `vueEnvIT` remplit la structure avec ce calcul puis
+applique les corrections. L'affichage est donc toujours à jour.
+
+Deux détails valent d'être notés. `envITEnregistre` **ignore délibérément** la
+structure figée des versions antérieures — le commentaire le dit et le code le
+fait. Et `siAvecVue` ne demande pas d'évènement « j'ai déplacé cet outil » : il
+**déduit** les corrections en comparant la vue affichée au calcul. Un outil
+absent de la vue alors que le calcul le place quelque part est enregistré comme
+masqué. C'est plus robuste qu'un journal de gestes.
+
+**Les lignes vides** : `sansLignesVides` filtre lignes et blocs vides pour
+l'impression et le PPTX. **Le compteur** : `stats` porte les quatre nombres.
+
+**Les mutations manquantes** : `insererEtape`, `supprimerEtape`, `ajouterEtape`
+existent, avec un champ `suppression` sur `Mutation` et un jeton `CREATION` qui
+tient la place de l'étape créée dans le tableau d'ordre — détail nécessaire que
+je n'avais pas spécifié.
+
+### La donnée figée a été effacée
+
+`si` valait `{}` sur Sekurit après l'opération, contre un `environnement_it`
+complet auparavant. La structure périmée — deux blocs, BOOST et SharePoint
+absents — a donc été supprimée, et tout se recalcule. C'est le bon choix de
+migration, mais **c'était de la donnée client** : les blocs qui y avaient été
+ajustés à la main sont perdus. Ils étaient périmés, ce qui limite la casse.
+
+### Deux réserves
+
+**Le gel des échanges reste une porte à sens unique.** `stock.echanges` vaut
+`null` tant que personne n'y touche, et les échanges se recalculent. Dès qu'un
+utilisateur change une nature, en ajoute ou en supprime un, le tableau est
+enregistré — et **plus rien ne le remet à `null`**. « Recalculer »
+(`siSansCorrections`) n'efface que les corrections, pas les échanges. Un support
+ajouté plus tard ne produira donc jamais de nouvel échange.
+
+C'est exactement le défaut qu'on vient de corriger sur les blocs, resté intact
+sur l'autre moitié de la section. Le correctif est symétrique : que
+« Recalculer » remette aussi `echanges` à `null`, ou qu'un second bouton le
+fasse.
+
+**Le bloc Qualité & QHSE a disparu**, et c'est mon erreur : ma trame de douze
+blocs ne le comportait pas. Les motifs `qms`, `qualite`, `non-conformite` ont
+donc quitté la table A. Un outil qualité tombera dans « Non classé ». À
+rajouter si vos audits en rencontrent.
+
+### Ce que je n'ai pas vérifié
+
+Le câblage des composants. J'ai lu la couche modèle et le contrat des
+mutations, pas `EnvironnementIT.tsx` ni les boutons du diagramme. Que les
+fonctions existent et soient justes ne dit pas qu'elles sont appelées.
