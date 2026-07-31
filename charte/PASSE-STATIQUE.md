@@ -401,3 +401,74 @@ Une nuance sur le second chiffre : le fichier porte toujours un
 pas dépendre du zoom sous peine de reconstruire le DOM à chaque cran de curseur.
 Il est délibéré et motivé en commentaire. Le zéro porte sur les avertissements
 réellement levés, pas sur l'absence de toute suppression.
+
+---
+
+## 8. L'export JSON — vérifié sur la base réelle
+
+Cette fois, pas de lecture de code : la fonction a été exécutée contre la base,
+sur `sekurit-float-france`.
+
+### La forme
+
+```
+racine     : client, exporte_le, format, version
+client     : code, date_visite, nom, notes, outils, processus, si, site
+processus  : chiffres, code, etapes, frictions, nom, rang, roles, soustitre
+etapes     : lien, ordre, phase, role, role2, supports, texte
+frictions  : rang, role, texte
+chiffres   : libelle, rang, valeur
+```
+
+`format` vaut `diagnostic-os`, `version` vaut 1, le fichier pèse 12,5 ko.
+
+Exactement les clés déclarées dans `echange-json.ts`, ni plus ni moins. **Aucun
+`id`, `client_id`, `processus_id`, `cree_le` ni `maj_le` nulle part** — le seul
+`version` est celui du format, à la racine, et l'import l'ignore.
+
+### Rien ne se perd
+
+| | base | export |
+|---|---|---|
+| processus | 4 | 4 |
+| étapes | 49 | 49 |
+| frictions | 16 | 16 |
+| chiffres clés | 11 | 11 |
+
+Et `si` porte bien sa clé `environnement_it`, donc les blocs, les échanges et
+les positions du schéma voyagent avec le reste.
+
+### Chaque clé lue par l'import existe dans l'export
+
+Confrontation des deux listes : `importer_client_json` lit `nom`, `site`,
+`date_visite`, `notes`, `outils`, `si`, `code` sur le client ; `code`, `nom`,
+`soustitre`, `roles` et les trois collections sur le processus ; `role`,
+`role2`, `texte`, `phase`, `supports`, `lien` sur l'étape. Toutes sont
+présentes.
+
+`ordre` et `rang` font exception : ils sont **écrits** par l'export mais
+**ignorés** par l'import, qui renumérote depuis la position dans le tableau.
+C'est voulu — le fichier reste lisible par un humain sans que l'import ait à
+faire confiance à des numéros éventuellement trafiqués.
+
+### La cascade existe
+
+Question laissée ouverte au § 1.5, désormais tranchée. Les quatre clés
+étrangères sont en `ON DELETE CASCADE` :
+
+```
+processus → clients     CASCADE
+etapes    → processus   CASCADE
+frictions → processus   CASCADE
+chiffres  → processus   CASCADE
+```
+
+Le `delete from processus` de l'injection emporte donc bien les étapes,
+frictions et chiffres, et la suppression d'un client emporte tout l'arbre.
+
+### Ce qui reste non exécuté
+
+L'import lui-même. Le vérifier vraiment suppose d'écrire dans la base de
+production — créer un diagnostic depuis le fichier, comparer, puis le
+supprimer. Tout le reste de la chaîne est vérifié ; il ne manque que la preuve
+par l'exécution.
