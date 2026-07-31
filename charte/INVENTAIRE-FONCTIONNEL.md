@@ -244,19 +244,14 @@ restent attendues à l'identique.
 - [ ] L37 — Déplacer une boîte à la main, position conservée au rechargement
 - [ ] L38 — `Replacer automatiquement`, en annonçant qu'il écrase
 
-## M. Synthèse
+## M. Synthèse — abandonnée
 
-- [ ] M1 — Sur-titre « Synthèse globale »
-- [ ] M2 — `<h2>` « État des lieux du site »
-- [ ] M3 — `[SPEC MODIFIÉE]` **une ou deux phrases par processus** résumant le
-      workflow et ses frictions (le mono-fichier affiche des compteurs)
-- [ ] M4 — `[SPEC MODIFIÉE]` bloc **« Frictions transverses »** regroupant les
-      irritants présents sur plusieurs processus
-- [ ] M5 — `Rôles cartographiés` : toutes les chips de rôle du client
-- [ ] M6 — `Outils et supports relevés`
-- [ ] M7 — Notes de synthèse du client, en gris
-- [ ] M8 — `[SPEC MODIFIÉE]` le total de frictions en très gros rouge n'est
-      plus demandé
+Section supprimée le 31/07. `Synthese.tsx` et `lib/synthese.ts` n'étaient
+branchés sur aucune route ; ils sont retirés. La vue d'impression garde son
+enchaînement : une page par processus, puis Environnement IT (blocs), puis
+Environnement IT (schéma).
+
+Rien à tester ici — et rien à signaler comme manquant.
 
 ## N. Impression et PDF
 

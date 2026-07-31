@@ -55,17 +55,44 @@ liste après le 1.1.
 Pas de confirmation chiffrant les étapes perdues (`F3`), et rien n'empêche de
 supprimer le dernier processus (`F4`).
 
-### 1.4 La synthèse n'existe nulle part
+### 1.4 La synthèse n'existe nulle part — et n'existera pas
 
 `Synthese.tsx` et `lib/synthese.ts` sont présents mais ne sont importés par
 aucune des trois routes. La vue d'impression enchaîne : une page par processus,
-puis Environnement IT (blocs), puis Environnement IT (schéma). **Pas de page
-synthèse.** Les points `M1` à `M8` sont absents à l'écran comme au PDF.
+puis Environnement IT (blocs), puis Environnement IT (schéma). Pas de page
+synthèse.
 
-### 1.5 Aucun import JSON
+**Tranché le 31/07 : la synthèse est abandonnée.** Ce n'est donc plus un
+manque mais du code mort, à supprimer. L'enchaînement d'impression reste celui
+ci-dessus, et le travail fait sur l'environnement IT — mosaïque statique,
+schéma des échanges, placement déterministe, tables de dérivation — est validé
+et n'est pas touché.
 
-L'export existe (`exporter`, un `Blob` téléchargé), l'import non. Un JSON
-exporté ne peut pas être réinjecté. Points `B8` à `B12` absents.
+### 1.5 Aucun import JSON, et un export non réimportable
+
+L'export existe (`exporter`, un `Blob` téléchargé), l'import non. Points `B8`
+à `B12` absents.
+
+Le format y est pour quelque chose. L'export déverse les lignes brutes —
+
+```js
+const donnees = { ...client, processus: processus.map((p) => ({ ...p, ...parProcessus[p.id] })) };
+```
+
+— donc les `id`, `client_id`, `processus_id`, `version`, `cree_le` et `maj_le`.
+Ces colonnes sont internes : réimportées, elles entrent en collision ou mentent.
+Le fichier est lisible par un humain, inutilisable en entrée.
+
+Forme portable, dérivée des tables telles qu'elles sont : les clés naturelles
+`client.code` et `processus.code`, la hiérarchie `client → processus → étapes /
+frictions / chiffres`, `outils` et `si` sur le client, et rien d'interne.
+`ordre` et `rang` sont renumérotés en 1..n depuis la position dans le tableau
+plutôt que repris du fichier.
+
+Deux contraintes d'écriture à l'import : le processus s'insère **avant** ses
+étapes, la base contrôlant que `etapes.role` appartient à `processus.roles` ;
+et l'opération doit être atomique, donc côté Postgres — la base expose déjà
+`client_json(p_code)`, à regarder avant d'écrire un troisième chemin.
 
 ### 1.6 Les rôles ne se réordonnent pas
 
