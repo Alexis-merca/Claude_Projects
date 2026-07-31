@@ -94,11 +94,33 @@ Deux contraintes d'écriture à l'import : le processus s'insère **avant** ses
 et l'opération doit être atomique, donc côté Postgres — la base expose déjà
 `client_json(p_code)`, à regarder avant d'écrire un troisième chemin.
 
-### 1.6 Les rôles ne se réordonnent pas
+### 1.6 Les rôles ne se réordonnent pas, et la couleur suit la position
 
 `roles-processus.ts` expose `ajouterRole`, `renommerRole`, `supprimerRole`.
 Rien pour monter ou descendre un couloir : `H19` et `H20` absents. L'ordre des
-couloirs commande la lisibilité du diagramme.
+couloirs commande pourtant la lisibilité du diagramme, et un rôle ajouté en
+cours d'audit reste coincé en bas.
+
+Le blocage n'était pas là. La teinte d'un rôle vient de son index dans
+`palette`, construit par ordre de rencontre :
+
+```js
+for (const p of processus) for (const r of p.roles) if (!out.includes(r)) out.push(r);
+```
+
+Réordonner les couloirs repeindrait donc tout le diagramme, et un lecteur
+croirait voir d'autres rôles. Inacceptable dans un document de restitution :
+c'est ce qui rendait le réordonnancement impossible à livrer seul.
+
+**Tranché le 31/07 : la couleur est attachée au rôle, pas à sa position.**
+Empreinte déterministe du nom normalisé projetée sur la liste de pastels, et
+en cas de collision entre deux rôles d'un même client, départage par
+`localeCompare` sur le **nom** — jamais sur la position, sinon le problème
+revient par la fenêtre. Un seul helper partagé par le diagramme,
+`GestionRoles`, `PanneauFrictions` et `SaisieRapide`.
+
+Critère : monter un rôle, en ajouter un, en supprimer un — aucune de ces trois
+actions ne change la couleur d'un autre rôle.
 
 ### 1.7 Un processus peut se retrouver sans aucun rôle
 
@@ -113,10 +135,18 @@ supprimer (`H22`).
 ```
 
 Le libellé est interpolé tel quel dans un filtre PostgREST, dont la virgule est
-le séparateur. Un rôle nommé `Chef d'équipe, adjoint` — plausible — produit un
-filtre malformé ou différent de celui voulu. Le contrôle « ce rôle est encore
-utilisé » peut alors répondre à côté et laisser supprimer un rôle qui porte des
-étapes.
+le séparateur. Un rôle nommé `Chef d'équipe, adjoint` — plausible — produit
+quatre fragments au lieu de deux, dont un invalide.
+
+Précision sur la gravité : le cas courant est un **400 de PostgREST**. La
+requête est rejetée, l'erreur remonte brute dans un toast, et le rôle devient
+impossible à supprimer sans qu'on comprenne pourquoi. Gênant et incompréhensible,
+pas dangereux. Le scénario silencieux — un filtre valide mais différent de celui
+voulu — demande des parenthèses dans le nom, que PostgREST interprète comme des
+groupes ; beaucoup moins probable. C'est donc un défaut de robustesse, pas un
+risque pour les données.
+
+Correctif : deux requêtes séparées plutôt qu'un `or` bâti par concaténation.
 
 ### 1.9 Le motif `mes` de la table A attrape « Messagerie »
 
@@ -151,7 +181,12 @@ onClick={() => {
 
 En mode édition, ouvrir l'éditeur pour lire ou corriger « ce qui passe » impose
 donc de modifier la nature. Il faut trois clics pour revenir à la valeur de
-départ. Le cycle par clic était demandé, mais pas au prix de la sélection.
+départ.
+
+La consigne est en cause, et elle est retirée : le cycle au clic avait été
+demandé par cohérence avec le diagramme de flux, sans voir que l'éditeur de
+flèche porte déjà une liste déroulante des trois natures. Les deux font le même
+travail, l'un des deux gêne. Le clic ne fait plus que sélectionner.
 
 ---
 
