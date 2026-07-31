@@ -385,3 +385,19 @@ la règle réelle distingue le moteur, intouchable, de l'enveloppe React. Et cel
 au-dessus de `palette` dit toujours que la teinte d'un rôle est son index, ce
 qui n'est plus vrai depuis `lib/roles.ts`. Sans effet sur le comportement, mais
 ce sont les commentaires qui égarent la prochaine lecture.
+
+### Clôture — 31/07, 11 h 59
+
+Les trois retouches de texte et la dépendance sont faites, mesures à zéro :
+`tsgo --noEmit` → 0 erreur, `eslint --max-warnings 0` sur `DiagrammeFlux.tsx`
+→ 0, occurrences de « synthèse » dans `clients.$code.tsx` → 0.
+
+Le balayage a trouvé une quatrième mention que je n'avais pas relevée : le
+commentaire au-dessus de `enfants` disait encore « les KPI **comme la synthèse**
+en dépendent ». Chercher le mot valait mieux que corriger les endroits nommés.
+
+Une nuance sur le second chiffre : le fichier porte toujours un
+`eslint-disable-next-line react-hooks/exhaustive-deps`, sur l'effet qui ne doit
+pas dépendre du zoom sous peine de reconstruire le DOM à chaque cran de curseur.
+Il est délibéré et motivé en commentaire. Le zéro porte sur les avertissements
+réellement levés, pas sur l'absence de toute suppression.
