@@ -329,3 +329,59 @@ sera inutilisable. Le premier essai d'injection le dira.
 `clients.$code.tsx` annonce encore « chiffres clés et synthèse du site » dans sa
 description, et le commentaire au-dessus de `palette` affirme toujours que la
 teinte d'un rôle est son index. Ni l'un ni l'autre ne change le comportement.
+
+---
+
+## 7. Zoom et défilement — vérification du 31/07
+
+### Le défilement horizontal
+
+Corrigé, et la cause était bien celle annoncée. `DiagrammeFlux` relève désormais
+`scrollLeft` en continu, par un écouteur `scroll` en phase de capture posé sur
+l'hôte — les évènements de défilement ne remontent pas, mais la capture les
+atteint. La valeur est reposée dans le `useLayoutEffect` déclenché par le
+changement de balisage, donc avant la peinture : aucun saut ne se voit.
+
+Portée exacte : le défilement survit aux **reconstructions** — ajout de support,
+saisie, déplacement d'étape. Il ne survit pas au changement d'onglet, la
+référence mourant avec le composant. C'est conforme à la demande, mais autant
+le savoir.
+
+### Le zoom
+
+Sorti du diagramme, comme demandé, et un cran au-delà. `DiagrammeFlux` accepte
+`zoom` et `onZoom` et devient contrôlé, avec repli sur son état local si l'hôte
+ne fournit rien. La page tient une `Map` par processus dans une référence, et
+`SectionProcessus` en garde une copie locale pour redessiner.
+
+Ce détour par une référence n'est pas une coquetterie : Radix démonte l'onglet
+inactif. Un zoom porté par le diagramme, ou même par l'état de la section,
+repartirait donc à 100 % à chaque aller-retour entre processus. Là, chacun
+retrouve le sien.
+
+L'ancien rattrapage a disparu de `DiagrammeAvecZoom`, qui ne fait plus que
+rejouer `acheverRendu` après reconstruction.
+
+### Une fausse alerte, levée
+
+`ajuster` est déclaré `useCallback(..., [])` alors qu'il appelle `setZoom`, qui
+dépend lui-même de `onZoom`. C'est une violation d'`exhaustive-deps` : le bouton
+« Ajuster » capture les fonctions du premier rendu et ne les met jamais à jour.
+
+Vérification faite, **c'est sans effet aujourd'hui**. La chaîne qu'il capture
+n'atteint que `zooms.current` — une référence, donc toujours à jour — et
+`setZoomVu`, un poseur d'état stable. Une copie périmée se comporte exactement
+comme la copie fraîche.
+
+Cela reste un piège : le jour où `onZoom` lira une valeur d'état plutôt qu'une
+référence, le bouton « Ajuster » se mettra à écrire depuis un instantané périmé,
+sans rien signaler. Ajouter `setZoom` aux dépendances coûte un caractère.
+
+### Deux commentaires devenus faux
+
+Le commentaire au-dessus du bouton de saisie rapide affirme encore que
+`src/flux/` ne se modifie pas, alors que `DiagrammeFlux.tsx` vient de l'être —
+la règle réelle distingue le moteur, intouchable, de l'enveloppe React. Et celui
+au-dessus de `palette` dit toujours que la teinte d'un rôle est son index, ce
+qui n'est plus vrai depuis `lib/roles.ts`. Sans effet sur le comportement, mais
+ce sont les commentaires qui égarent la prochaine lecture.
