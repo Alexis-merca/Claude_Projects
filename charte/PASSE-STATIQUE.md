@@ -636,3 +636,80 @@ qu'une activité est ajoutée, `structure` est enregistrée. Un enrichissement
 ultérieur de `TRAME` — un quatorzième bloc — n'atteindra donc pas les
 diagnostics déjà édités. C'est inhérent au modèle et acceptable ; il faut juste
 le savoir avant de s'étonner qu'un nouveau bloc n'apparaisse pas partout.
+
+---
+
+## 11. Authentification Google restreinte à `@merca.team` — 31/07
+
+### Le point de départ
+
+`src/routes/auth.tsx` exposait `supabase.auth.signUp` **sans aucun filtre**,
+avec une bascule « Créer un accès ». Quiconque connaissait l'URL pouvait se
+créer un compte, et les politiques se contentant de `auth.uid() IS NOT NULL`,
+lire et écrire tous les diagnostics — des relevés nominatifs de sites
+industriels clients. C'était le vrai trou, plus encore que l'absence de Google.
+
+### Vérifié en base
+
+Les cinq tables portent une politique unique en `est_mercateam()`, en `USING`
+comme en `WITH CHECK`, visant `authenticated`. Plus aucune occurrence
+d'`auth.uid() IS NOT NULL`. La fonction est exactement celle demandée :
+
+```sql
+select split_part(lower(coalesce(auth.jwt() ->> 'email', '')), '@', 2) = 'merca.team';
+```
+
+Comparaison exacte sur la partie après l'arobase plutôt qu'un motif
+`like '%@merca.team'` : le motif serait correct mais une retouche l'aurait
+rendu faux, un `%merca.team` sans arobase acceptant `contact@faux-merca.team`.
+
+`client_json`, `importer_client_json`, `reordonner_etapes` et `est_mercateam`
+sont toutes en droits de l'appelant — **aucune n'est `SECURITY DEFINER`**, donc
+aucune ne contourne les politiques.
+
+### Vérifié côté navigateur
+
+L'ancien formulaire a disparu : `auth.tsx` n'est plus qu'une route rendant
+`CarteConnexion`. Ni `signUp`, ni `signInWithPassword`, ni champ mot de passe.
+La garde ne laisse passer que l'état `authenticated`.
+
+Un détail de mise en œuvre mérite d'être noté. Au refus, l'état passe à
+`denied` **puis** la session est fermée côté serveur ; la fermeture rappelle
+l'observateur avec une session nulle, et la transition préserve `denied` au lieu
+de retomber sur `signed_out`. Sans cette précaution, le message de refus
+disparaîtrait aussitôt affiché et l'utilisateur ne saurait pas pourquoi il est
+bloqué.
+
+### Une substitution non demandée
+
+La connexion passe par `lovable.auth.signInWithOAuth` — le paquet
+`@lovable.dev/cloud-auth-js` — et non par `supabase.auth.signInWithOAuth`. Le
+courtier mène le parcours Google puis pose la session dans Supabase.
+
+C'est une réponse légitime au point bloquant que j'avais signalé : plus besoin
+d'un identifiant et d'un secret OAuth Google Cloud. Mais l'arrangement de
+confiance change. L'authentification est courtée par l'application OAuth de
+Lovable, pas par un client Google appartenant à Mercateam — contrairement à
+« Deployment Internal OS ». L'écran de consentement vu par l'utilisateur est
+celui de Lovable, et la connexion dépend de son service.
+
+**Conséquence qui rachète tout** : même si ce courtier admet un compte Google
+quelconque, la base refuse tout. `est_mercateam()` lit l'adresse dans le jeton
+Supabase, quelle qu'en soit l'origine. Un compte extérieur obtient une session
+valide et ne peut lire ni écrire une seule ligne. C'est précisément pourquoi il
+fallait la vérification en base et pas seulement dans le navigateur.
+
+### Deux réserves
+
+**Le périmètre Google n'est pas vérifiable.** J'avais spécifié exactement
+`openid email profile`. `lovable.auth.signInWithOAuth` n'accepte pas de
+paramètre de périmètre : c'est celui de l'application OAuth de Lovable qui
+s'applique. À lire sur l'écran de consentement à la première connexion.
+
+**Retirer l'écran ne désactive pas le fournisseur.** Les deux comptes
+e-mail / mot de passe existent toujours dans `auth.users`, et si le fournisseur
+mot de passe reste actif côté Supabase, `signInWithPassword` fonctionne encore
+par appel direct à l'API — l'absence de bouton ne ferme rien. Ces deux comptes
+étant `@merca.team`, ce n'est pas une brèche ; mais la surface n'est réellement
+réduite à Google que le jour où le fournisseur mot de passe est désactivé dans
+la console Supabase.
