@@ -210,3 +210,89 @@ e-learning, oral et réunion.
 Tout le reste — Padoa, Boost, SAP, Corim, Qlik — s'écrit en toutes lettres.
 C'est voulu : un logo inventé pour un outil métier serait plus trompeur que le
 nom écrit.
+
+---
+
+## Trame de blocs par défaut — 31/07
+
+Décidé sur la base d'un livrable client réel (« Écosystème IT existant »), qui
+apprend une chose que la spécification initiale avait manquée : **la taxonomie
+utile est « un bloc par système IT », pas « un bloc par domaine métier »**. Le
+suivi médical y est un bloc à part entière, là où le dictionnaire en faisait une
+ligne sous Réglementaire.
+
+### Pourquoi une trame
+
+Un bloc n'existait que s'il portait au moins un outil. Sur un site où 7 étapes
+sur 49 portent un support — le cas de Sekurit — la section reste presque vide,
+et rien ne dit au consultant ce qu'il n'a pas encore relevé. La trame existe
+d'emblée et se remplit au fil des saisies : elle devient un guide de relevé.
+
+### Les douze blocs
+
+| Bloc | Activités |
+|---|---|
+| SIRH & GTA | Données collaborateurs · Absences · Roulements horaires · Contrats et paie |
+| Compétences | Matrice de polyvalence · Référentiel postes · Évaluation des acquis · Savoir-faire critiques |
+| Formations | Formations obligatoires · Formations réglementaires · Catalogue et plan · Suivi + évaluation |
+| Habilitations | Habilitations et recyclages · Autorisations internes · Habilitations électriques |
+| Suivi médical | Visites médicales · Aptitudes et restrictions |
+| Planning | Planification des équipes · Affectation au poste · Absences et remplacements · Intérim |
+| Ordonnancement & production | Ordres de fabrication · Suivi de ligne |
+| Maintenance | Interventions · Préventif |
+| GED & partage | Modes opératoires · Fiches sécurité · Diffusion documentaire |
+| ERP | Données de référence |
+| BI & reporting | Charge / capacité · Indicateurs de polyvalence · Reporting de conformité |
+| Non classé | — |
+
+Trois écarts avec la table A d'origine, qui la remplacent : `Suivi médical` et
+`Habilitations` deviennent des blocs, `ERP` redevient un bloc au lieu d'être
+rangé sous Production. Le bloc `Réglementaire` disparaît, ses lignes réparties
+entre les deux premiers.
+
+### Structure, contenu, corrections
+
+Le point qui commande tout le reste. Jusqu'ici, dès qu'une version était
+enregistrée dans `si.environnement_it`, elle primait et le calcul cessait de
+s'exécuter — d'où la version figée de Sekurit, où BOOST et SharePoint restaient
+invisibles alors qu'ils étaient bien saisis sur les étapes.
+
+Semer la trame dans `si` aurait gelé l'ensemble définitivement. Trois choses
+sont donc séparées :
+
+- **structure** — blocs et activités : la trame, plus les renommages, ajouts et
+  suppressions de l'utilisateur ;
+- **contenu** — les outils, recalculés à chaque affichage depuis les supports ;
+- **corrections** — les outils déplacés à la main d'une ligne vers une autre.
+
+Le calcul **fusionne** dans la structure au lieu de la remplacer. « Recalculer »
+ne sert plus qu'à effacer les corrections, et la question « version figée ou à
+jour ? » disparaît.
+
+### Les lignes vides, et la nuance qui les sauve
+
+L'objection initiale — « on ne fabrique pas un manque » — tenait pour un
+document client, pas pour un outil de relevé. D'où deux lectures :
+
+- **en mode travail**, les lignes vides sont visibles : « pas encore relevé » ;
+- **à l'impression et en PPTX**, elles sont masquées, ainsi que les blocs
+  entièrement vides : sur un document client, « Suivi médical — aucun outil »
+  dirait « ce site ne le fait pas », ce qui serait faux.
+
+Un compteur en tête de section — « 14 activités renseignées sur 38 · 7 étapes
+portent un support sur 49 » — transforme la section en liste de ce qui reste à
+demander.
+
+### Deux points laissés tels quels
+
+**Les logos de marque.** Le livrable de référence affiche SAP, DOXIS, Qlik,
+CORIM. Le moteur ne dessine que des pastilles génériques et écrit le reste en
+toutes lettres : les artworks de marque ne sont pas redistribuables. Le rendu
+restera donc plus sobre que la slide, à moins d'ouvrir un téléversement de
+logos par outil — décision non prise.
+
+**La sémantique des flèches.** Le livrable qualifie les liens par priorité
+d'interface ; le schéma les qualifie par nature — automatique, manuel, non
+qualifié. Les deux ne disent pas la même chose : l'un planifie ce qu'il faudra
+construire, l'autre constate ce qui existe. On garde le constat, la
+priorisation restant un sujet distinct.
