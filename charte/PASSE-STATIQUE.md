@@ -466,9 +466,60 @@ chiffres  → processus   CASCADE
 Le `delete from processus` de l'injection emporte donc bien les étapes,
 frictions et chiffres, et la suppression d'un client emporte tout l'arbre.
 
-### Ce qui reste non exécuté
+---
 
-L'import lui-même. Le vérifier vraiment suppose d'écrire dans la base de
-production — créer un diagnostic depuis le fichier, comparer, puis le
-supprimer. Tout le reste de la chaîne est vérifié ; il ne manque que la preuve
-par l'exécution.
+## 9. L'import — exécuté pour de bon
+
+Le dernier maillon non prouvé. Testé sur la base réelle, avec une précaution :
+plutôt que d'écrire dans `test-alexis` comme prévu, j'ai constaté qu'il ne
+contenait que 4 étapes, aucune friction et aucun chiffre — il n'aurait rien
+exercé. J'ai donc importé le JSON de Sekurit **comme nouveau diagnostic**, ce
+qui a produit un bac à sable riche, et j'ai malmené celui-là. Ni Sekurit ni
+`test-alexis` n'ont été modifiés.
+
+### Aller-retour, chemin « nouveau diagnostic »
+
+`importer_client_json(client_json('sekurit-float-france'), null)` a rendu
+`sekurit-float-france-2` — le code déjà pris a bien été suffixé plutôt
+qu'écrasé.
+
+Comparaison des deux exports, `exporte_le` et `client.code` neutralisés
+puisqu'ils doivent légitimement différer :
+
+**`identiques → true`**
+
+Égalité `jsonb` sur le document entier, pas seulement sur des compteurs. 4
+processus, 49 étapes, 16 frictions, 11 chiffres de part et d'autre. Le fichier
+exporté reconstitue donc le diagnostic à l'identique.
+
+### Injection, le chemin destructif
+
+J'ai ensuite injecté dans cette copie le contenu **différent** de `test-alexis`,
+pour vérifier que l'injection remplace au lieu de fusionner — le risque étant
+que les anciens processus survivent à côté des nouveaux.
+
+| | avant injection | après |
+|---|---|---|
+| étapes | 49 | 4 |
+| frictions | 16 | 0 |
+| chiffres | 11 | 0 |
+
+**`contenu_identique_a_test_alexis → true`**, `code` conservé
+(`sekurit-float-france-2`), `nom` remplacé par « Test Alexis ». L'ancien contenu
+a bien été détruit.
+
+Et le contrôle qui compte vraiment : **zéro étape orpheline, zéro friction
+orpheline** dans toute la base. La cascade fait son travail, rien ne reste
+accroché à un processus disparu.
+
+### Nettoyage
+
+Le bac à sable est supprimé. La base est revenue à ses deux diagnostics, avec
+leurs compteurs d'origine — Sekurit 4/49/16/11, `test-alexis` 4/4/0/0, sa
+version toujours à 1, donc jamais écrit.
+
+### Bilan
+
+La chaîne export → fichier → import est vérifiée de bout en bout, par
+l'exécution et non par la lecture. Le point `1.5` est clos, ainsi que la
+réserve sur la cascade.
