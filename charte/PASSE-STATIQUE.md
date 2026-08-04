@@ -713,3 +713,64 @@ par appel direct à l'API — l'absence de bouton ne ferme rien. Ces deux compte
 étant `@merca.team`, ce n'est pas une brèche ; mais la surface n'est réellement
 réduite à Google que le jour où le fournisseur mot de passe est désactivé dans
 la console Supabase.
+
+---
+
+## 12. Versionnement des diagnostics — 31/07
+
+### Ce qui est en place
+
+**La table.** Neuf colonnes conformes, RLS active, une politique en
+`est_mercateam()`. Et **zéro clé étrangère** — la décision a tenu. Un
+diagnostic supprimé laisse ses versions derrière lui, `code_client` et
+`nom_client` recopiés permettant de les identifier et de les restaurer. Sans
+ça, la suppression d'un client serait restée le seul cas irrécupérable, c'est-à-dire
+le plus coûteux.
+
+**`prendre_version`.** Recherche du client, idempotence du motif `quotidien` sur
+des bornes de journée correctes, appel à `client_json`, auteur pris dans
+`auth.jwt()`. Rend `null` plutôt que d'échouer quand il n'y a rien à faire.
+
+**`restaurer_version`.** Prend un instantané `avant_restauration` **avant**
+d'agir : se tromper de restauration n'est pas définitif. Si le client n'existe
+plus, elle bascule en création — `importer_client_json(contenu, null)` — et
+recrée le diagnostic depuis une version orpheline.
+
+**Dans `importer_client_json`**, l'appel `prendre_version(v_id,
+'avant_injection', '')` est placé immédiatement avant le `delete from
+processus`. Même fonction plpgsql, donc même transaction : il ne peut pas y
+avoir d'écrasement sans filet.
+
+**Les compteurs** viennent d'un `versions_liste` calculé en base — le document
+lui-même ne descend jamais au navigateur pour afficher une liste.
+
+**L'ordre à la suppression d'un client**, qui était le point à ne pas rater :
+
+```ts
+await prendreVersion(id, "avant_suppression_client");
+await deleteClientRow(id);
+```
+
+Séquentiel, instantané d'abord. Et l'enchaînement échoue du bon côté : si
+l'instantané échoue, l'exception empêche la suppression.
+
+### La recette a tourné contre la base réelle
+
+Cinq versions sur Sekurit, les cinq motifs exercés, et **un seul `quotidien`**
+malgré deux appels — l'idempotence tient. Un processus a été supprimé puis
+restauré : le diagnostic est revenu à 4 processus, 49 étapes, 16 frictions,
+11 chiffres, identique à son état d'origine. Taille d'une version : 9 à 12 ko.
+
+### Trois réserves
+
+**`auteur` est nul sur les cinq lignes.** Les appels de recette sont partis en
+SQL direct, où `auth.jwt()` n'existe pas. Ce n'est pas un défaut, c'est un
+chemin non exercé : la colonne se remplira dès qu'un utilisateur agira depuis
+l'application. À vérifier au premier usage réel.
+
+**Deux points d'appel ne sont pas prouvés.** Aucune ligne `avant_recalcul`
+n'existe, et le `quotidien` observé peut venir du SQL de recette plutôt que de
+l'ouverture d'un diagnostic en édition.
+
+**Le panneau « Versions » n'a pas été lu.** La couche base et la bibliothèque
+d'accès sont vérifiées ; l'écran qui les expose ne l'est pas.
