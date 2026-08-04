@@ -774,3 +774,67 @@ l'ouverture d'un diagnostic en édition.
 
 **Le panneau « Versions » n'a pas été lu.** La couche base et la bibliothèque
 d'accès sont vérifiées ; l'écran qui les expose ne l'est pas.
+
+---
+
+## 13. Le panneau « Versions » — lecture, deux correctifs, vérification
+
+La réserve qui fermait le §12 est levée : `PanneauVersions.tsx` a été lu. Deux
+angles morts en sont sortis, aucun des deux n'étant un bug visible.
+
+### 13.1 La liste n'avait aucune limite
+
+`versions_liste` se terminait sur `order by v.cree_le desc` sans `LIMIT`, et le
+panneau rendait toutes les lignes. Avec un instantané quotidien plus un par
+opération risquée, un diagnostic suivi un an accumule des centaines de lignes.
+Les lignes sont légères — les compteurs sont calculés en base, `contenu` ne
+descend jamais — donc c'était un mur d'usage, pas de performance.
+
+Corrigé : `p_limite int default 20`, `limit greatest(p_limite, 0)`, et un
+bouton « Voir plus » par tranches de 20. Aucune purge automatique n'a été
+ajoutée : une version supprimée est une restauration devenue impossible, la
+décision appartient à l'utilisateur et pas à une règle de rétention muette.
+
+Mesuré en base sur Sekurit (5 versions) :
+
+| appel | lignes rendues |
+|---|---|
+| défaut (20) | 5 |
+| `p_limite = 2` | 2 |
+| `p_limite = 0` | 0 |
+| `p_limite = -5` | 0 |
+
+Le dernier cas justifie le `greatest` : `limit -5` est une erreur Postgres, pas
+un ensemble vide. L'ancienne signature `versions_liste(uuid)` a été supprimée —
+`pg_proc` n'en rend plus qu'une seule, il ne reste aucune surcharge ambiguë.
+La fonction reste `STABLE`, invoker, `search_path` fixé à `public`.
+
+### 13.2 La garde d'édition était chez l'appelant, pas dans le composant
+
+Le composant ne portait pas de propriété `edition`. **Ce n'était pas un trou :**
+le site de montage dans `clients.$code.tsx` enveloppait déjà le panneau dans
+`{edition ? … : null}`, et le bouton « Restaurer » n'était donc pas accessible
+en lecture. La protection était simplement au mauvais endroit — une condition
+écrite chez l'appelant plutôt qu'une propriété du composant.
+
+Corrigé : `edition: boolean` **obligatoire**. Un défaut permissif aurait
+reproduit exactement le problème. En lecture, la liste des versions reste
+visible — consulter l'historique est une lecture légitime — mais « Restaurer »
+et « Marquer cette version » ne sont pas rendus du tout, pas seulement grisés.
+
+Vérifié : un seul site de montage dans tout le projet, `clients.$code.tsx`, qui
+passe `edition={edition}` et conserve son enveloppe. La vue d'impression
+`impression.$code.tsx` n'importe pas le panneau.
+
+### 13.3 Réserve restante
+
+Le changement de `limite` change la clé de requête TanStack. Au clic sur
+« Voir plus », la nouvelle clé n'a pas de données en cache : `isLoading` repasse
+à vrai et la liste est remplacée par « Chargement… » le temps de l'aller-retour,
+bouton compris. Clignotement, pas perte de données. `placeholderData: (p) => p`
+le supprimerait. À grouper avec un prochain lot, ça ne vaut pas un aller-retour
+seul.
+
+Les réserves du §12 restent ouvertes : `auteur` toujours nul faute d'écriture
+depuis l'application, `avant_recalcul` et `quotidien` non exercés par leurs
+points d'appel réels.
