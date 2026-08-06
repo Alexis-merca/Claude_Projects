@@ -68,7 +68,7 @@
             "role": "Chef d'équipe",
             "role2": "",
             "phase": "À l'événement",
-            "texte": "La matrice se met à jour d'elle-même après une formation validée, une arrivée ou une mobilité",
+            "texte": "Retrouve la matrice à jour après une formation validée, une arrivée ou une mobilité, sans l'avoir ressaisie",
             "supports": "Mercateam (Master)",
             "lien": ""
           },
@@ -159,7 +159,7 @@
             "role": "RH",
             "role2": "",
             "phase": "Continu",
-            "texte": "Absences, congés et contraintes individuelles remontent automatiquement du SIRH",
+            "texte": "Ne ressaisit plus les absences, congés et contraintes individuelles : ils remontent du SIRH",
             "supports": "Logiciel (SIRH / GTA), Mercateam (Planner)",
             "lien": ""
           },
@@ -240,7 +240,7 @@
             "role": "Chef d'équipe",
             "role2": "",
             "phase": "Jour J",
-            "texte": "Est alerté si le remplaçant pressenti n'est pas habilité au poste",
+            "texte": "Reçoit une alerte quand le remplaçant pressenti n'est pas habilité au poste",
             "supports": "Mercateam (Planner)",
             "lien": ""
           },
@@ -509,7 +509,7 @@
             "role": "Chef d'équipe",
             "role2": "",
             "phase": "J+X",
-            "texte": "La matrice de polyvalence se met à jour dès la validation, sans ressaisie",
+            "texte": "Retrouve la matrice de polyvalence à jour dès la validation, sans ressaisie",
             "supports": "Mercateam (Master)",
             "lien": ""
           },
@@ -666,7 +666,7 @@
             "role": "Chef d'équipe",
             "role2": "",
             "phase": "Mensuel",
-            "texte": "Est alerté des compétences à revalider avant qu'elles n'expirent",
+            "texte": "Reçoit l'alerte des compétences à revalider avant leur expiration",
             "supports": "Mercateam (Trainer)",
             "lien": ""
           },
@@ -830,7 +830,7 @@
             "role": "QHSE / EHS",
             "role2": "",
             "phase": "Continu",
-            "texte": "Les échéances sont suivies automatiquement : plus de fichier de suivi parallèle",
+            "texte": "Suit les échéances sur un tableau unique, sans tenir de fichier parallèle",
             "supports": "Mercateam (Trainer)",
             "lien": ""
           },
@@ -839,7 +839,7 @@
             "role": "Responsable formation",
             "role2": "",
             "phase": "Mensuel",
-            "texte": "Est alerté des recyclages à programmer, deux mois avant échéance",
+            "texte": "Reçoit l'alerte des recyclages à programmer, deux mois avant échéance",
             "supports": "Mercateam (Trainer)",
             "lien": ""
           },
@@ -848,7 +848,7 @@
             "role": "RH",
             "role2": "",
             "phase": "À l'événement",
-            "texte": "L'attestation de l'organisme est déposée sur la fiche et datée",
+            "texte": "Dépose l'attestation de l'organisme sur la fiche du collaborateur, datée automatiquement",
             "supports": "Mercateam (Trainer)",
             "lien": ""
           },
@@ -857,7 +857,7 @@
             "role": "Planificateur opérateurs",
             "role2": "",
             "phase": "Hebdo (S-1)",
-            "texte": "L'outil refuse d'affecter un opérateur non habilité au poste",
+            "texte": "Ne peut plus affecter un opérateur non habilité : l'outil bloque avant validation",
             "supports": "Mercateam (Planner)",
             "lien": ""
           },
@@ -866,7 +866,7 @@
             "role": "Chef d'équipe",
             "role2": "",
             "phase": "Jour J",
-            "texte": "Est alerté avant l'affectation, pas après l'incident",
+            "texte": "Reçoit l'alerte avant d'affecter, et non après l'incident",
             "supports": "Mercateam (Planner)",
             "lien": ""
           },
@@ -875,21 +875,12 @@
             "role": "Collaborateur",
             "role2": "",
             "phase": "Continu",
-            "texte": "Voit ses habilitations et leurs dates de validité sur sa fiche",
+            "texte": "Consulte ses habilitations et leurs dates de validité sur sa fiche",
             "supports": "Mercateam (Starter)",
             "lien": ""
           },
           {
             "ordre": 9,
-            "role": "Planificateur opérateurs",
-            "role2": "",
-            "phase": "Continu",
-            "texte": "Les limites de temps de travail et de temps sur poste contraignant sont contrôlées à l'affectation",
-            "supports": "Mercateam (Planner)",
-            "lien": ""
-          },
-          {
-            "ordre": 10,
             "role": "Direction site",
             "role2": "",
             "phase": "Trimestriel",
@@ -928,7 +919,7 @@
             "role": "Responsable compétences",
             "role2": "",
             "phase": "Continu",
-            "texte": "Les preuves de formation sont générées et historisées au fil de l'eau",
+            "texte": "Produit les preuves de formation au fil de l'eau, datées à chaque validation",
             "supports": "Mercateam (Trainer)",
             "lien": ""
           },
@@ -937,7 +928,7 @@
             "role": "QHSE / EHS",
             "role2": "",
             "phase": "Continu",
-            "texte": "Les documents de conformité sont stockés sur la fiche du collaborateur",
+            "texte": "Dépose les documents de conformité sur la fiche du collaborateur",
             "supports": "Mercateam (Starter)",
             "lien": ""
           },
@@ -994,15 +985,6 @@
             "texte": "Ouvre et suit le plan d'action sur les remarques reçues",
             "supports": "Mercateam (KPIs)",
             "lien": ""
-          },
-          {
-            "ordre": 10,
-            "role": "Qualité",
-            "role2": "",
-            "phase": "À l'audit",
-            "texte": "Le dossier n'est pas reconstitué : il est déjà à jour",
-            "supports": "Mercateam (Starter)",
-            "lien": ""
           }
         ],
         "frictions": [],
@@ -1055,7 +1037,7 @@
             "role": "Planificateur opérateurs",
             "role2": "",
             "phase": "Continu",
-            "texte": "La rotation sur les postes contraignants est suivie et équilibrée",
+            "texte": "Équilibre la rotation sur les postes contraignants, suivie automatiquement",
             "supports": "Mercateam (Planner)",
             "lien": ""
           },
@@ -1064,7 +1046,7 @@
             "role": "Collaborateur",
             "role2": "",
             "phase": "Continu",
-            "texte": "Voit ses affectations passées et les critères qui les ont motivées",
+            "texte": "Consulte ses affectations passées et les critères qui les ont motivées",
             "supports": "Mercateam (Planner)",
             "lien": ""
           },
@@ -1173,7 +1155,7 @@
             "role": "Collaborateur",
             "role2": "",
             "phase": "Continu",
-            "texte": "Voit les compétences requises, son positionnement et ce qui lui manque pour progresser",
+            "texte": "Consulte les compétences requises, son positionnement et ce qui lui manque pour progresser",
             "supports": "Mercateam (Master)",
             "lien": ""
           },

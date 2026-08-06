@@ -105,7 +105,7 @@ et CACES). Conservée telle quelle : c'est la source qui est imprécise, et
 `cible-mercateam.json` porte les dix mêmes use cases, **après** déploiement.
 `PROCESSUS-CIBLE.md` est le même contenu sous forme relisible.
 
-**10 processus, 111 étapes** — contre 141 pour l'existant, soit 30 étapes de
+**10 processus, 109 étapes** — contre 141 pour l'existant, soit 32 étapes de
 moins pour le même périmètre.
 
 Les **codes de processus sont identiques** de part et d'autre
@@ -119,6 +119,31 @@ Des « User Journey » de la base de connaissance Top Use Cases Mercateam. **Rie
 n'a été inventé sur ce que fait le produit** : là où le journey ne décrit rien,
 aucune étape n'a été ajoutée. Un processus cible court est un processus cible
 honnête.
+
+## Relecture du 06/08 : 16 étapes réécrites, 2 supprimées
+
+Le mode d'emploi du classeur fixe la règle : « ACTION RELEVÉE — l'action telle
+qu'elle se pratique aujourd'hui, **verbe au présent**, formulation routine ».
+Dans un logigramme à couloirs, le sujet de la phrase doit être le rôle du
+couloir. Le premier jet de la cible dérivait de cette règle : seize étapes
+étaient écrites comme des promesses produit, sujet passif ou outil en sujet —
+« la matrice se met à jour », « l'outil refuse d'affecter », « les preuves sont
+générées ». Toutes réécrites en action du rôle.
+
+Mesure : `0` étape sur 109 dont le sujet n'est pas le rôle, contre `0` sur 141
+dans la trame de l'existant. Avant relecture, la cible en comptait 16.
+
+**Deux étapes supprimées, pas réécrites :**
+
+- UC 7, « Les limites de temps de travail et de temps sur poste contraignant
+  sont contrôlées à l'affectation » — le *User Journey* d'UC 7 ne dit rien des
+  limites de temps de travail. Elles figurent dans celui d'UC 9, où l'étape
+  existe déjà. C'était une extrapolation, exactement ce que ce document
+  s'interdit.
+- UC 8, « Le dossier n'est pas reconstitué : il est déjà à jour » — ce n'est pas
+  une action, c'est une conclusion. Une étape qui dit « on ne fait plus ça »
+  n'est pas une étape : elle disparaît, et c'est précisément ce que l'avant/après
+  doit montrer.
 
 ## Ce que la cible ne prétend pas remplacer
 

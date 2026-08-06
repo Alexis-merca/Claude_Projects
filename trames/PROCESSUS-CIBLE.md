@@ -6,7 +6,7 @@ là où le journey ne décrit rien, aucune étape n'a été ajoutée.
 
 À relire ligne à ligne : c'est un jet, pas une référence.
 
-**10 processus, 111 étapes.**
+**10 processus, 109 étapes.**
 
 ---
 
@@ -21,7 +21,7 @@ Couloirs : Collaborateur · Chef d'équipe · Responsable production · Responsa
 | 1 | Annuel | Responsable compétences | Définit le référentiel de postes et de compétences du site, commun à toutes les UP | Mercateam (Starter) |
 | 2 | Annuel | Responsable compétences | Fixe pour chaque poste ce qu'« être opérationnel » veut dire : critères, prérequis, niveau attendu | Mercateam (Starter) |
 | 3 | À l'événement | Chef d'équipe | Évalue le niveau réel de chaque opérateur sur la matrice de polyvalence, mise à jour en continu | Mercateam (Master) |
-| 4 | À l'événement | Chef d'équipe | La matrice se met à jour d'elle-même après une formation validée, une arrivée ou une mobilité | Mercateam (Master) |
+| 4 | À l'événement | Chef d'équipe | Retrouve la matrice à jour après une formation validée, une arrivée ou une mobilité, sans l'avoir ressaisie | Mercateam (Master) |
 | 5 | Quotidien | Chef d'équipe | Cherche qui sait tenir un poste par recherche multicritère, en quelques secondes | Mercateam (Master) |
 | 6 | Continu | Collaborateur | Consulte sa fiche : compétences validées, niveaux atteints, ce qui lui manque pour progresser | Mercateam (Master) |
 | 7 | Hebdo | Chef d'équipe | Suit la couverture et les écarts de compétences de son équipe | Mercateam (KPIs) |
@@ -40,7 +40,7 @@ Couloirs : Collaborateur · Chef d'équipe · Responsable production · Planific
 | N° | Quand | Rôle | Action cible | Supports |
 |---|---|---|---|---|
 | 1 | Annuel (N-1) | RH | Fixe les horaires et le plan de roulement de l'année | Mercateam (Planner) |
-| 2 | Continu | RH | Absences, congés et contraintes individuelles remontent automatiquement du SIRH | Logiciel (SIRH / GTA), Mercateam (Planner) |
+| 2 | Continu | RH | Ne ressaisit plus les absences, congés et contraintes individuelles : ils remontent du SIRH | Logiciel (SIRH / GTA), Mercateam (Planner) |
 | 3 | Mensuel (M-1) | Collaborateur | Pose ses congés ; la demande arrive directement dans le planning | Mercateam (Planner) |
 | 4 | Mi-mois M-1 | Supply Chain | Partage le besoin de production, traduit en effectif par poste | Logiciel (ERP), Mercateam (Planner) |
 | 5 | Hebdo (S-1) | Planificateur opérateurs | Duplique le planning de référence au lieu de le reconstruire | Mercateam (Planner) |
@@ -49,7 +49,7 @@ Couloirs : Collaborateur · Chef d'équipe · Responsable production · Planific
 | 8 | Hebdo (S-1) | Chef d'équipe | Comble les manques : mobilité interne, emprunt entre équipes, intérim en dernier recours | Mercateam (Planner) |
 | 9 | Prise de poste | Collaborateur | Consulte son affectation sur l'écran d'atelier, à jour en temps réel | TV / écran atelier, Mercateam (Planner) |
 | 10 | Jour J | Chef d'équipe | Traite un aléa en réaffectant depuis l'outil ; l'écran d'atelier suit aussitôt | Mercateam (Planner) |
-| 11 | Jour J | Chef d'équipe | Est alerté si le remplaçant pressenti n'est pas habilité au poste | Mercateam (Planner) |
+| 11 | Jour J | Chef d'équipe | Reçoit une alerte quand le remplaçant pressenti n'est pas habilité au poste | Mercateam (Planner) |
 | 12 | Mensuel | Responsable production | Compare charge et main-d'œuvre disponible et formée pour anticiper au lieu de réagir | Mercateam (KPIs) |
 | 13 | Mensuel | Responsable production | Suit les heures supplémentaires et le recours à l'intérim | Mercateam (KPIs) |
 
@@ -96,7 +96,7 @@ Couloirs : Collaborateur · Tuteur · Chef d'équipe · Responsable production �
 | 7 | J+X | Tuteur | Forme au poste et documente chaque étape validée au fil de l'eau | Mercateam (Trainer) |
 | 8 | J+X | Tuteur | Fait passer l'évaluation finale ; la preuve est générée et signée dans l'outil | Mercateam (Trainer) |
 | 9 | J+X | Qualité | Réalise l'audit de poste et l'attache à la fiche du collaborateur | Mercateam (Trainer) |
-| 10 | J+X | Chef d'équipe | La matrice de polyvalence se met à jour dès la validation, sans ressaisie | Mercateam (Master) |
+| 10 | J+X | Chef d'équipe | Retrouve la matrice de polyvalence à jour dès la validation, sans ressaisie | Mercateam (Master) |
 | 11 | Mensuel | Responsable compétences | Suit la progression de chaque parcours et relance ce qui traîne | Mercateam (Trainer) |
 | 12 | Trimestriel | Direction site | Suit le délai réel d'autonomie et le compare à l'objectif | Mercateam (KPIs) |
 
@@ -122,7 +122,7 @@ Couloirs : Collaborateur · Tuteur · Chef d'équipe · Responsable compétences
 | 10 | À l'événement | Tuteur | Forme au poste en s'appuyant sur le mode opératoire validé, pas sur sa seule pratique | Mercateam (Trainer) |
 | 11 | À l'événement | Tuteur | Valide la formation ; la preuve signée est générée automatiquement | Mercateam (Trainer) |
 | 12 | Continu | Collaborateur | Signale depuis le poste un écart entre le document et la réalité | Mercateam (Trainer) |
-| 13 | Mensuel | Chef d'équipe | Est alerté des compétences à revalider avant qu'elles n'expirent | Mercateam (Trainer) |
+| 13 | Mensuel | Chef d'équipe | Reçoit l'alerte des compétences à revalider avant leur expiration | Mercateam (Trainer) |
 | 14 | Trimestriel | Responsable compétences | Réalise des audits terrain aléatoires pour vérifier que le geste est conforme | Mercateam (Trainer) |
 | 15 | Trimestriel | Direction site | Suit la couverture, la polyvalence et l'exposition aux départs | Mercateam (KPIs) |
 
@@ -158,14 +158,13 @@ Couloirs : Collaborateur · Chef d'équipe · Planificateur opérateurs · Respo
 |---|---|---|---|---|
 | 1 | Annuel | QHSE / EHS | Définit pour chaque poste ce qu'« autorisé à travailler » veut dire | Mercateam (Starter) |
 | 2 | À l'arrivée | RH | Enregistre titres, CACES et visites médicales sur la fiche du collaborateur | Mercateam (Starter) |
-| 3 | Continu | QHSE / EHS | Les échéances sont suivies automatiquement : plus de fichier de suivi parallèle | Mercateam (Trainer) |
-| 4 | Mensuel | Responsable formation | Est alerté des recyclages à programmer, deux mois avant échéance | Mercateam (Trainer) |
-| 5 | À l'événement | RH | L'attestation de l'organisme est déposée sur la fiche et datée | Mercateam (Trainer) |
-| 6 | Hebdo (S-1) | Planificateur opérateurs | L'outil refuse d'affecter un opérateur non habilité au poste | Mercateam (Planner) |
-| 7 | Jour J | Chef d'équipe | Est alerté avant l'affectation, pas après l'incident | Mercateam (Planner) |
-| 8 | Continu | Collaborateur | Voit ses habilitations et leurs dates de validité sur sa fiche | Mercateam (Starter) |
-| 9 | Continu | Planificateur opérateurs | Les limites de temps de travail et de temps sur poste contraignant sont contrôlées à l'affectation | Mercateam (Planner) |
-| 10 | Trimestriel | Direction site | Lit le taux de conformité sans le reconstruire à la main | Mercateam (KPIs) |
+| 3 | Continu | QHSE / EHS | Suit les échéances sur un tableau unique, sans tenir de fichier parallèle | Mercateam (Trainer) |
+| 4 | Mensuel | Responsable formation | Reçoit l'alerte des recyclages à programmer, deux mois avant échéance | Mercateam (Trainer) |
+| 5 | À l'événement | RH | Dépose l'attestation de l'organisme sur la fiche du collaborateur, datée automatiquement | Mercateam (Trainer) |
+| 6 | Hebdo (S-1) | Planificateur opérateurs | Ne peut plus affecter un opérateur non habilité : l'outil bloque avant validation | Mercateam (Planner) |
+| 7 | Jour J | Chef d'équipe | Reçoit l'alerte avant d'affecter, et non après l'incident | Mercateam (Planner) |
+| 8 | Continu | Collaborateur | Consulte ses habilitations et leurs dates de validité sur sa fiche | Mercateam (Starter) |
+| 9 | Trimestriel | Direction site | Lit le taux de conformité sans le reconstruire à la main | Mercateam (KPIs) |
 
 ---
 
@@ -178,15 +177,14 @@ Couloirs : Responsable compétences · QHSE / EHS · Qualité · Auditeur
 | N° | Quand | Rôle | Action cible | Supports |
 |---|---|---|---|---|
 | 1 | Annuel (N-1) | Qualité | Planifie les audits internes, clients et de certification de l'année | Mercateam (KPIs) |
-| 2 | Continu | Responsable compétences | Les preuves de formation sont générées et historisées au fil de l'eau | Mercateam (Trainer) |
-| 3 | Continu | QHSE / EHS | Les documents de conformité sont stockés sur la fiche du collaborateur | Mercateam (Starter) |
+| 2 | Continu | Responsable compétences | Produit les preuves de formation au fil de l'eau, datées à chaque validation | Mercateam (Trainer) |
+| 3 | Continu | QHSE / EHS | Dépose les documents de conformité sur la fiche du collaborateur | Mercateam (Starter) |
 | 4 | Mensuel | Qualité | Vérifie l'état de préparation en continu, plutôt qu'à l'approche de l'audit | Mercateam (KPIs) |
 | 5 | Mensuel (M-1) | Qualité | Corrige les écarts détectés avant la visite, sans reconstituer de dossier | Mercateam (KPIs) |
 | 6 | Jour J | Auditeur | Accède aux preuves et aux fiches à jour en séance | Mercateam (Starter) |
 | 7 | Jour J | Qualité | Sort une pièce demandée en quelques clics, sans quitter la salle | Mercateam (Starter) |
 | 8 | Jour J | Qualité | Relie un défaut ou un ordre de fabrication au collaborateur concerné | Mercateam (Master) |
 | 9 | J+X | Qualité | Ouvre et suit le plan d'action sur les remarques reçues | Mercateam (KPIs) |
-| 10 | À l'audit | Qualité | Le dossier n'est pas reconstitué : il est déjà à jour | Mercateam (Starter) |
 
 ---
 
@@ -201,8 +199,8 @@ Couloirs : Collaborateur · Chef d'équipe · Responsable production · Planific
 | 1 | Annuel | RH | Définit des règles d'affectation objectives : rotation, pénibilité, restrictions | Mercateam (Planner) |
 | 2 | À l'événement | RH | Saisit une restriction médicale ; elle contraint l'affectation dès le lendemain | Mercateam (Planner) |
 | 3 | Prise de poste | Chef d'équipe | Affecte sur des faits : compétences, habilitations, contraintes légales | Mercateam (Planner) |
-| 4 | Continu | Planificateur opérateurs | La rotation sur les postes contraignants est suivie et équilibrée | Mercateam (Planner) |
-| 5 | Continu | Collaborateur | Voit ses affectations passées et les critères qui les ont motivées | Mercateam (Planner) |
+| 4 | Continu | Planificateur opérateurs | Équilibre la rotation sur les postes contraignants, suivie automatiquement | Mercateam (Planner) |
+| 5 | Continu | Collaborateur | Consulte ses affectations passées et les critères qui les ont motivées | Mercateam (Planner) |
 | 6 | À l'événement | RH | Répond à une réclamation avec l'historique complet des affectations | Mercateam (KPIs) |
 | 7 | Mensuel | Responsable production | Suit la répartition des postes contraignants, opérateur par opérateur | Mercateam (KPIs) |
 | 8 | Mensuel | Direction site | Suit l'absentéisme et le turnover en regard de la charge subie | Mercateam (KPIs) |
@@ -223,7 +221,7 @@ Couloirs : Collaborateur · Tuteur · Chef d'équipe · Responsable compétences
 | 3 | Annuel | Responsable compétences | Définit avec des critères objectifs, checklists et prérequis ce qu'être compétent veut dire | Mercateam (Master) |
 | 4 | Annuel | Chef d'équipe | Fixe des objectifs de progression tirés des besoins industriels | Mercateam (KPIs) |
 | 5 | À l'événement | Tuteur | Valide une compétence sur preuve documentée, pas au jugé | Mercateam (Trainer) |
-| 6 | Continu | Collaborateur | Voit les compétences requises, son positionnement et ce qui lui manque pour progresser | Mercateam (Master) |
+| 6 | Continu | Collaborateur | Consulte les compétences requises, son positionnement et ce qui lui manque pour progresser | Mercateam (Master) |
 | 7 | Annuel | Chef d'équipe | Propose une évolution appuyée sur des compétences validées | Mercateam (Master) |
 | 8 | Annuel | RH | Arbitre en connaissant l'exposition financière des compétences déjà acquises | Mercateam (KPIs) |
 | 9 | Annuel | RH | Explique la décision au collaborateur et aux représentants, critères à l'appui | Mercateam (KPIs) |
