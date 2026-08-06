@@ -1,0 +1,1212 @@
+{
+  "format": "diagnostic-os",
+  "version": 1,
+  "client": {
+    "code": "cible-mercateam",
+    "nom": "Template use case — cible Mercateam",
+    "site": "Trame de référence",
+    "date_visite": "",
+    "notes": "Trame CIBLE — le processus tel qu'il tourne après déploiement Mercateam.\n\nÀ lire en regard de « Template use case », qui porte le relevé de l'existant.\nLes codes de processus sont identiques de part et d'autre : c'est ce qui\npermettra de les apparier quand la variante existant / cible sera en place.\n\nSource des étapes : les « User Journey » de la base de connaissance Top Use\nCases Mercateam. Là où le journey ne décrit rien, aucune étape n'a été\ninventée — un processus cible court est un processus cible honnête.\n\nCe que la cible ne prétend pas remplacer : le SIRH et la GTA restent la source\ndes absences et des temps, l'ERP reste la source de la charge. Mercateam s'y\nbranche. Les faire disparaître du schéma donnerait un avant/après flatteur et\nfaux.",
+    "outils": [
+      "Mercateam (Starter)",
+      "Mercateam (Master)",
+      "Mercateam (Trainer)",
+      "Mercateam (Planner)",
+      "Mercateam (KPIs)",
+      "Logiciel (SIRH / GTA)",
+      "Logiciel (GTA / paie)",
+      "Logiciel (ERP)",
+      "Logiciel (ERP / MES)",
+      "TV / écran atelier"
+    ],
+    "si": {},
+    "processus": [
+      {
+        "code": "pilotage-competences",
+        "nom": "UC 6 - Pilotage des compétences",
+        "soustitre": "Référentiel de compétences par poste, cartographie des niveaux réels, mise à jour, usage dans les décisions du quotidien, suivi de la couverture et de la polyvalence.",
+        "rang": 1,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Responsable production",
+          "Responsable compétences",
+          "RH",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit le référentiel de postes et de compétences du site, commun à toutes les UP",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Fixe pour chaque poste ce qu'« être opérationnel » veut dire : critères, prérequis, niveau attendu",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Évalue le niveau réel de chaque opérateur sur la matrice de polyvalence, mise à jour en continu",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "La matrice se met à jour d'elle-même après une formation validée, une arrivée ou une mobilité",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Cherche qui sait tenir un poste par recherche multicritère, en quelques secondes",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Consulte sa fiche : compétences validées, niveaux atteints, ce qui lui manque pour progresser",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo",
+            "texte": "Suit la couverture et les écarts de compétences de son équipe",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit la polyvalence et les postes critiques de son secteur",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Suit les risques, la couverture et la polyvalence à l'échelle du site",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Accède à la matrice à jour sans la demander à personne",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "planification-et-gestion-aleas",
+        "nom": "UC 1 - Planification des opérateurs et gestion des aléas",
+        "soustitre": "Construction du planning d'affectation des opérateurs, du cadrage annuel des horaires à la gestion des aléas du jour.",
+        "rang": 2,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Responsable production",
+          "Planificateur opérateurs",
+          "Supply Chain",
+          "RH"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Fixe les horaires et le plan de roulement de l'année",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Absences, congés et contraintes individuelles remontent automatiquement du SIRH",
+            "supports": "Logiciel (SIRH / GTA), Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Pose ses congés ; la demande arrive directement dans le planning",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Supply Chain",
+            "role2": "",
+            "phase": "Mi-mois M-1",
+            "texte": "Partage le besoin de production, traduit en effectif par poste",
+            "supports": "Logiciel (ERP), Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Duplique le planning de référence au lieu de le reconstruire",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Affecte : l'outil ne propose que les opérateurs compétents, habilités et disponibles",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Voit en temps réel les postes non couverts, les écarts de compétence et les surcharges",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Comble les manques : mobilité interne, emprunt entre équipes, intérim en dernier recours",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Prise de poste",
+            "texte": "Consulte son affectation sur l'écran d'atelier, à jour en temps réel",
+            "supports": "TV / écran atelier, Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Traite un aléa en réaffectant depuis l'outil ; l'écran d'atelier suit aussitôt",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Est alerté si le remplaçant pressenti n'est pas habilité au poste",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Compare charge et main-d'œuvre disponible et formée pour anticiper au lieu de réagir",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit les heures supplémentaires et le recours à l'intérim",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "pilotage-charge-capacite",
+        "nom": "UC 2 - Pilotage de l'adéquation charge / capacité",
+        "soustitre": "Cascade des horizons de planification, traduction de la charge en effectif, pilotage des heures supplémentaires, de l'intérim et des coûts.",
+        "rang": 3,
+        "roles": [
+          "Responsable production",
+          "Planificateur opérateurs",
+          "Ordonnancement",
+          "Supply Chain",
+          "Responsable compétences",
+          "RH",
+          "Contrôle de gestion",
+          "Direction site",
+          "Direction Groupe"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Transmet les prévisions de volume de l'année à venir",
+            "supports": "Logiciel (ERP)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Décline le plan et en déduit le budget d'heures et d'effectif",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Ordonnancement",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Construit le plan de production du mois à partir du carnet de commandes",
+            "supports": "Logiciel (ERP)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Supply Chain",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Partage la charge traduite en ETP par poste, reprise automatiquement dans le planning",
+            "supports": "Logiciel (ERP), Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Construit un plan glissant de référence par duplication",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Y injecte les contraintes réelles : absences planifiées, formations, règles RH",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Lit l'écart capacité / charge : goulots, postes non couverts, sureffectifs",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Simule plusieurs scénarios d'affectation avant d'arbitrer",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Hebdo",
+            "texte": "Arbitre les leviers sur des scénarios chiffrés : heures sup, intérim, mobilité interne",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "RH",
+            "role2": "",
+            "phase": "Hebdo",
+            "texte": "Valide les commandes d'intérim et les heures supplémentaires",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Contrôle de gestion",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Extrait les heures réelles et les coûts par centre de coût",
+            "supports": "Mercateam (KPIs), Logiciel (GTA / paie)",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Convertit les écarts de compétence récurrents en plan de formation",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Arbitre en comparant les scénarios coût / risque / service",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "integration",
+        "nom": "UC 3 - Intégration des nouveaux collaborateurs",
+        "soustitre": "Parcours d'accueil et d'intégration d'un nouvel arrivant, de l'annonce de l'arrivée à la validation de l'autonomie.",
+        "rang": 4,
+        "roles": [
+          "Collaborateur",
+          "Tuteur",
+          "Chef d'équipe",
+          "Responsable production",
+          "Responsable compétences",
+          "RH",
+          "QHSE / EHS",
+          "Qualité",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "J-X",
+            "texte": "Structure le parcours d'intégration et d'apprentissage, par poste",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "J-X",
+            "texte": "Déclare l'arrivée ; le parcours d'intégration se déclenche automatiquement",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "J-X",
+            "texte": "Suit son pré-accueil sur mobile, avant d'arriver sur site",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Accueille le collaborateur ; l'émargement est numérique",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Anime l'accueil sécurité ; QCM et signature sont enregistrés sur la fiche",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Anime l'accueil qualité ; la validation est attachée au collaborateur",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Forme au poste et documente chaque étape validée au fil de l'eau",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Fait passer l'évaluation finale ; la preuve est générée et signée dans l'outil",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Réalise l'audit de poste et l'attache à la fiche du collaborateur",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "La matrice de polyvalence se met à jour dès la validation, sans ressaisie",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit la progression de chaque parcours et relance ce qui traîne",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Suit le délai réel d'autonomie et le compare à l'objectif",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "transfert-savoir-faire",
+        "nom": "UC 4 - Capitalisation et transfert des savoir-faire critiques",
+        "soustitre": "Identification des savoir-faire critiques, construction et cycle de vie des modes opératoires, transfert par compagnonnage, maintien et recyclage des compétences.",
+        "rang": 5,
+        "roles": [
+          "Collaborateur",
+          "Tuteur",
+          "Chef d'équipe",
+          "Responsable compétences",
+          "RH",
+          "Qualité",
+          "Amélioration continue",
+          "Service technique",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Identifie les zones critiques : postes tenus par une seule personne, départs à venir",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Partage la pyramide des âges et le plan de départs",
+            "supports": "Logiciel (SIRH / GTA), Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Arrête le plan d'action : formation, recrutement, mobilité",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Amélioration continue",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Déclenche la création ou la mise à jour d'un mode opératoire",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Service technique",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Rédige le mode opératoire, photos et vidéos intégrées",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Relit le document ; son retour est tracé, pas seulement dit à l'oral",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Valide le document et lui attribue un indice ; l'ancienne version est retirée d'office",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Diffuse la nouvelle version aux personnes concernées et suit les acquittements",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Consulte au poste le mode opératoire à jour, par QR code",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Forme au poste en s'appuyant sur le mode opératoire validé, pas sur sa seule pratique",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Valide la formation ; la preuve signée est générée automatiquement",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Signale depuis le poste un écart entre le document et la réalité",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Est alerté des compétences à revalider avant qu'elles n'expirent",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 14,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Réalise des audits terrain aléatoires pour vérifier que le geste est conforme",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 15,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Suit la couverture, la polyvalence et l'exposition aux départs",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "standardisation-sites",
+        "nom": "UC 5 - Standardisation multi-sites de la gestion du savoir-faire",
+        "soustitre": "Référentiels locaux, diffusion des standards par les directions transverses, mobilité inter-sites et comparabilité des données au niveau Groupe.",
+        "rang": 6,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "RH site",
+          "Direction Groupe",
+          "Direction transverse Groupe"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Direction transverse Groupe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit un référentiel de compétences commun à tous les sites",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Direction transverse Groupe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit des parcours de formation et de transfert communs",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "RH site",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Structure les postes du site selon le modèle commun, sans créer son propre référentiel",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Cartographie les compétences de son équipe dans ce référentiel unique",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Cherche à l'échelle du Groupe qui est formé sur un poste",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Arrive d'un autre site : ses compétences validées sont déjà reconnues",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "RH site",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Clôture la mission ; les compétences acquises restent attachées au collaborateur",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Lit une vue consolidée et comparable, sans campagne de collecte",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Compare couverture, risques et postes critiques entre sites",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "habilitations",
+        "nom": "UC 7 - Maîtrise des habilitations et sécurité au poste",
+        "soustitre": "Habilitations et autorisations requises par poste, restrictions médicales, suivi des échéances, contrôle avant affectation.",
+        "rang": 7,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Planificateur opérateurs",
+          "Responsable formation",
+          "RH",
+          "QHSE / EHS",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit pour chaque poste ce qu'« autorisé à travailler » veut dire",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Enregistre titres, CACES et visites médicales sur la fiche du collaborateur",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Les échéances sont suivies automatiquement : plus de fichier de suivi parallèle",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Responsable formation",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Est alerté des recyclages à programmer, deux mois avant échéance",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "L'attestation de l'organisme est déposée sur la fiche et datée",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "L'outil refuse d'affecter un opérateur non habilité au poste",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Est alerté avant l'affectation, pas après l'incident",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Voit ses habilitations et leurs dates de validité sur sa fiche",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Les limites de temps de travail et de temps sur poste contraignant sont contrôlées à l'affectation",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Lit le taux de conformité sans le reconstruire à la main",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "audits",
+        "nom": "UC 8 - Préparation et tenue des audits",
+        "soustitre": "Préparation des preuves de compétences et d'habilitations, déroulé de l'audit, suivi des remarques.",
+        "rang": 8,
+        "roles": [
+          "Responsable compétences",
+          "QHSE / EHS",
+          "Qualité",
+          "Auditeur"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Planifie les audits internes, clients et de certification de l'année",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Les preuves de formation sont générées et historisées au fil de l'eau",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Les documents de conformité sont stockés sur la fiche du collaborateur",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Vérifie l'état de préparation en continu, plutôt qu'à l'approche de l'audit",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Corrige les écarts détectés avant la visite, sans reconstituer de dossier",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Auditeur",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Accède aux preuves et aux fiches à jour en séance",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Sort une pièce demandée en quelques clics, sans quitter la salle",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Relie un défaut ou un ordre de fabrication au collaborateur concerné",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Ouvre et suit le plan d'action sur les remarques reçues",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'audit",
+            "texte": "Le dossier n'est pas reconstitué : il est déjà à jour",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "equite-affectations",
+        "nom": "UC 9 - Équité et traçabilité des affectations",
+        "soustitre": "Règles d'affectation, rotation sur les postes contraignants, capacité à prouver l'équité dans le temps.",
+        "rang": 9,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Responsable production",
+          "Planificateur opérateurs",
+          "RH",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit des règles d'affectation objectives : rotation, pénibilité, restrictions",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Saisit une restriction médicale ; elle contraint l'affectation dès le lendemain",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Prise de poste",
+            "texte": "Affecte sur des faits : compétences, habilitations, contraintes légales",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "La rotation sur les postes contraignants est suivie et équilibrée",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Voit ses affectations passées et les critères qui les ont motivées",
+            "supports": "Mercateam (Planner)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Répond à une réclamation avec l'historique complet des affectations",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit la répartition des postes contraignants, opérateur par opérateur",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit l'absentéisme et le turnover en regard de la charge subie",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Prouve l'équité en instance, chiffres à l'appui",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "reconnaissance",
+        "nom": "UC 10 - Reconnaissance et rémunération des compétences",
+        "soustitre": "Lien entre compétences validées, progression, classification et rémunération.",
+        "rang": 10,
+        "roles": [
+          "Collaborateur",
+          "Tuteur",
+          "Chef d'équipe",
+          "Responsable compétences",
+          "RH",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Définit le modèle de compétences, les niveaux, les incréments et les règles d'expiration",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Aligne RH, Finance et Opérations sur ce que vaut chaque niveau",
+            "supports": "Mercateam (Starter)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Responsable compétences",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit avec des critères objectifs, checklists et prérequis ce qu'être compétent veut dire",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Fixe des objectifs de progression tirés des besoins industriels",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Valide une compétence sur preuve documentée, pas au jugé",
+            "supports": "Mercateam (Trainer)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Voit les compétences requises, son positionnement et ce qui lui manque pour progresser",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Propose une évolution appuyée sur des compétences validées",
+            "supports": "Mercateam (Master)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Arbitre en connaissant l'exposition financière des compétences déjà acquises",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Explique la décision au collaborateur et aux représentants, critères à l'appui",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Suit couverture, polyvalence et exposition à la rémunération",
+            "supports": "Mercateam (KPIs)",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      }
+    ]
+  }
+}

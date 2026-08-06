@@ -97,3 +97,56 @@ aujourd'hui — cette trame est ce qui le réveillerait.
 combinaison `Papier + Logiciel` du référentiel (UC 7, enregistrement des titres
 et CACES). Conservée telle quelle : c'est la source qui est imprécise, et
 `Logiciel` en « Non classé » est le bon signal pour le consultant.
+
+---
+
+# Trame « cible Mercateam »
+
+`cible-mercateam.json` porte les dix mêmes use cases, **après** déploiement.
+`PROCESSUS-CIBLE.md` est le même contenu sous forme relisible.
+
+**10 processus, 111 étapes** — contre 141 pour l'existant, soit 30 étapes de
+moins pour le même périmètre.
+
+Les **codes de processus sont identiques** de part et d'autre
+(`pilotage-competences`, `habilitations`…) : c'est ce qui permettra d'apparier
+existant et cible quand la variante sera en place, sans dépendre du nom, qu'un
+consultant peut renommer.
+
+## D'où viennent les étapes
+
+Des « User Journey » de la base de connaissance Top Use Cases Mercateam. **Rien
+n'a été inventé sur ce que fait le produit** : là où le journey ne décrit rien,
+aucune étape n'a été ajoutée. Un processus cible court est un processus cible
+honnête.
+
+## Ce que la cible ne prétend pas remplacer
+
+Le SIRH et la GTA restent la source des absences et des temps, l'ERP reste la
+source de la charge. Mercateam s'y branche. Les faire disparaître du schéma
+donnerait un avant/après flatteur et faux — et un client industriel le verrait.
+
+## Une entrée manque dans le classement des outils
+
+Les cinq modules Mercateam tombent aujourd'hui dans **« Non classé »** :
+`TABLE_A` de `src/lib/environnement-it.ts` ne connaît pas le produit. Le schéma
+« après » est donc illisible tant que ce n'est pas corrigé.
+
+Cinq entrées suffisent, et elles tombent sur des blocs qui existent déjà :
+
+| motif | bloc | activité |
+|---|---|---|
+| `mercateam (starter)` | `competence` | Référentiel postes |
+| `mercateam (master)` | `competence` | Matrice de polyvalence |
+| `mercateam (trainer)` | `formation` | Suivi + évaluation |
+| `mercateam (planner)` | `planning` | Affectation au poste |
+| `mercateam (kpis)` | `bi` | Indicateurs de polyvalence |
+
+Attention à l'ordre : un motif `mercateam` nu capterait les cinq. S'il en faut
+un comme filet, il doit venir **après** les entrées précises.
+
+**Et cela ne suffira pas.** Un outil n'est placé qu'une fois, par le premier
+processus qui l'emploie (`PASSE-STATIQUE.md` §14). Or l'argument de la cible est
+précisément qu'**un seul outil couvre plusieurs blocs**. Le classement
+multi-blocs, rangé en vague 4 de la feuille de route, est donc un prérequis du
+rendu avant/après, pas un confort.
