@@ -1,0 +1,1491 @@
+{
+  "format": "diagnostic-os",
+  "version": 1,
+  "client": {
+    "code": "template-use-case",
+    "nom": "Template use case",
+    "site": "Trame de référence",
+    "date_visite": "",
+    "notes": "Trame de diagnostic Mercateam — un processus par use case.\nSource : Templates_diagnostic_Mercateam_v2.xlsx (version 2, huit logigrammes).\n\nHypothèse de départ : ce relevé est la retranscription d'une routine d'usine\nlambda, peu outillée et peu mature (niveau 1 à 2 sur 5). C'est une base de\ndiscussion pour l'entretien, pas un constat. Chaque étape se confirme, se\ncorrige, se réordonne ou se supprime avec l'interlocuteur. Une étape que\nl'interlocuteur ne reconnaît pas est soit à supprimer, soit le signe qu'il\ndécrit la cible et non la pratique réelle : il faut alors creuser. Une étape\nqu'il trouve « pire que ça chez nous » est un irritant à noter tel quel, avec\nses mots.\n\nLe bandeau de frise du diagramme porte le QUAND : moment ou fréquence réelle\nde l'action. C'est le meilleur détecteur d'irritant — une action quotidienne\nqui devrait être mensuelle est un point de douleur. Un support « Au jugé » ou\n« Oral » sur une étape de décision est un signal fort à remonter dans le\nrapport. Sur un site plus avancé, remplacer ces deux supports par l'outil\nréellement utilisé.\n\nUC 9 et UC 10 sont des use cases Advanced : sur un site de maturité 1 à 2, il\nn'y a souvent aucun process constitué. Les utiliser comme une liste de\nquestions plutôt que comme un déroulé à confirmer.\n\nCorrespondance use case / nom de version diagnostic / catégorie de valeur :",
+    "outils": [
+      "Oral",
+      "Papier",
+      "Excel",
+      "PowerPoint",
+      "Word",
+      "Mail",
+      "Réseau",
+      "Au jugé",
+      "Téléphone",
+      "Tableau blanc",
+      "Excel imprimé",
+      "TV / écran atelier",
+      "Formulaire",
+      "Logiciel (ERP)",
+      "Logiciel (MES)",
+      "Logiciel (ERP / MES)",
+      "Logiciel (GTA)",
+      "Logiciel (SIRH)",
+      "Logiciel (SIRH / GTA)",
+      "Logiciel (GTA / paie)",
+      "Logiciel (paie)",
+      "Logiciel (GED)",
+      "Logiciel (GMAO)",
+      "Logiciel (autre)"
+    ],
+    "si": {},
+    "processus": [
+      {
+        "code": "pilotage-competences",
+        "nom": "UC 6 - Pilotage des compétences",
+        "soustitre": "Référentiel de compétences par poste, cartographie des niveaux réels, mise à jour, usage dans les décisions du quotidien, suivi de la couverture et de la polyvalence.",
+        "rang": 1,
+        "roles": [
+          "Chef d'équipe",
+          "Superviseur d'UP",
+          "Responsable production",
+          "RH"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Fixe la liste des postes et des activités de son périmètre",
+            "supports": "Word",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Superviseur d'UP",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Définit les compétences attendues par poste, avec sa propre nomenclature",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Superviseur d'UP",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Fixe avec la qualité ce que « être opérationnel au poste » veut dire",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel ou à la demande",
+            "texte": "Évalue le niveau réel de chaque opérateur de son équipe",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel ou à la demande",
+            "texte": "Fixe des objectifs de montée en compétence pour les collaborateurs de son équipe",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Met à jour la matrice après une arrivée, un départ, une formation ou une mobilité",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Met à jour la matrice à l'approche d'un audit ou des entretiens professionnels, pour être en règle",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Cherche qui sait tenir un poste pour arbitrer son affectation du jour",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Sait de mémoire quand on lui demande qui sait faire quoi",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Superviseur d'UP",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Consolide les matrices de ses chefs d'équipe à l'échelle de l'UP",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Demande un état de la couverture et de la polyvalence du secteur",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Demande la matrice à jour (réunion, litige, demande client)",
+            "supports": "Mail",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "planification-et-gestion-aleas",
+        "nom": "UC 1 - Planification des opérateurs et gestion des aléas",
+        "soustitre": "Construction du planning d'affectation des opérateurs, du cadrage annuel des horaires à la gestion des aléas du jour.",
+        "rang": 2,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Responsable production",
+          "Supply Chain",
+          "RH"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Fixe les horaires et le plan de roulement de l'année",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Supply Chain",
+            "role2": "",
+            "phase": "Mi-mois M-1",
+            "texte": "Communique le besoin de production du mois à venir",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Planifie ses congés",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Retranscrit les absences et congés dans l'outil de gestion des temps",
+            "supports": "Logiciel (SIRH / GTA)",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "RH",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Transmet les restrictions médicales et les contraintes individuelles",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Ajuste le plan de roulement selon les contraintes des opérateurs",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Supply Chain",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Transmet la charge de la semaine suivante et le besoin en effectif par poste, un jour fixe de la semaine",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Traduit la charge en besoin en effectif par poste",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Construit le planning d'affectation au mois ou à la semaine selon l'UP",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Vérifie qui sait tenir quel poste avant d'affecter",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Imprime et affiche le planning en atelier",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Prise de poste",
+            "texte": "Consulte son affectation en atelier",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Met à jour le planning après les aléas du matin (absence, panne, urgence)",
+            "supports": "Excel, Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 14,
+            "role": "Supply Chain",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Annonce un changement de charge ou une rupture matière en cours de semaine",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 15,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Remplace en cascade : le remplaçant du poste A laisse un trou sur le poste B, et ainsi de suite",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 16,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Cherche un renfort en interne ou appelle l'agence d'intérim",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 17,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Analyse a posteriori les heures supplémentaires et le recours à l'intérim",
+            "supports": "Excel",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "pilotage-charge-capacite",
+        "nom": "UC 2 - Pilotage de l'adéquation charge / capacité",
+        "soustitre": "Cascade des horizons de planification, traduction de la charge en effectif, pilotage des heures supplémentaires, de l'intérim et des coûts.",
+        "rang": 3,
+        "roles": [
+          "Chef d'équipe",
+          "Responsable production",
+          "Planificateur opérateurs",
+          "Ordonnancement",
+          "Méthodes / Engineering",
+          "RH",
+          "Contrôle de gestion",
+          "Direction site",
+          "Direction Groupe"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Construit le plan de production long terme au niveau du siège",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Transmet les prévisions de volume de l'année à venir, par famille de produits ou par ligne",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Décline le plan en plan à l'année et en déduit le budget d'heures et d'effectif",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Semestriel",
+            "texte": "Révise l'horizon à 6 mois selon la demande révisée",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Méthodes / Engineering",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Établit ou met à jour la gamme de fabrication et les temps standards, pas toujours à jour des évolutions machine",
+            "supports": "Logiciel (ERP)",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Ordonnancement",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Construit le plan de production du mois à partir du carnet de commandes et des gammes",
+            "supports": "Logiciel (ERP)",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "RH",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Transmet les absences prévues, les formations et les contraintes réglementaires",
+            "supports": "Logiciel (SIRH / GTA)",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Ordonnancement",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Découpe le plan en programme de fabrication de la semaine : ordres de fabrication, séquence, quantités",
+            "supports": "Logiciel (ERP / MES)",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Ordonnancement",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Traduit le programme en heures ou en effectif par poste, avec des temps standards souvent contestés par la production",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Compare ce besoin à l'effectif théoriquement disponible",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "RH",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Fait sa propre projection d'effectif, de tête ou dans un fichier séparé",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Repère les postes non couverts et les sureffectifs",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Arbitre en réunion les leviers : heures supplémentaires, intérim, mobilité interne",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 14,
+            "role": "RH",
+            "role2": "",
+            "phase": "Hebdo",
+            "texte": "Valide les commandes d'intérim et les heures supplémentaires",
+            "supports": "Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 15,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Ajuste l'affectation quand le programme de fabrication bouge en cours de semaine",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 16,
+            "role": "Contrôle de gestion",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Extrait les heures réelles et les coûts de main-d'œuvre par centre de coût",
+            "supports": "Logiciel (GTA / paie)",
+            "lien": ""
+          },
+          {
+            "ordre": 17,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Commente les écarts d'effectif et d'heures supplémentaires en réunion de performance, une fois le mois clôturé",
+            "supports": "PowerPoint",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "integration",
+        "nom": "UC 3 - Intégration des nouveaux collaborateurs",
+        "soustitre": "Parcours d'accueil et d'intégration d'un nouvel arrivant, de l'annonce de l'arrivée à la validation de l'autonomie.",
+        "rang": 4,
+        "roles": [
+          "Collaborateur",
+          "Tuteur",
+          "Chef d'équipe",
+          "Responsable production",
+          "RH",
+          "QHSE / EHS",
+          "Qualité"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "J-X",
+            "texte": "Communique l'arrivée du collaborateur aux services concernés",
+            "supports": "Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Accueille le collaborateur sur site",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Présente le livret d'accueil",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Signe l'émargement et conserve le livret original",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Transmet la checklist d'émargement au service RH",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Stocke le dossier d'intégration sur le serveur",
+            "supports": "Papier, Réseau",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Anime l'accueil RH : présentation, QCM, signature",
+            "supports": "PowerPoint, Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Anime l'accueil sécurité : présentation, QCM, signature",
+            "supports": "PowerPoint",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Anime l'accueil qualité et amélioration continue : présentation, QCM, signature",
+            "supports": "PowerPoint, Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Anime l'accueil production puis la visite de l'usine",
+            "supports": "PowerPoint",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Forme au poste en compagnonnage",
+            "supports": "Oral, Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Estime au jugé le moment où le collaborateur est autonome",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Fait passer l'évaluation finale, théorie et pratique et fait signer le collaborateur",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 14,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Réalise un audit de poste pour vérifier la conformité du geste après la formation",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 15,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Classe la documentation de formation et met à jour la matrice de polyvalence",
+            "supports": "Papier, Excel",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "transfert-savoir-faire",
+        "nom": "UC 4 - Capitalisation et transfert des savoir-faire critiques",
+        "soustitre": "Identification des savoir-faire critiques, construction et cycle de vie des modes opératoires, transfert par compagnonnage, maintien et recyclage des compétences.",
+        "rang": 5,
+        "roles": [
+          "Collaborateur",
+          "Tuteur",
+          "Chef d'équipe",
+          "Superviseur d'UP",
+          "Responsable production",
+          "Responsable formation",
+          "RH",
+          "Qualité",
+          "Amélioration continue",
+          "Service technique"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Identifie les postes critiques tenus par une seule personne et les savoir-faire qui ne sont pas documentés",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Partage la pyramide des âges et les départs à venir",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Établit le plan de départs et simule l'impact pour identifier les compétences critiques à risque",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Arrête le plan d'action : recrutement, intérim, échange entre équipes, formation",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Amélioration continue",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Décide qu'un mode opératoire doit être créé ou mis à jour (nouveau produit, modification process, incident qualité, évolution de norme)",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Service technique",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Récupère la version précédente sur le serveur",
+            "supports": "Réseau",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Service technique",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Observe le poste et interroge l'opérateur expert pour reconstituer le geste réel",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Service technique",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Rédige le mode opératoire et y intègre des photos prises au téléphone",
+            "supports": "Word",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Est sollicité pour relire le document, le plus souvent à l'oral et sans trace de son retour",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Valide le document et lui attribue un indice de version",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Stocke la version validée sur le serveur, en parallèle du classeur papier de l'atelier",
+            "supports": "Papier, Réseau",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Diffuse la nouvelle version aux personnes concernées et fait émarger",
+            "supports": "Papier, Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Remplace le document dans le classeur du poste, sans retirer systématiquement l'ancienne version",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 14,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Consulte le mode opératoire dans le classeur ou l'affichage du poste",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 15,
+            "role": "Superviseur d'UP",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Organise un doublon avec le collaborateur sur le départ, sans support ni checklist",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 16,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Forme au poste en s'appuyant sur sa propre pratique",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 17,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Fait signer la fiche de formation au poste par le collaborateur, la signe, et la remet au service RH",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 18,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Signale à l'oral un écart entre le document et la réalité du poste",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 19,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "S'assure que le collaborateur tient le poste assez souvent pour rester compétent, ou lui fait passer une évaluation rapide si le poste n'a pas été tenu depuis longtemps",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 20,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Vérifie de façon informelle que la pratique est conforme au document affiché",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 21,
+            "role": "Responsable formation",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit les échéances de recyclage des savoir-faire à durée limitée",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 22,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Passe en revue les documents obsolètes à l'occasion d'un audit ou d'un changement de gamme",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 23,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Suit le taux de réussite des formations",
+            "supports": "Excel",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "standardisation-sites",
+        "nom": "UC 5 - Standardisation multi-sites de la gestion du savoir-faire",
+        "soustitre": "Référentiels locaux, diffusion des standards par les directions transverses, mobilité inter-sites et comparabilité des données au niveau Groupe.",
+        "rang": 6,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "RH site",
+          "Direction Groupe",
+          "Direction transverse Groupe"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH site",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Crée et fait vivre son propre référentiel de compétences et d'habilitations, sans lien avec celui des autres sites",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Direction transverse Groupe",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Diffuse ses standards (EHS, qualité, formation, amélioration continue) par GED, SharePoint ou mail, sans savoir qui les a lus ni appliqués",
+            "supports": "Logiciel (GED)",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Constate qu'il n'a personne de formé sur un poste et cherche de l'aide en dehors de son équipe",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Appelle son homologue d'un autre site pour savoir si un de ses salariés peut venir",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Cherche dans les fichiers des sites qui pourrait être mobilisé",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Arrive d'un autre site et refait un parcours de formation depuis le début, ses compétences n'étant pas reconnues",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "RH site",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Clôture la mission sans enregistrer les compétences acquises sur l'autre site",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Demande aux sites un état de leurs compétences avec une trame commune",
+            "supports": "Excel, Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "RH site",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Renseigne la trame avec sa propre taxonomie et sa propre maille",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Fournit les matrices de polyvalence de son périmètre",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Mensuel (M+1)",
+            "texte": "Consolide des fichiers de formats différents, avec des niveaux qui ne veulent pas dire la même chose d'un site à l'autre",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "Direction Groupe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Recommence l'exercice complet à la campagne suivante",
+            "supports": "Excel",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "habilitations",
+        "nom": "UC 7 - Maîtrise des habilitations et sécurité au poste",
+        "soustitre": "Habilitations et autorisations requises par poste, restrictions médicales, suivi des échéances, contrôle avant affectation.",
+        "rang": 7,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Planificateur opérateurs",
+          "Responsable formation",
+          "RH",
+          "QHSE / EHS",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Recense les habilitations et autorisations requises par poste",
+            "supports": "Word",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Met à jour son propre fichier de suivi des habilitations, une fois par an",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Met à jour son propre fichier de suivi, en parallèle de celui du QHSE, sans réconciliation entre les deux",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'arrivée",
+            "texte": "Enregistre les titres, CACES et visites médicales du collaborateur",
+            "supports": "Papier, Logiciel",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Contrôle les dates d'expiration des habilitations",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Responsable formation",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Planifie les sessions de recyclage avec l'organisme, 2 mois avant échéance",
+            "supports": "Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Reçoit l'attestation de l'organisme par mail, l'imprime et la classe dans le dossier papier du salarié",
+            "supports": "Papier, Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Vérifie que l'opérateur pressenti est bien habilité au poste",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Affecte parfois un opérateur sans certitude sur son habilitation",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Demande à son chef d'équipe si son habilitation est encore valable",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Planificateur opérateurs",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Découvre après coup qu'une limite légale de temps de travail ou de temps sur poste contraignant a été dépassée",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 12,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Découvre une habilitation expirée lors d'un contrôle ou d'un incident",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 13,
+            "role": "QHSE / EHS",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Retire l'opérateur du poste et déclenche une formation en urgence",
+            "supports": "Oral, Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 14,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Trimestriel",
+            "texte": "Demande un taux de conformité, reconstruit manuellement",
+            "supports": "Excel",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "audits",
+        "nom": "UC 8 - Préparation et tenue des audits",
+        "soustitre": "Préparation des preuves de compétences et d'habilitations, déroulé de l'audit, suivi des remarques. À croiser avec l'onglet Transverse - Preuves.",
+        "rang": 8,
+        "roles": [
+          "Chef d'équipe",
+          "Responsable formation",
+          "RH",
+          "Qualité"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Planifie les audits internes, clients et de certification de l'année",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Reçoit la date et le périmètre de l'audit, 2 mois avant",
+            "supports": "Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Liste les preuves attendues sur les compétences et les formations",
+            "supports": "Word",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Responsable formation",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Fait le tour des ateliers et des classeurs pour rassembler les preuves de formation demandées",
+            "supports": "Papier, Réseau",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Responsable formation",
+            "role2": "",
+            "phase": "Mensuel (M-1)",
+            "texte": "Reconstitue ou refait signer les preuves manquantes avant la visite",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "RH",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Ressort les attestations et titres des dossiers salariés",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Met à jour et réimprime la matrice de polyvalence affichée",
+            "supports": "Excel, Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Hebdo (S-1)",
+            "texte": "Constitue le classeur de preuves pour la session",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "Jour J",
+            "texte": "Accompagne l'auditeur et recherche les pièces en direct",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "J+X",
+            "texte": "Ouvre et suit le plan d'action sur les remarques reçues",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 11,
+            "role": "Qualité",
+            "role2": "",
+            "phase": "À l'audit",
+            "texte": "Reconstitue l'ensemble du dossier depuis le début à chaque nouvel audit",
+            "supports": "Papier",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "equite-affectations",
+        "nom": "UC 9 - Équité et traçabilité des affectations",
+        "soustitre": "Règles d'affectation, rotation sur les postes contraignants, capacité à prouver l'équité dans le temps. Use case Advanced : à maturité 1 à 2, vérifier d'abord qu'un process existe.",
+        "rang": 9,
+        "roles": [
+          "Collaborateur",
+          "Chef d'équipe",
+          "Responsable production",
+          "RH",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Rappelle les règles d'affectation : rotation, pénibilité, restrictions",
+            "supports": "Word",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Transmet au chef d'équipe une restriction médicale à respecter",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Prise de poste",
+            "texte": "Affecte selon sa connaissance de l'équipe et les urgences du jour",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Quotidien",
+            "texte": "Confie les postes difficiles aux mêmes opérateurs, par fiabilité",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Exprime un ressenti d'iniquité sur la répartition des postes",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "RH",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Reçoit une réclamation individuelle ou une remontée en instance",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Justifie a posteriori des affectations passées",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "RH",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Cherche l'historique des affectations et ne le retrouve pas au-delà de quelques semaines",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "Responsable production",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Suit l'absentéisme et le turnover par secteur",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Répond aux questions d'équité sans indicateur de répartition des postes contraignants",
+            "supports": "Au jugé",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      },
+      {
+        "code": "reconnaissance",
+        "nom": "UC 10 - Reconnaissance et rémunération des compétences",
+        "soustitre": "Lien entre compétences validées, progression, classification et rémunération. Use case Advanced : à maturité 1 à 2, le process se réduit souvent à l'entretien annuel et à la négociation salariale.",
+        "rang": 10,
+        "roles": [
+          "Collaborateur",
+          "Tuteur",
+          "Chef d'équipe",
+          "Responsable formation",
+          "RH",
+          "Direction site"
+        ],
+        "etapes": [
+          {
+            "ordre": 1,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel (N-1)",
+            "texte": "Cadre la grille de classification et l'enveloppe budgétaire",
+            "supports": "Word, Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 2,
+            "role": "Responsable formation",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Précise ce qu'être compétent signifie pour chaque poste",
+            "supports": "Word",
+            "lien": ""
+          },
+          {
+            "ordre": 3,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Mène l'entretien annuel et fixe des objectifs de progression",
+            "supports": "Papier",
+            "lien": ""
+          },
+          {
+            "ordre": 4,
+            "role": "Tuteur",
+            "role2": "",
+            "phase": "À l'événement",
+            "texte": "Valide une compétence acquise sans critère standardisé",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 5,
+            "role": "Collaborateur",
+            "role2": "",
+            "phase": "Continu",
+            "texte": "Demande à son chef d'équipe ce qu'il doit faire pour évoluer, et reçoit une réponse au cas par cas",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 6,
+            "role": "Chef d'équipe",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Propose une évolution ou une prime, 2 mois avant la négociation annuelle",
+            "supports": "Oral, Mail",
+            "lien": ""
+          },
+          {
+            "ordre": 7,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Arbitre les propositions à budget contraint",
+            "supports": "Excel",
+            "lien": ""
+          },
+          {
+            "ordre": 8,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Arbitre sans chiffrer l'exposition financière des compétences déjà acquises",
+            "supports": "Au jugé",
+            "lien": ""
+          },
+          {
+            "ordre": 9,
+            "role": "RH",
+            "role2": "",
+            "phase": "Annuel",
+            "texte": "Explique la décision au collaborateur et aux représentants du personnel",
+            "supports": "Oral",
+            "lien": ""
+          },
+          {
+            "ordre": 10,
+            "role": "Direction site",
+            "role2": "",
+            "phase": "Mensuel",
+            "texte": "Constate le turnover et le désengagement sur les postes clés",
+            "supports": "Excel",
+            "lien": ""
+          }
+        ],
+        "frictions": [],
+        "chiffres": []
+      }
+    ]
+  }
+}
