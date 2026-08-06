@@ -838,3 +838,47 @@ seul.
 Les réserves du §12 restent ouvertes : `auteur` toujours nul faute d'écriture
 depuis l'application, `avant_recalcul` et `quotidien` non exercés par leurs
 points d'appel réels.
+
+---
+
+## 14. Le classement `erp` / PowerPoint
+
+`classer()` cherchait les motifs de `TABLE_A` en sous-chaîne. Le motif `erp` est
+contenu dans `pow`**`erp`**`oint` : un outil nommé PowerPoint atterrissait dans
+le bloc ERP, activité « Données de référence ». Le fichier connaissait déjà le
+piège — il écarte explicitement le motif `mes` à cause de « Messagerie » — mais
+`erp` était passé au travers.
+
+Le balayage de tous les motifs de `TABLE_A` sur un vocabulaire d'outils
+plausible a rendu trois correspondances situées au milieu d'un mot :
+`erp`→PowerPoint (faux positif), `drive`→OneDrive (correct, et couvert par le
+motif `onedrive`), `qms`→eQMS (correct mais fragile).
+
+**Correctif** : un helper unique `correspond(motif, valeur)` qui teste
+`\b` + motif — début de mot, pas mot entier, pour que `habilitation` continue
+d'attraper « habilitations ». Appliqué à `TABLE_A`, `TABLE_B`, `GENERIQUES` et
+`MOTIFS_LOGO`. Plus l'ajout du motif `eqms`, seule régression que le balayage
+avait trouvée. Vérifié : plus aucun `.includes(` sur une liste de motifs.
+
+**Rejeu indépendant sur 25 outils**, ancienne règle contre nouvelle, dans le
+contexte d'un processus donné : **une seule ligne change**, PowerPoint passant
+de `erp` à `non-classe`. eQMS reste dans `qualite`, OneDrive dans `ged`, les 22
+autres sont identiques.
+
+### Ce que le rejeu a révélé au passage
+
+Un outil **générique** est placé une fois pour toutes, par le **premier
+processus** qui l'emploie — `calculEnvIT` court-circuite sur
+`if (!placements.has(clef))`. Sur la trame des dix use cases :
+
+| outil | bloc | décidé par |
+|---|---|---|
+| Excel, Word, Mail | Compétences | UC 6, premier de la liste |
+| Oral, Papier | Planning | UC 1 |
+| PowerPoint | Non classé | UC 2, qui ne correspond à aucun motif de `TABLE_B` |
+
+Excel est classé « Compétences » pour les dix use cases alors qu'il est
+l'outil commun de tout le site. Ce n'est pas un défaut d'implémentation — le
+code fait ce qu'il annonce — mais le résultat est faux en restitution, et il
+dépend de l'ordre des processus. Consigné comme piste d'évolution, pas comme
+correctif.
