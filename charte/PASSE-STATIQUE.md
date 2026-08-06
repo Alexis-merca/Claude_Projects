@@ -1153,3 +1153,41 @@ case pré-remplira réellement. Le chemin décrit au §17.5 comme non exerçable
 l'est désormais.
 
 Reste inchangé : 3 clients, 18 processus, 194 étapes, 16 frictions.
+
+---
+
+## 19. La trame cible importée en base
+
+Importée sur demande explicite d'Alexis, par `importer_client_json(payload, null)`
+— le chemin qu'emprunte le bouton « Importer » de l'application, pas des
+`INSERT` à la main.
+
+| code | trame | processus | étapes | clefs use case |
+|---|---|---|---|---|
+| `sekurit-float-france` | — | 4 | 49 | 0 |
+| `test-alexis` | — | 4 | 4 | 0 |
+| `template-use-case` | `existant` | 10 | 141 | 10 |
+| `cible-mercateam` | `cible` | 10 | 109 | 10 |
+
+Le code obtenu est `cible-mercateam`, **sans suffixe** : aucune collision, la
+boucle de dédoublonnage de l'importeur n'a pas eu à intervenir.
+
+Répartition vérifiée processus par processus : 10, 13, 13, 12, 15, 9, 9, 9, 9,
+10 — soit 109, exactement le contenu généré. Les dix clefs `uc1` … `uc10` sont
+posées, et les **codes de processus sont identiques à ceux de l'existant**,
+ce qui rendra l'appariement trivial quand la variante arrivera.
+
+`maturite` reste `null` sur les dix : la trame décrit un processus cible, elle
+ne prétend pas noter un site.
+
+### Marquée `trame = 'cible'`
+
+Fait dans la foulée, avec `version + 1` et `maj_le` pour rester cohérent avec
+la façon dont l'application écrit. Sans ce marquage, une trame apparaîtrait
+dans la liste des diagnostics client, ce qu'elle n'est pas.
+
+Cela ne change rien au pré-remplissage : `trameExistante()` ne lit que
+`trame = 'existant'`. La valeur `'cible'` n'est encore lue par personne — elle
+était prévue pour ne pas remigrer le jour de l'avant/après.
+
+Réversible d'un clic depuis la liste.
