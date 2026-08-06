@@ -1,5 +1,9 @@
 # Plan d'action P0 — Mercateam · Deployment OS
 
+> **📄 Document de travail.** La version consolidée et destinée à la transmission
+> est **`AUDIT-DEPLOYMENT-OS.md`** — elle intègre ce plan, ajoute un quatrième
+> axe P0 (bug de capacité) et détaille les axes P1 et P2.
+
 > Complément opérationnel de `ANALYSE-DEPLOYMENT-OS.md`.
 > Contient les artefacts prêts à l'emploi : migration SQL, procédure de test,
 > prompts pour l'agent Lovable, nouveau Knowledge projet, spécifications produit.

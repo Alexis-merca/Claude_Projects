@@ -1,5 +1,9 @@
 # Analyse — Mercateam · Deployment OS (projet Lovable)
 
+> **📄 Document de travail.** La version consolidée et destinée à la transmission
+> est **`AUDIT-DEPLOYMENT-OS.md`** — elle reprend ces constats, les complète
+> (dont un bug de capacité découvert depuis) et détaille les 19 axes P0→P2.
+
 > Analyse réalisée en **lecture seule** sur le projet Lovable
 > `03446cd1-9ede-4811-b7e4-f522751647e3` (`mercateam-internal-deploymentos`).
 > Aucun message n'a été envoyé à l'agent Lovable, aucun fichier du projet n'a été modifié.
@@ -33,7 +37,7 @@ capacité de l'équipe, puis se confronte au temps réellement imputé.
 | Fichiers source | ~230 (hors `node_modules`) |
 | Migrations SQL | **90** |
 | Tables | 24 + 1 vue + ~30 fonctions PostgreSQL |
-| Fichiers de test | 18 (`*.test.ts`, Vitest) |
+| Fichiers de test | 16 (`*.test.ts`, Vitest) |
 | URL publiée | `mercateam-internal-deploymentos.lovable.app` (publiée, accès filtré par Google Sign-In) |
 
 La vitesse d'exécution est le fait marquant : 90 migrations, un import ClickUp
@@ -144,7 +148,7 @@ src/
 
 **Principe structurant, très sain : les moteurs de calcul sont purs.**
 `workload-engine.ts` et `workload-capacity.ts` ne touchent jamais Supabase — ils
-prennent des tableaux, rendent des tableaux. C'est ce qui rend les 18 fichiers de
+prennent des tableaux, rendent des tableaux. C'est ce qui rend les 16 fichiers de
 test possibles et ce qui protège la logique métier des refontes d'UI.
 
 **Contrepartie : tout le calcul est fait dans le navigateur.** `loadFullWorkload()`
@@ -426,7 +430,7 @@ C'est aussi celle que le Knowledge interdit de casser — d'où l'urgence de la
 protéger autrement que par la consigne.
 
 **7. Faire tourner les tests.**
-18 fichiers de test Vitest existent, `vitest.config.ts` existe — mais **il n'y a
+16 fichiers de test Vitest existent, `vitest.config.ts` existe — mais **il n'y a
 pas de script `test` dans `package.json`** et pas de CI. Les tests ne s'exécutent
 donc jamais. Ajouter `"test": "vitest run"` + un workflow GitHub Actions
 (lint + `tsc --noEmit` + vitest) sur la branche connectée.
