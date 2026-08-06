@@ -947,3 +947,77 @@ Vérifié en base, pas sur parole :
 **Ce que je n'ai pas vérifié :** l'écran. La pastille sur les cartes du
 diagramme en lecture, en édition et à l'impression demande un navigateur. Reste
 à faire côté Alexis.
+
+---
+
+## 16. Les libellés de maturité, et la clef de use case
+
+### 16.1 Ce qui a été livré
+
+`src/lib/maturite.ts` (nouveau) porte les **dix échelles, cinquante niveaux**,
+plus `clefUseCase`, `libelleNiveau` et `intituleUseCase`. Contenu éditorial dans
+le code, comme `TRAME` — pas en base.
+
+`processus.use_case text null`, contrainte `processus_use_case_valide` :
+`use_case is null or use_case in ('uc1'…'uc10')`. Vérifié en base, la liste est
+exactement celle demandée.
+
+### 16.2 Les cinquante libellés
+
+Comparés un à un avec `charte/MATURITE.md` : **conformes, y compris la
+ponctuation** — les guillemets français de « qui sait faire quoi », les
+deux-points de « Gestion proactive : … », le tiret de « ramp-up ». Aucune
+reformulation.
+
+### 16.3 Rien n'a été rempli automatiquement
+
+**18 processus en base, 0 avec un `use_case`.** C'était la mesure qui
+m'intéressait le plus : la tentation de déduire la clef du nom (« UC 6 - … »)
+était forte, et c'est précisément ce dont on voulait cesser de dépendre. Le
+`client_json` de Sekurit rend bien `"use_case": null`.
+
+Données intactes : 3 clients, 16 frictions, 194 étapes.
+
+### 16.4 L'écran
+
+`Maturite.tsx` fait ce qu'il faut, vérifié à la lecture :
+
+- en lecture, `maturite == null` rend `null` — rien du tout, pas de « —/5 » ;
+- le libellé du niveau s'affiche sous la pastille, la justification en dessous ;
+- en édition, les cinq niveaux portent chacun **leur libellé**, pas seulement
+  leur chiffre ;
+- sans use case : cinq niveaux nus et la mention « Choisir un use case pour
+  afficher l'échelle » — **aucune échelle générique inventée** ;
+- deux façons de revenir à « non évalué » : le lien explicite, et un second clic
+  sur le niveau actif.
+
+**L'impression** compose le libellé dans le sous-titre de la page du processus.
+**Le PPTX n'avait pas besoin d'être modifié** : `exporterPptx` photographie les
+`.page-16-9` de la vue d'impression, il hérite donc du libellé. Le diff ne
+touche pas `export-pptx.ts`, et c'est correct — vérifié en lisant le fichier,
+pas supposé.
+
+### 16.5 L'aller-retour du format
+
+`client_json` porte `use_case`, `maturite`, `maturite_note` sur le processus et
+`etape` sur la friction. `importer_client_json` tient une correspondance
+`ordre → id` (`v_ordres`) remplie à l'insertion des étapes, et y résout le champ
+`etape` des frictions — c'est la seule façon correcte, les identifiants ne
+survivant pas à un import.
+
+**Une tolérance à noter.** L'importeur ramène silencieusement à `null` une
+`maturite` hors de 1–5 et un `use_case` hors catalogue, au lieu d'échouer.
+C'était demandé pour les frictions (« un fichier édité à la main ne doit pas
+casser l'import ») et a été généralisé. Raisonnable, mais une faute de frappe
+dans un fichier retouché perd la valeur sans un mot.
+
+### 16.6 Un changement non demandé
+
+`src/routeTree.gen.ts` perd son bloc `declare module '@tanstack/react-start'`.
+Fichier généré, et `tsgo` reste à zéro erreur — mais c'est une modification que
+personne n'a demandée. À surveiller si un typage de routeur se met à manquer.
+
+### 16.7 Toujours pas vérifié
+
+La pastille de friction sur les cartes du diagramme, en lecture, en édition et à
+l'impression. Elle demande un navigateur.
