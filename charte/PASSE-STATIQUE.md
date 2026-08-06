@@ -1021,3 +1021,86 @@ personne n'a demandée. À surveiller si un typage de routeur se met à manquer.
 
 La pastille de friction sur les cartes du diagramme, en lecture, en édition et à
 l'impression. Elle demande un navigateur.
+
+---
+
+## 17. Le use case devient l'unité du diagnostic
+
+### 17.1 Ce qui a été livré
+
+- `clients.trame text null`, contrainte `clients_trame_valide` :
+  `trame is null or trame in ('existant','cible')`.
+- `src/lib/trame-use-case.ts` (nouveau) : lecture de la trame, recopie d'un
+  processus, création d'un use case ou d'un processus libre.
+- `src/components/diagnostic/SelecteurUseCase.tsx` (nouveau) : les dix use
+  cases avec intitulé et périmètre, les déjà audités grisés, « Autre
+  processus » en fin de liste.
+- Création d'un diagnostic : liste à cocher des dix use cases, plus « aucun
+  pour l'instant ».
+- Liste des diagnostics : les trames sortent dans une section repliée, portent
+  une pastille, et leur bouton de suppression est désactivé.
+
+`moteur.js` et `moteur.css` ne figurent pas dans le diff.
+
+### 17.2 Vérifié en base
+
+**Aucune donnée touchée** : 3 clients, 18 processus, 194 étapes, 16 frictions —
+les mêmes qu'avant. `trame` à `null` partout, `use_case` à `null` partout.
+Aucun diagnostic d'essai laissé derrière.
+
+### 17.3 Le point délicat, correctement traité
+
+`recopier()` remappe `etape_id` des frictions vers **les copies** des étapes, en
+passant par l'`ordre` :
+
+```ts
+const ordreDe = new Map(etapes.map((e) => [e.id, e.ordre]));
+etape_id: ordre != null ? (parOrdre.get(ordre) ?? null) : null
+```
+
+Sans ce détour, les frictions de la trame auraient pointé vers les étapes de la
+trame elle-même, et une suppression dans la trame aurait détaché des frictions
+chez un client. C'est le même raisonnement que pour l'import : les identifiants
+ne traversent pas une copie.
+
+Le rattachement trame → use case passe uniquement par `processus.use_case`,
+jamais par le nom. Conforme.
+
+### 17.4 Une divergence éditoriale à trancher
+
+`PERIMETRES` dans `src/lib/maturite.ts` est **du texte neuf**. Je n'avais pas
+fourni les périmètres, Lovable les a donc rédigés. Ils sont justes, mais ils
+décrivent une seconde fois ce que le classeur de diagnostic décrit déjà — et
+les deux formulations diffèrent :
+
+| source | UC 6 |
+|---|---|
+| classeur (`soustitre` de la trame) | « Référentiel de compétences par poste, cartographie des niveaux réels, mise à jour, usage dans les décisions du quotidien, suivi de la couverture et de la polyvalence. » |
+| `PERIMETRES` (code) | « Référentiel de compétences, matrice de polyvalence et évaluation au poste. » |
+
+Une constante en code se justifie : le sélecteur doit afficher un périmètre
+**avant** de consulter la trame, et la trame peut ne pas exister. Ce qui ne se
+justifie pas, c'est que le texte diverge de la source. À aligner sur le
+classeur, ou à assumer comme version courte propre au sélecteur.
+
+### 17.5 Deux gestes avant que le pré-remplissage fonctionne
+
+Le chemin de pré-remplissage n'est pas exerçable aujourd'hui, et pas à cause du
+code :
+
+1. **Aucun diagnostic n'est marqué comme trame** — volontaire, je l'avais
+   interdit à Lovable.
+2. **Les dix processus de `template-use-case` ont `use_case` à `null`**, ayant
+   été importés avant l'existence de la colonne. `processusDeTrame()` les
+   indexe par clef : il rendrait une table vide même une fois la trame marquée.
+
+Il faut donc **réinjecter le JSON régénéré** (qui porte les clefs) dans le
+diagnostic existant, puis le marquer comme trame « existant ». L'injection
+prend un instantané de version avant d'agir.
+
+Jusque-là, le repli documenté s'applique : le use case est créé avec sa clef et
+son intitulé, mais vide. Pas d'erreur, pas de blocage.
+
+### 17.6 Toujours pas vérifié
+
+La pastille de friction sur les cartes du diagramme. Elle demande un navigateur.
