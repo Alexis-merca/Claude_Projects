@@ -19,8 +19,7 @@ import openpyxl
 
 SOURCE = ("/root/.claude/uploads/a0555995-c6c1-5fb2-8d4d-e4f6f9232744/"
           "8e6166de-Templates_diagnostic_Mercateam_v2.xlsx")
-CIBLE = ("/tmp/claude-0/-home-user-Claude-Projects/"
-         "a0555995-c6c1-5fb2-8d4d-e4f6f9232744/scratchpad/template-use-case.json")
+CIBLE = "/home/user/Claude_Projects/trames/template-use-case.json"
 
 # Onglets use case, dans l'ordre du classeur.
 ONGLETS = [
@@ -97,6 +96,21 @@ for r in ref.iter_rows(min_row=lg_ref + 1, values_only=True):
 # referentiel s'obtiennent par deux clics, elles n'ont pas leur place ici.
 OUTILS = [s for s in SUPPORTS_REF if "+" not in s]
 
+# Clef de use case, par code de processus. Les codes sont identiques dans les
+# deux trames : c'est ce qui permet d'apparier existant et cible.
+USE_CASE = {
+    "pilotage-competences": "uc6",
+    "planification-et-gestion-aleas": "uc1",
+    "pilotage-charge-capacite": "uc2",
+    "integration": "uc3",
+    "transfert-savoir-faire": "uc4",
+    "standardisation-sites": "uc5",
+    "habilitations": "uc7",
+    "audits": "uc8",
+    "equite-affectations": "uc9",
+    "reconnaissance": "uc10",
+}
+
 processus, journal = [], []
 
 for onglet in ONGLETS:
@@ -137,6 +151,7 @@ for onglet in ONGLETS:
 
     processus.append({
         "code": slug(onglet),
+        "use_case": USE_CASE[slug(onglet)],
         "nom": titre,
         "soustitre": perimetre,
         "rang": len(processus) + 1,

@@ -37,6 +37,7 @@
     "processus": [
       {
         "code": "pilotage-competences",
+        "use_case": "uc6",
         "nom": "UC 6 - Pilotage des compétences",
         "soustitre": "Référentiel de compétences par poste, cartographie des niveaux réels, mise à jour, usage dans les décisions du quotidien, suivi de la couverture et de la polyvalence.",
         "rang": 1,
@@ -161,6 +162,7 @@
       },
       {
         "code": "planification-et-gestion-aleas",
+        "use_case": "uc1",
         "nom": "UC 1 - Planification des opérateurs et gestion des aléas",
         "soustitre": "Construction du planning d'affectation des opérateurs, du cadrage annuel des horaires à la gestion des aléas du jour.",
         "rang": 2,
@@ -331,6 +333,7 @@
       },
       {
         "code": "pilotage-charge-capacite",
+        "use_case": "uc2",
         "nom": "UC 2 - Pilotage de l'adéquation charge / capacité",
         "soustitre": "Cascade des horizons de planification, traduction de la charge en effectif, pilotage des heures supplémentaires, de l'intérim et des coûts.",
         "rang": 3,
@@ -505,6 +508,7 @@
       },
       {
         "code": "integration",
+        "use_case": "uc3",
         "nom": "UC 3 - Intégration des nouveaux collaborateurs",
         "soustitre": "Parcours d'accueil et d'intégration d'un nouvel arrivant, de l'annonce de l'arrivée à la validation de l'autonomie.",
         "rang": 4,
@@ -659,6 +663,7 @@
       },
       {
         "code": "transfert-savoir-faire",
+        "use_case": "uc4",
         "nom": "UC 4 - Capitalisation et transfert des savoir-faire critiques",
         "soustitre": "Identification des savoir-faire critiques, construction et cycle de vie des modes opératoires, transfert par compagnonnage, maintien et recyclage des compétences.",
         "rang": 5,
@@ -888,6 +893,7 @@
       },
       {
         "code": "standardisation-sites",
+        "use_case": "uc5",
         "nom": "UC 5 - Standardisation multi-sites de la gestion du savoir-faire",
         "soustitre": "Référentiels locaux, diffusion des standards par les directions transverses, mobilité inter-sites et comparabilité des données au niveau Groupe.",
         "rang": 6,
@@ -1013,6 +1019,7 @@
       },
       {
         "code": "habilitations",
+        "use_case": "uc7",
         "nom": "UC 7 - Maîtrise des habilitations et sécurité au poste",
         "soustitre": "Habilitations et autorisations requises par poste, restrictions médicales, suivi des échéances, contrôle avant affectation.",
         "rang": 7,
@@ -1158,6 +1165,7 @@
       },
       {
         "code": "audits",
+        "use_case": "uc8",
         "nom": "UC 8 - Préparation et tenue des audits",
         "soustitre": "Préparation des preuves de compétences et d'habilitations, déroulé de l'audit, suivi des remarques. À croiser avec l'onglet Transverse - Preuves.",
         "rang": 8,
@@ -1273,6 +1281,7 @@
       },
       {
         "code": "equite-affectations",
+        "use_case": "uc9",
         "nom": "UC 9 - Équité et traçabilité des affectations",
         "soustitre": "Règles d'affectation, rotation sur les postes contraignants, capacité à prouver l'équité dans le temps. Use case Advanced : à maturité 1 à 2, vérifier d'abord qu'un process existe.",
         "rang": 9,
@@ -1380,6 +1389,7 @@
       },
       {
         "code": "reconnaissance",
+        "use_case": "uc10",
         "nom": "UC 10 - Reconnaissance et rémunération des compétences",
         "soustitre": "Lien entre compétences validées, progression, classification et rémunération. Use case Advanced : à maturité 1 à 2, le process se réduit souvent à l'entretien annuel et à la négociation salariale.",
         "rang": 10,

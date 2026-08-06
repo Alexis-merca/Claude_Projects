@@ -14,8 +14,7 @@ import json
 import re
 import unicodedata
 
-BASE = ("/tmp/claude-0/-home-user-Claude-Projects/"
-        "a0555995-c6c1-5fb2-8d4d-e4f6f9232744/scratchpad/")
+BASE = "/home/user/Claude_Projects/trames/"
 
 # Ordre de reference des couloirs. Reprend celui du classeur de diagnostic pour
 # que la cible et l'existant se lisent lane par lane, avec « Responsable
@@ -232,6 +231,21 @@ def slug(v):
     return re.sub(r"(^-|-$)", "", re.sub(r"[^a-z0-9]+", "-", v))
 
 
+# Clef de use case, par code de processus. Les codes sont identiques dans les
+# deux trames : c'est ce qui permet d'apparier existant et cible.
+USE_CASE = {
+    "pilotage-competences": "uc6",
+    "planification-et-gestion-aleas": "uc1",
+    "pilotage-charge-capacite": "uc2",
+    "integration": "uc3",
+    "transfert-savoir-faire": "uc4",
+    "standardisation-sites": "uc5",
+    "habilitations": "uc7",
+    "audits": "uc8",
+    "equite-affectations": "uc9",
+    "reconnaissance": "uc10",
+}
+
 processus, hors_ref = [], set()
 for code, nom, perimetre, etapes in UC:
     utilises = []
@@ -246,6 +260,7 @@ for code, nom, perimetre, etapes in UC:
 
     processus.append({
         "code": code,
+        "use_case": USE_CASE[code],
         "nom": nom,
         "soustitre": perimetre,
         "rang": len(processus) + 1,

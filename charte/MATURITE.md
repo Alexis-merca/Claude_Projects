@@ -117,3 +117,33 @@ trame, réglerait la question — et servirait aussi à apparier existant et cib
 usine lambda de niveau 1 à 2 ; les processus cible décrivent des niveaux 4 à 5.
 L'avant/après en maturité est donc déjà porté par les deux trames, il ne reste
 qu'à le rendre.
+
+---
+
+## Les clefs, et où elles sont posées
+
+La clef de use case est `uc1` … `uc10`, portée par `processus.use_case`
+(nullable — un processus hors catalogue est un cas normal). Elle n'est **jamais
+déduite du nom** : c'est précisément ce dont on voulait cesser de dépendre.
+
+Les deux trames la portent déjà, sur les mêmes codes de processus de part et
+d'autre :
+
+| code de processus | clef |
+|---|---|
+| `planification-et-gestion-aleas` | `uc1` |
+| `pilotage-charge-capacite` | `uc2` |
+| `integration` | `uc3` |
+| `transfert-savoir-faire` | `uc4` |
+| `standardisation-sites` | `uc5` |
+| `pilotage-competences` | `uc6` |
+| `habilitations` | `uc7` |
+| `audits` | `uc8` |
+| `equite-affectations` | `uc9` |
+| `reconnaissance` | `uc10` |
+
+**Les diagnostics déjà en base ne l'ont pas.** La migration ajoute la colonne
+sans rien remplir, volontairement. Pour les dix processus de chaque trame,
+une mise à jour clef par code suffira — les codes sont stables, c'est ce pour
+quoi ils ont été fixés. À faire sur autorisation, ce sont des écritures en
+production.
