@@ -1104,3 +1104,52 @@ son intitulé, mais vide. Pas d'erreur, pas de blocage.
 ### 17.6 Toujours pas vérifié
 
 La pastille de friction sur les cartes du diagramme. Elle demande un navigateur.
+
+---
+
+## 18. Les périmètres alignés sur le classeur
+
+`PERIMETRES` portait dix phrases rédigées par Lovable, faute que je les aie
+fournies. Elles étaient justes mais décrivaient une seconde fois ce que le
+classeur décrit déjà — deux sources de vérité pour la même chose.
+
+### 18.1 Vérifié en dérivant l'attendu depuis la source
+
+Le contrôle ne compare pas le livré à mon brief : il repart du `soustitre` de
+chaque processus de la trame — donc du classeur — retire la queue prévue, et
+compare. **Zéro écart sur les dix**, longueurs de 77 à 166 caractères.
+
+### 18.2 Trois queues retirées, et ce qu'elles sont devenues
+
+| use case | queue du classeur | traitement |
+|---|---|---|
+| uc8 | « À croiser avec l'onglet Transverse - Preuves. » | **supprimée** — l'onglet n'existe ni dans l'application ni dans le classeur |
+| uc9 | « Use case Advanced : à maturité 1 à 2, vérifier d'abord qu'un process existe. » | déplacée dans `NOTES_METHODE` |
+| uc10 | « Use case Advanced : … l'entretien annuel et la négociation salariale. » | déplacée dans `NOTES_METHODE` |
+
+Vérifié : `PERIMETRES.uc8` ne contient plus « Transverse ».
+
+`NOTES_METHODE` est un `Partial<Record<ClefUseCase, string>>` à **deux entrées**
+— pas dix dont huit vides. Affichée sous le périmètre, en italique précédée
+d'un fanion, dans le sélecteur « + Use case » **et** dans la liste à cocher de
+la création. C'est le bon moment : la note dit s'il faut dérouler ou
+questionner, et c'est au choix du use case qu'on en a besoin.
+
+Les `soustitre` de la trame n'ont pas été touchés : c'est une transcription du
+classeur, elle reste fidèle à sa source, référence pendante d'uc8 comprise. Le
+catalogue de l'application, lui, n'a pas à propager une référence morte.
+
+### 18.3 La trame est en service
+
+Constaté en base à cette occasion, l'état a changé depuis le §17 :
+
+- `template-use-case` est marqué `trame = 'existant'` ;
+- ses **dix processus portent chacun une clef distincte**, `uc1` à `uc10` ;
+- les comptes d'étapes par use case sont ceux de la trame générée — 12, 17, 17,
+  15, 23, 12, 14, 11, 10, 10, soit 141.
+
+`processusDeTrame()` rendra donc une table de dix entrées, et choisir un use
+case pré-remplira réellement. Le chemin décrit au §17.5 comme non exerçable
+l'est désormais.
+
+Reste inchangé : 3 clients, 18 processus, 194 étapes, 16 frictions.
