@@ -882,3 +882,68 @@ l'outil commun de tout le site. Ce n'est pas un défaut d'implémentation — le
 code fait ce qu'il annonce — mais le résultat est faux en restitution, et il
 dépend de l'ordre des processus. Consigné comme piste d'évolution, pas comme
 correctif.
+
+---
+
+## 15. Les modules Mercateam dans le classement, et la vague frictions / maturité
+
+### 15.1 Six entrées pour Mercateam
+
+`TABLE_A` ne connaissait pas le produit : les cinq modules tombaient en
+« Non classé », rendant illisible le schéma de la trame cible. Six entrées
+ajoutées — cinq précises, plus un repli sur `mercateam` nu, parce que sur le
+terrain personne ne tape « Mercateam (Planner) ».
+
+**Rejeu indépendant**, en recopiant la table depuis le fichier :
+
+| outil saisi | bloc | activité |
+|---|---|---|
+| Mercateam (Starter) | `competence` | Référentiel postes |
+| Mercateam (Master) | `competence` | Matrice de polyvalence |
+| Mercateam (Trainer) | `formation` | Suivi + évaluation |
+| Mercateam (Planner) | `planning` | Affectation au poste |
+| Mercateam (KPIs) | `bi` | Indicateurs de polyvalence |
+| Mercateam · mercateam · MERCATEAM (PLANNER) | repli, casse normalisée | — |
+
+Les cinq libellés d'activité sont **présents au caractère près dans `TRAME`** —
+vérifié : `vueEnvIT` rapproche les lignes par nom normalisé, un libellé
+approchant aurait créé une ligne en double.
+
+Les huit outils déjà classés (SharePoint, Teams, OneDrive, Padoa, BOOST,
+Kronos, SAP, Qlik) : **zéro changement**. `Teams` reste dans `ged` — c'était le
+cas à surveiller, « mercateam » ne le capte pas, et le motif `teams` ne capte
+pas « mercateam » faute de frontière de mot.
+
+Le piège d'ordre est évité : placé avant les cinq, le repli nu les aurait tous
+captés. Vérifié en rejouant l'ordre inverse — `Mercateam (Planner)` serait alors
+tombé dans `competence` au lieu de `planning`.
+
+**Une limite connue.** `Mercateam Planner`, sans parenthèses, tombe sur le repli
+et atterrit dans `competence`. Les motifs exigent la forme parenthésée. C'est
+une saisie plausible sur le terrain, à surveiller.
+
+### 15.2 La vague frictions / maturité a atterri
+
+Vérifié en base, pas sur parole :
+
+- **PostgreSQL 17.6**, donc la forme demandée est disponible et a bien été
+  utilisée : `FOREIGN KEY (etape_id, processus_id) REFERENCES etapes(id,
+  processus_id) ON DELETE SET NULL (etape_id)`. La liste de colonnes est là —
+  `processus_id`, qui est `not null`, n'est pas touché.
+- `frictions.etape_id` nullable, `processus.maturite` smallint nullable,
+  `processus.maturite_note` text not null.
+- Contrainte `processus_maturite_plage` :
+  `(maturite IS NULL) OR (maturite >= 1 AND maturite <= 5)`.
+- **Sekurit : 16 frictions avant, 16 après, les 16 détachées.** Rien n'a été
+  perdu à la migration.
+- `template-use-case` : 141 étapes, inchangé.
+- **Trois clients en base** : le diagnostic bac à sable de la recette
+  d'aller-retour a bien été supprimé, aucun résidu.
+- Le seul déclencheur sur `frictions` est `frictions_touche_parent`, celui qui
+  existait déjà pour faire avancer la version du processus parent.
+- `client_json` porte désormais `maturite` et `maturite_note` sur le processus,
+  et `etape` sur la friction — `null` quand elle n'est rattachée à rien.
+
+**Ce que je n'ai pas vérifié :** l'écran. La pastille sur les cartes du
+diagramme en lecture, en édition et à l'impression demande un navigateur. Reste
+à faire côté Alexis.
