@@ -1415,3 +1415,82 @@ posé, mais après le passage du formateur.
 **À faire** : restaurer `src/flux/moteur.js` et `src/flux/mutations.js` dans
 leur état d'avant ce commit. `src/flux` étant désormais ignoré par Prettier, la
 restauration tient.
+
+---
+
+## 23. Restauration de `moteur.js` — vérifiée contre la copie de référence
+
+Correctif reçu le 07/08. **Quatre fichiers touchés, aucun autre** :
+`src/flux/moteur.js`, `src/flux/mutations.js`, `src/routeTree.gen.ts`,
+`src/integrations/supabase/types.ts`. `moteur.css` n'apparaît ni dans ce diff
+ni dans le précédent.
+
+### 23.1 La méthode : ne pas relire, comparer
+
+Constater que les guillemets sont redevenus simples ne prouve rien — Prettier
+inversé n'est pas l'original. La copie de référence du dépôt,
+`flux/moteur.js` (commit `2222b3f`, 583 lignes, antérieure à tout passage de
+formateur), sert donc d'étalon.
+
+Pour chacun des **23 hunks** du diff, le côté « après » (lignes `context` +
+`add`) est extrait et confronté à la copie locale **au décalage de ligne
+annoncé** — pas cherché ailleurs dans le fichier.
+
+| fichier | hunks | identiques à la référence |
+|---|---|---|
+| `moteur.js` | 23 | **23** |
+| `mutations.js` | 11 | 8 + 3 hors périmètre (voir 23.2) |
+
+23 hunks qui retombent tous sur la bonne ligne, du n° 30 au n° 574 d'un fichier
+qui en compte 583, c'est aussi la preuve que la numérotation est redevenue
+celle de l'original : le côté Prettier, lui, courait jusqu'à la ligne 704.
+
+Contrôle de sens inverse : 663 guillemets doubles retirés, 217 rendus. Les 217
+sont ceux que l'original portait déjà — attributs HTML dans les gabarits
+(`class="…"`). Les clefs `'auto'` et `'manuel'` de `LIENS`, seule divergence
+sémantique relevée en §22.3, sont de nouveau quotées.
+
+### 23.2 Les trois hunks « divergents » de `mutations.js` ne le sont pas
+
+Ils portent sur les lignes 213 à 273, au-delà des 209 lignes de la copie locale.
+`mutations.js` est du code projet, modifiable, et il a grandi depuis le 30/07 —
+la référence est simplement plus vieille que le fichier. Leur contenu est lu
+ligne à ligne : `"@creation"` → `'@creation'`, `role: et.role || ""` →
+`|| ''`, et rien d'autre. Restauration de guillemets, aucun ajout.
+
+### 23.3 Deux effets de bord, tous deux favorables
+
+**`routeTree.gen.ts` retrouve son bloc `declare module '@tanstack/react-start'`**
+— dix lignes réapparaissent. C'était le point resté en surveillance depuis la
+passe précédente : il est clos, et il s'explique. Le fichier est listé dans
+`.prettierignore` ; le passage de Prettier l'avait quand même amputé, la
+restauration le rétablit.
+
+**`types.ts` revient au style du générateur Supabase** (pas de point-virgule,
+union `Json` sur plusieurs lignes). C'est un fichier généré : son style est
+celui de son générateur, pas celui du dépôt.
+
+### 23.4 Les deux garde-fous tiennent
+
+`.prettierignore` porte toujours `src/flux` (et `routeTree.gen.ts`).
+`eslint.config.js` ignore `src/flux` **globalement**, avant toute règle ;
+`eslint-plugin-prettier/recommended` est bien chargé à la racine, mais ne peut
+pas atteindre un chemin ignoré. Deux garde-fous indépendants, pas un.
+
+**Reste exposé** : `src/integrations/supabase/types.ts` n'est ignoré nulle
+part. Un prochain passage de formateur le reformatera de nouveau. Le fichier
+est régénéré à chaque migration, l'enjeu est le bruit de diff, pas le
+comportement.
+
+### 23.5 La base n'a pas bougé — et le marquage a écrit pour de bon
+
+4 clients, 30 processus, 393 étapes, 16 frictions : identique à la §22.
+
+Un chiffre est nouveau : **une étape porte un `bilan`**. Sekurit Float France,
+UC 1, étape 6 (« Ajuste le plan de roulement selon les contraintes des
+opérateurs »), état `mercateam`. C'est la première écriture du marquage
+étape par étape à atteindre la base — la greffe par portail sur les cartes du
+diagramme fonctionne de bout en bout, et elle y survit après restauration du
+moteur.
+
+`maturite_bilan` reste à 0 ligne renseignée, `use_case` à 26 sur 30.
