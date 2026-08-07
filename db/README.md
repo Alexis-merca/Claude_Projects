@@ -50,7 +50,20 @@ raison.
 - **L'ordre des étapes est unique dans un processus**, via une contrainte
   différée : un réordonnancement passe par des positions transitoirement en
   double et doit pouvoir se faire en une transaction.
-- **Supprimer un client emporte tout son contenu.**
+- **Supprimer un client emporte tout son contenu** — mais **pas ses versions** :
+  la table `versions` n'a volontairement aucune clé étrangère vers `clients`,
+  sans quoi l'instantané pris « avant suppression » partirait avec ce qu'il est
+  censé sauver. Elle recopie `code_client` et `nom_client` pour rester lisible
+  et restaurable quand la ligne d'origine n'existe plus.
+- **Une friction rattachée à une étape désigne une étape du même processus.**
+  La clé est composite `(etape_id, processus_id)` : une clé simple n'aurait pas
+  su le dire. Supprimer l'étape détache la friction (`on delete set null` sur la
+  seule colonne `etape_id`) au lieu de l'emporter — un constat de terrain ne
+  disparaît pas parce que la carte qu'il désignait a été réécrite.
+- **Au plus une trame `existant` et une trame `cible`**, par index unique
+  partiel. Le code lit la trame en `order by maj_le desc limit 1` : sans cette
+  garantie, deux diagnostics marqués feraient basculer la source de
+  pré-remplissage en silence.
 
 ## Lecture
 
@@ -64,13 +77,53 @@ select client_json('sekurit-float-france');
 
 ## Accès
 
-Lecture et écriture ouvertes à tout utilisateur **authentifié**, sans
-cloisonnement : cela reproduit le drive partagé actuel. `authenticated` et non
-`anon` — les données nomment des personnes et des constats sur des sites
-clients, elles sont partagées en interne et non ouvertes au web.
+Lecture et écriture réservées aux adresses **`@merca.team`**, vérifiées dans le
+JWT par `est_mercateam()`. Pas de cloisonnement entre consultants à l'intérieur
+du domaine : cela reproduit le drive partagé actuel.
+
+Le filtre par domaine n'est pas un raffinement. La connexion passe par un
+fournisseur OAuth qui accepte n'importe quelle adresse : sans lui, « être
+authentifié » suffirait à voir tous les diagnostics de tous les sites clients.
 
 Le rôle `authenticated` existe d'office sur Supabase. Sur un PostgreSQL nu, il
-faut le créer avant d'appliquer le schéma.
+faut le créer — ainsi que la fonction `auth.jwt()` — avant d'appliquer le
+schéma.
+
+## Vérifier que `schema.sql` est à jour
+
+**Ce fichier est recopié de la base, il ne la pilote pas.** Les migrations sont
+appliquées depuis l'application et vivent dans `supabase/migrations/` du dépôt
+applicatif ; `schema.sql` dérive dès que l'une d'elles passe sans être
+recopiée. Ça s'est produit : entre le 31/07 et le 07/08, il a manqué une table
+(`versions`), huit colonnes, sept contraintes, cinq fonctions, et le
+changement de politique d'accès.
+
+Pour comparer, sur la base réelle :
+
+```sql
+-- tables et colonnes
+select c.relname, a.attname, format_type(a.atttypid, a.atttypmod)
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
+  join pg_attribute a on a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+ where c.relkind = 'r' order by 1, a.attnum;
+
+-- contraintes, index, triggers, politiques
+select conrelid::regclass, conname, pg_get_constraintdef(oid) from pg_constraint
+ where connamespace = 'public'::regnamespace order by 1, 2;
+select tablename, indexdef from pg_indexes where schemaname = 'public' order by 1;
+select c.relname, pg_get_triggerdef(t.oid) from pg_trigger t
+  join pg_class c on c.oid = t.tgrelid
+  join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
+ where not t.tgisinternal;
+select tablename, policyname, cmd, qual, with_check from pg_policies where schemaname = 'public';
+
+-- fonctions
+select proname, pg_get_functiondef(oid) from pg_proc
+ where pronamespace = 'public'::regnamespace order by 1;
+```
+
+Tant que ce contrôle est manuel, il ne sera pas fait. L'automatiser est en
+feuille de route.
 
 ## Choix assumés
 

@@ -1691,3 +1691,80 @@ conservé**, avec repli de lecture sur l'ancienne clef et réécriture
 opportuniste à la première sauvegarde. Aucune migration destructive. Non
 engagé — c'est une passe à part entière, avec sa propre recette sur les
 positions et le déterminisme du rendu.
+
+---
+
+## 27. Unicité de la trame, et `db/schema.sql` régénéré
+
+### 27.1 Trame unique — `bf90edc`
+
+Index unique partiel `clients_trame_unique on clients (trame) where trame is
+not null` : au plus une trame `existant` **et** une trame `cible`, l'unicité
+portant sur la valeur. Le défaut était symétrique — `trameExistante()` et
+`chargerTrameCible()` lisent toutes deux
+`.eq("trame", …).order("maj_le" desc).limit(1)`, donc deux diagnostics marqués
+auraient fait basculer la source de pré-remplissage **en silence**, selon qui a
+édité en dernier.
+
+`marquerTrame` intercepte la violation `23505` et va lire en base le nom du
+détenteur pour rédiger : « "Template use case" est déjà la trame "existant".
+Sortez-la des trames avant d'en désigner une autre. » **La contrainte reste
+l'autorité** : pas de contrôle préalable, qui laisserait passer deux marquages
+simultanés. Données avant et après : `existant 1`, `cible 1`.
+
+Deux pistes explicitement écartées, et non préparées : la propagation d'une
+correction de trame vers les diagnostics déjà créés, et la création des
+processus cible à la sélection des use cases.
+
+### 27.2 Ce que la vague 2 n'avait pas besoin d'être
+
+En allant lire le code plutôt que la feuille de route, il apparaît que
+**l'essentiel de la « vague 2 » est déjà construit** : `clients.trame`,
+`trameExistante()`, `processusDeTrame()`, `creerUseCases()` → `recopier()`, le
+sélecteur des dix use cases à la création, la trame repliée hors de la liste et
+protégée de la suppression. Le rattachement passe uniquement par
+`processus.use_case`, jamais par le nom. Le bilan ne se recopie jamais.
+
+La feuille de route décrivait donc comme « à faire » une fonctionnalité en
+production. Elle est en retard sur l'application, pas l'inverse.
+
+### 27.3 `db/schema.sql` régénéré depuis la base réelle
+
+Le fichier décrivait la base du 31/07. Manquaient : la table **`versions`**,
+huit colonnes (`clients.trame`, `etapes.bilan`, `frictions.etape_id`,
+`processus.use_case`, `maturite`, `maturite_note`, `maturite_bilan`,
+`maturite_bilan_note`), sept contraintes, l'index unique de trame, cinq
+fonctions (`est_mercateam`, `importer_client_json`, `prendre_version`,
+`restaurer_version`, `versions_liste`), le `set search_path` de toutes les
+fonctions, et **le format de `client_json`, entièrement différent**.
+
+Le plus grave n'était pas une omission mais une affirmation fausse : le fichier
+et le README annonçaient un accès ouvert à **tout utilisateur authentifié**,
+alors que les politiques filtrent désormais sur `est_mercateam()` — le domaine
+`@merca.team` lu dans le JWT. Un document de sécurité périmé est pire qu'absent.
+
+Deux constats méritent d'être gardés, découverts en relisant la base :
+
+- **`versions` n'a aucune clé étrangère vers `clients`**, volontairement : avec
+  une clé en cascade, l'instantané « avant suppression » partirait avec ce
+  qu'il est censé sauver.
+- **La clé de `frictions.etape_id` est composite** `(etape_id, processus_id)` :
+  elle garantit que l'étape désignée appartient au même processus, ce qu'une
+  clé simple ne saurait pas dire. Le `on delete set null` ne porte que sur
+  `etape_id` : supprimer l'étape détache la friction sans l'emporter.
+
+`db/README.md` porte maintenant les requêtes de comparaison. **Tant que ce
+contrôle est manuel, il ne sera pas fait** — l'automatiser est en feuille de
+route.
+
+### 27.4 Trois `normaliser`, pas deux
+
+Relevé sans modification : `environnement-it.ts` (NFD + minuscules),
+`trame-cible.ts` (idem + espaces compactés + trim), et une troisième copie
+privée dans `roles.ts`. Sur « Power␣␣BI » les deux premières divergent.
+
+La plus robuste est celle de `trame-cible.ts` — compacter et trimmer est un
+sur-ensemble sans perte. Mais unifier ne se réduit pas à remplacer une
+fonction : `environnement-it.ts` sert de **clef de placement** (`outil|bloc`)
+et `schema-outils.ts` clefe sur le nom exact. Changer la normalisation change
+des clefs enregistrées. Cela relève de la refonte clef/libellé du §26.3.
