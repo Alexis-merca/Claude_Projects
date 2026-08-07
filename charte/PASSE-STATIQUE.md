@@ -1844,3 +1844,73 @@ du routeur et `ssr: true`. Fichier généré, donc churn probable de l'outil de
 génération plutôt qu'intention — mais `tsgo` passe aussi bien avec qu'sans, ce
 qui est cohérent avec un typage affaibli et non avec une équivalence. À
 restaurer, ou à confirmer comme régénération légitime.
+
+---
+
+## 29. OAuth Google — la cause trouvée, le correctif suspendu
+
+### 29.1 `routeTree.gen.ts` : rien à restaurer
+
+Le bloc `declare module '@tanstack/react-start'` **était déjà revenu** dans
+l'arbre de travail, réémis spontanément par le générateur du plugin TanStack.
+Ce n'est donc pas un changement de format de l'outil : le commit `b09ccf0` a
+figé le fichier dans un état **partiel**, entre l'écriture de l'arbre et celle
+de l'augmentation de module.
+
+Ma lecture du symptôme était bonne sur le fond : le bloc n'est pas devenu
+inutile. Sans lui, `Register` n'est pas peuplée, `Link to`, `navigate`,
+`useParams` et `search` retombent sur des types larges — `tsgo` reste vert
+**par affaiblissement, pas par équivalence**. À surveiller : ça peut se
+reproduire à l'identique au prochain commit pris au mauvais moment.
+
+### 29.2 La cause : `window.self !== window.top`
+
+Lecture du paquet `@lovable.dev/cloud-auth-js` (v1.1.2). Il n'exporte que
+`createLovableAuth` — **aucun `handleRedirectCallback`, aucun écouteur au
+chargement du module**. Le seul écouteur `message` est créé *dans* l'appel à
+`signInWithOAuth` et détruit dans son `finally`.
+
+Le SDK choisit son parcours sur un seul test :
+
+| contexte | parcours | résultat |
+|---|---|---|
+| aperçu de l'éditeur (**iframe**) | fenêtre surgissante, `response_mode=web_message` | jetons rendus, `setSession` fait le travail — **ça marche** |
+| `mercaudit.lovable.app` (onglet normal) | `window.location.href = /~oauth/initiate…`, `redirected: true` | **la jambe de retour n'est traitée par personne** |
+
+C'est pourquoi la connexion peut sembler fonctionner dans l'éditeur et échouer
+en usage réel. Écartés au passage : le fournisseur Google **est** activé
+(`"google": true`, `"email": false`), les deux origines **sont** dans la liste
+d'autorisation, et `hd`/`prompt` sont bien transmis au courtier. Aucun n'est la
+cause. À noter : sur un `localhost` de développement, le chemin `/~oauth/*`
+n'existe pas — la connexion Google y est structurellement impossible.
+
+### 29.3 Pourquoi je n'ai pas pris le correctif proposé
+
+La réalisation propose une route publique de rappel qui lit le fragment et
+appelle `setSession`. **Le raisonnement ne tient pas, et c'est la déduction
+utile de cette passe :**
+
+`detectSessionInUrl` de supabase-js est actif par défaut et sait déjà lire
+`#access_token=…&refresh_token=…`. Si le courtier renvoyait ce fragment, la
+connexion **fonctionnerait déjà** sur le site publié, sans aucune route de
+rappel. Elle ne fonctionne pas. Donc le retour ne porte pas ce format — et une
+route de rappel qui lit `#access_token` ne lirait rien.
+
+Le correctif proposé est juste **si et seulement si** le fragment est au format
+attendu, ce qui est exactement l'inconnue. J'ai donc demandé de
+**l'instrumentation, pas un correctif** : journaliser au montage les *noms* des
+paramètres reçus en `search` et en `hash`, avec leurs longueurs, jamais leurs
+valeurs — un jeton dans une console est un jeton dans une capture d'écran. Et
+une trace explicite si l'URL d'arrivée ne porte **aucun** paramètre, cas au
+moins aussi instructif.
+
+### 29.4 Ce que je ne peux pas faire d'ici
+
+Le réseau de cet environnement refuse le domaine `lovable.app` (403 sur le
+tunnel `CONNECT`), pour l'aperçu comme pour le site publié. Je ne peux ni
+cliquer, ni lire une console, ni observer l'URL de retour. **Le diagnostic
+final tient à une observation d'une seconde que seul un humain devant un
+navigateur peut faire** : ce que montre la barre d'adresse au retour de Google.
+
+Ce qui reste vrai quoi qu'il arrive : `est_mercateam()` verrouille la base. Un
+compte extérieur qui obtiendrait une session ne peut lire ni écrire une ligne.
