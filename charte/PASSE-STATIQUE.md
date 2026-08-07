@@ -1553,12 +1553,9 @@ disparaissent d'elles-mêmes. Rien à migrer, rien à programmer.
 
 ### 24.3 Deux réserves, aucune bloquante
 
-**Le marquage des répétitions compare avec `toLowerCase()`**, pas avec le
-`normaliser()` du module (qui retire aussi les accents). Deux graphies d'un
-même outil différant par un accent — `Réseau` / `Reseau` — seraient vues comme
-deux outils par le marquage, alors que le reste du fichier les fusionne.
-Aucune donnée actuelle n'est concernée. La cause est identifiable :
-`normaliser` n'est pas exporté, le composant ne pouvait pas s'en servir.
+~~**Le marquage des répétitions compare avec `toLowerCase()`**, pas avec le
+`normaliser()` du module (qui retire aussi les accents).~~ **Corrigé le 07/08,
+voir §25.**
 
 **Un outil ne peut toujours pas figurer deux fois dans le même bloc.** La clef
 de correction est `outil|bloc` et non `outil|bloc|activité` : ajouter Excel à
@@ -1573,3 +1570,47 @@ schéma). Le champ « + outil » permet de l'atteindre en mode édition.
 diagnostic ne porte de corrections d'environnement IT** (0 sur 4) : le
 changement de format des clefs ne s'est appliqué à rien. C'était le bon moment
 pour le faire.
+
+---
+
+## 25. `toLowerCase` → `normaliser` dans le marquage des répétitions
+
+Correctif de cohérence demandé le 07/08, reçu en `416a45f`. **Quatre lignes,
+deux fichiers, rien d'autre.**
+
+| fichier | changement |
+|---|---|
+| `src/lib/environnement-it.ts` | `function normaliser` → `export function normaliser` |
+| `src/components/diagnostic/EnvironnementIT.tsx` | import de `normaliser` ; `repetes.get(o.toLowerCase())` → `repetes.get(normaliser(o))` ; `const clef = o.toLowerCase()` → `const clef = normaliser(o)` |
+
+Ni `package.json`, ni `src/flux/`, ni aucune table de classement. Diff relu
+ligne à ligne, pas seulement le compte-rendu de l'agent.
+
+**Le défaut.** Le marquage des outils répétés indexait par `toLowerCase()`,
+qui met en minuscules sans retirer les accents, alors que tout le reste du
+module compare par `normaliser()`. `Réseau` et `Reseau` étaient donc fusionnés
+partout ailleurs et comptés comme deux outils par le seul marquage — aucun des
+deux n'aurait été estompé. La cause n'était pas une inattention : `normaliser`
+n'était pas exporté, le composant n'y avait pas accès.
+
+**Le piège du correctif.** Les deux occurrences devaient changer ensemble.
+N'en corriger qu'une désaligne la clef d'écriture et la clef de lecture de la
+`Map`, et **plus aucun outil n'est estompé** — panne silencieuse, sans erreur
+de compilation, invisible autrement qu'en regardant la page. Le brief l'a dit
+explicitement ; le diff montre les deux.
+
+**Hors périmètre, volontairement.** Le `useMemo` `outils`, juste au-dessus,
+dédoublonne par `!vus.includes(o)` en comparaison exacte. La même substitution
+y serait tentante — mais c'est lui qui fixe le nombre de boîtes du schéma
+d'échanges, l'un des trois garde-fous du §24. Je l'ai mis hors périmètre pour
+qu'il ne voyage pas en passager clandestin d'un correctif de trois lignes. À
+traiter séparément, avec sa propre recette.
+
+**Contrôle de non-changement.** Cette correction est préventive : aucun outil
+des trois diagnostics ne porte aujourd'hui de graphie accentuée en double, donc
+le résultat attendu était l'identité. `template-use-case` : 14 outils, 35
+placements, **6 outils estompés** (Excel 6 blocs, Mail 5, Oral 5, Papier 5,
+Word 4, PowerPoint 2), légende affichée. Identique au §24. `tsgo --noEmit` :
+0 erreur. J'avais demandé à Lovable de ne rien corriger et de me signaler tout
+écart — un chiffre différent aurait voulu dire que la substitution touchait
+autre chose que ce qu'on croyait.
