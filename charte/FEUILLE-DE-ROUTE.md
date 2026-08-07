@@ -110,12 +110,33 @@ et il ne coûte rien de plus une fois les deux briques posées.
 ## Vague 4 — ce qui rend la restitution juste
 
 **Un outil générique ne devrait pas être enfermé dans un seul bloc.**
+*Envoyé à Lovable le 07/08, avec le correctif ci-dessous.*
+
 `calculEnvIT` court-circuite sur `if (!placements.has(clef))` : le premier
 processus rencontré décide pour tous les autres. Mesuré sur la trame : Excel,
 Word et Mail sont étiquetés « Compétences » pour les dix use cases, parce que
 UC 6 est en tête de liste. Le code fait ce qu'il annonce, mais le résultat est
 faux en restitution — Excel est justement l'outil commun de tout le site — et
 il dépend de l'ordre des onglets. Voir `PASSE-STATIQUE.md` §14.
+
+Le défaut ne touche que les outils **génériques** : un outil de la table A ou un
+outil inconnu se classe sans regarder le processus. `cible-mercateam` ne compte
+donc aucun outil multi-blocs — c'est l'« avant » qui est faux, pas l'« après ».
+
+L'unité de placement passe de l'outil au couple **(outil, bloc)**. Le schéma
+d'échanges, lui, garde **une boîte par outil** : les positions y sont indexées
+par nom, les flèches vont d'outil à outil, et six boîtes Excel multiplieraient
+les flèches pour dire quelque chose de faux — c'est le même Excel qui échange
+avec Padoa. Les outils répétés sont **estompés** dans la mosaïque, avec une
+légende qui survit à l'impression.
+
+**Le bloc d'un processus catalogué vient de sa clef de use case.** Corollaire
+découvert en mesurant : `blocDuProcessus` devine le bloc depuis le *nom*, et
+trois use cases sur dix n'y matchent rien — UC 2, UC 4, UC 5 tombaient en
+« Non classé ». `processus.use_case` existe depuis la vague 1 ; une table
+`uc1…uc10 → bloc` supprime la devinette. La table B reste, pour les processus
+libres. Fait dans le même envoi : le multi-blocs seul n'aurait fait que
+multiplier proprement un mauvais classement.
 
 **Les frictions transverses.** Une friction isolée est un incident, la même sur
 trois processus est un problème d'organisation. C'est ce que prévoyait la spec

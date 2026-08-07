@@ -151,13 +151,11 @@ Le SIRH et la GTA restent la source des absences et des temps, l'ERP reste la
 source de la charge. Mercateam s'y branche. Les faire disparaître du schéma
 donnerait un avant/après flatteur et faux — et un client industriel le verrait.
 
-## Une entrée manque dans le classement des outils
+## Le classement des outils : entrées ajoutées, et une erreur corrigée
 
-Les cinq modules Mercateam tombent aujourd'hui dans **« Non classé »** :
-`TABLE_A` de `src/lib/environnement-it.ts` ne connaît pas le produit. Le schéma
-« après » est donc illisible tant que ce n'est pas corrigé.
-
-Cinq entrées suffisent, et elles tombent sur des blocs qui existent déjà :
+Les cinq modules Mercateam tombaient dans **« Non classé »** — `TABLE_A` de
+`src/lib/environnement-it.ts` ne connaissait pas le produit. Cinq entrées l'ont
+réglé, sur des blocs qui existaient déjà :
 
 | motif | bloc | activité |
 |---|---|---|
@@ -167,11 +165,22 @@ Cinq entrées suffisent, et elles tombent sur des blocs qui existent déjà :
 | `mercateam (planner)` | `planning` | Affectation au poste |
 | `mercateam (kpis)` | `bi` | Indicateurs de polyvalence |
 
-Attention à l'ordre : un motif `mercateam` nu capterait les cinq. S'il en faut
-un comme filet, il doit venir **après** les entrées précises.
+Attention à l'ordre : un motif `mercateam` nu capterait les cinq. Le filet
+existe, et il est placé **après** les entrées précises.
 
-**Et cela ne suffira pas.** Un outil n'est placé qu'une fois, par le premier
-processus qui l'emploie (`PASSE-STATIQUE.md` §14). Or l'argument de la cible est
-précisément qu'**un seul outil couvre plusieurs blocs**. Le classement
-multi-blocs, rangé en vague 4 de la feuille de route, est donc un prérequis du
-rendu avant/après, pas un confort.
+### Ce que ce document affirmait à tort
+
+Il disait que le classement multi-blocs était un **prérequis du rendu
+avant/après**, un outil ne pouvant être placé qu'une fois. **C'est faux, et la
+mesure le montre : `cible-mercateam` ne compte aucun outil multi-blocs.**
+
+La raison est simple : les cinq modules sont cinq *noms d'outils distincts*, et
+chacun a sa propre entrée en table A, dont le bloc ne dépend pas du processus.
+Ils se répartissent donc déjà sur quatre blocs — Compétences, Formations,
+Planning, BI. Le raisonnement confondait « un produit couvre plusieurs blocs »
+avec « un nom d'outil est placé plusieurs fois ».
+
+Le placement unique est un vrai défaut, mais il frappe **l'existant, pas la
+cible** : il ne concerne que les outils génériques, ceux qui héritent du bloc
+de leur processus. Sur `template-use-case`, Excel sert dans 6 blocs et n'est
+montré qu'une fois. C'est l'« avant » qui est faux, pas l'« après ».
