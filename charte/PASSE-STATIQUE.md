@@ -1512,7 +1512,7 @@ Lovable a mesuré autrement : en important le module TypeScript réel et sa
 version d'avant (`git show a6f0c29`), et en les faisant tourner sur un export
 de la base. Les deux séries coïncident case par case.
 
-| diagnostic | état | outils | placements | « Non classé » | activités | renseignées | boîtes |
+| diagnostic | état | outils | placements | « Non classé » | activités | renseignées | outils au schéma¹ |
 |---|---|---|---|---|---|---|---|
 | template-use-case | avant | 14 | 14 | 3 | 40 | 8 | 14 |
 | template-use-case | **après** | 14 | **35** | **2** | 43 | **11** | 14 |
@@ -1521,10 +1521,15 @@ de la base. Les deux séries coïncident case par case.
 | cible-mercateam | avant | 9 | 9 | 1 | 36 | 8 | 9 |
 | cible-mercateam | **après** | 9 | 9 | 1 | 36 | 8 | 9 |
 
+¹ Cette colonne compte la **liste d'outils candidats** passée au schéma, et non
+les boîtes réellement dessinées — je l'avais mal nommée, voir §26. Les deux
+diffèrent : `sekurit-float-france` a 9 candidats mais 8 boîtes, Padoa n'entrant
+dans aucun échange et n'apparaissant qu'en pastille « Sans échange relevé ».
+
 Deux implémentations écrites séparément qui tombent sur les mêmes 42 nombres,
 c'est ce qui distingue une recette d'une déclaration. Les trois garde-fous
 tiennent : **le nombre d'outils ne bouge pas** (on ne crée pas d'outil, on le
-place plusieurs fois), **le nombre de boîtes du schéma ne bouge pas**, et
+place plusieurs fois), **la liste d'outils du schéma ne bouge pas**, et
 **`cible-mercateam` est identique en tout point** — les cinq modules Mercateam
 étant classés par la table A, ils ne dépendent pas du processus.
 
@@ -1601,10 +1606,11 @@ explicitement ; le diff montre les deux.
 
 **Hors périmètre, volontairement.** Le `useMemo` `outils`, juste au-dessus,
 dédoublonne par `!vus.includes(o)` en comparaison exacte. La même substitution
-y serait tentante — mais c'est lui qui fixe le nombre de boîtes du schéma
-d'échanges, l'un des trois garde-fous du §24. Je l'ai mis hors périmètre pour
-qu'il ne voyage pas en passager clandestin d'un correctif de trois lignes. À
-traiter séparément, avec sa propre recette.
+y serait tentante — mais ~~c'est lui qui fixe le nombre de boîtes du schéma
+d'échanges~~ **(faux, voir §26 : les boîtes viennent des échanges)**, l'un des
+trois garde-fous du §24. Je l'ai mis hors périmètre pour qu'il ne voyage pas en
+passager clandestin d'un correctif de trois lignes. À traiter séparément, avec
+sa propre recette.
 
 **Contrôle de non-changement.** Cette correction est préventive : aucun outil
 des trois diagnostics ne porte aujourd'hui de graphie accentuée en double, donc
@@ -1614,3 +1620,74 @@ Word 4, PowerPoint 2), légende affichée. Identique au §24. `tsgo --noEmit` :
 0 erreur. J'avais demandé à Lovable de ne rien corriger et de me signaler tout
 écart — un chiffre différent aurait voulu dire que la substitution touchait
 autre chose que ce qu'on croyait.
+
+---
+
+## 26. `outils` dédoublonné par `normaliser` — et une erreur de lecture de ma part
+
+Correctif reçu en `8f58282`. **Un seul `useMemo`, un seul fichier**
+(`src/components/diagnostic/EnvironnementIT.tsx`) : le dédoublonnage par
+`!vus.includes(o)` devient un `Set` de clefs `normaliser(o)`, la **première
+graphie rencontrée** étant conservée puisque c'est elle qui s'affiche. Tri par
+`localeCompare` inchangé. `git diff` vide sur `src/flux/`, `package.json`,
+`schema-outils.ts` et `SchemaEchanges.tsx`. `tsgo --noEmit` : 0 erreur.
+
+### 26.1 Ce que j'avais écrit et qui était faux
+
+Aux §24 et §25 j'ai justifié la mise hors périmètre de ce `useMemo` en écrivant
+qu'il **fixait le nombre de boîtes du schéma d'échanges**. C'est faux, et la
+lecture de `src/lib/schema-outils.ts` le montre sans ambiguïté :
+
+```
+ordre  ←  relies = [...poids.keys()]  ←  poids  ←  aretes  ←  echanges
+```
+
+Les boîtes dessinées viennent des **extrémités des échanges**. `outils` ne sert
+qu'à deux choses : calculer `isoles = outils.filter(o => !poids.has(o))`, les
+pastilles « Sans échange relevé », et décider si la section s'affiche
+(`outils.length ?`). Un outil qui n'échange avec rien n'est jamais un nœud.
+
+La preuve est dans les données, pas dans le raisonnement :
+**`sekurit-float-france` a 9 outils candidats et 8 boîtes** — Padoa n'entre
+dans aucun échange. J'avais donc aussi mal nommé une colonne du tableau du §24,
+corrigée en « outils au schéma ».
+
+Ma prudence portait sur le mauvais risque. Le correctif était plus anodin que
+je ne l'ai annoncé.
+
+### 26.2 Contrôle de non-changement
+
+Préventif là encore — aucun outil ne porte deux graphies aujourd'hui.
+
+| diagnostic | outils avant | outils après | boîtes | sans échange relevé |
+|---|---|---|---|---|
+| template-use-case | 14 | 14 | 14 | 0 |
+| sekurit-float-france | 9 | 9 | 8 | 1 — Padoa |
+| cible-mercateam | 9 | 9 | 9 | 0 |
+
+### 26.3 L'incohérence qui reste, et pourquoi je n'y touche pas
+
+Toute la couche schéma compare les noms d'outils **caractère à caractère** :
+`isoles` teste `!poids.has(o)`, `positions` et `data-outil` sont clefés sur le
+nom exact, `clefPaire` trie des noms bruts. La couche environnement, elle,
+compare par `normaliser`. Les deux ne se rejoignent nulle part.
+
+Corrigé naïvement — indexer sur `normaliser(nom)` — cela casserait quatre
+choses, dont deux avec perte silencieuse :
+
+- **Les `positions` enregistrées** deviennent introuvables : toute boîte
+  déplacée à la main repart au placement automatique, sur tous les diagnostics
+  existants.
+- **Les `echanges` enregistrés** fusionnent quand deux graphies coexistent :
+  les fréquences s'additionnent et la nature comme le libellé se résolvent au
+  premier rencontré — perte silencieuse.
+- **Le déterminisme du rendu** : la fusion change `ordre`, donc le placement,
+  donc l'image produite en PDF et en PPTX. Or `schema-outils.ts` s'ouvre sur un
+  engagement explicite de reproductibilité.
+- **L'export/import JSON**, où les noms circulent tels quels.
+
+Le chemin le moins risqué : **clef normalisée en interne, libellé d'affichage
+conservé**, avec repli de lecture sur l'ancienne clef et réécriture
+opportuniste à la première sauvegarde. Aucune migration destructive. Non
+engagé — c'est une passe à part entière, avec sa propre recette sur les
+positions et le déterminisme du rendu.
