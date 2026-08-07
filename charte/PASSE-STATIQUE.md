@@ -1998,3 +1998,23 @@ partir du code seul avait bien identifié la couche (la jambe de retour), mais
 attribuait la perte au courtier au lieu de la chercher dans notre routeur.
 Un accès navigateur aurait fait gagner deux allers-retours ; il reste le
 premier poste de la feuille de route.
+
+### 30.6 Confirmé en production
+
+Connexion Google vérifiée par l'utilisateur sur `mercaudit.lovable.app` après
+publication du commit `aa71a169`. **Le correctif suffit.**
+
+Cela tranche l'inconnue laissée ouverte au §30.4 : **le courtier renvoie bien
+un fragment `#access_token=…`**, et non un `?code=` PKCE. `detectSessionInUrl`
+faisait donc déjà tout le travail — il suffisait de cesser de lui retirer l'URL
+sous les pieds. Aucune route de rappel n'a été nécessaire, ce qui valide le
+choix de ne pas en écrire une avant de savoir.
+
+Le second risque du §30.4 tombe aussi : `void supabase.auth` **a survécu à la
+minification** de la construction de production, puisque le parcours aboutit.
+
+Reste un point d'hygiène, sans urgence : les traces `[auth] …` de
+`src/lib/auth.tsx` et `src/routes/index.tsx` sont des échafaudages de mise au
+point. Elles ne divulguent que des noms de paramètres et des longueurs, jamais
+une valeur de jeton — on peut les laisser le temps de s'assurer que le flux
+tient, puis les retirer.

@@ -115,9 +115,13 @@ fait.**
 - Clignotement de la liste des versions (`placeholderData: (p) => p`).
 - L'onglet « Transverse - Preuves » annoncé par la page de garde du classeur et
   absent du fichier — rien n'a été inventé pour combler le trou.
-- L'état du flux Google OAuth, **à revérifier** : il était signalé comme ne se
-  terminant pas, mais `est_mercateam()` lit une adresse dans le JWT, donc la
-  connexion aboutit au moins parfois.
+- ~~L'état du flux Google OAuth~~ — **réparé et vérifié en production le
+  07/08** (`d3b60d9` + `aa71a16`, publié). Connexion confirmée par
+  l'utilisateur sur `mercaudit.lovable.app`. Voir `PASSE-STATIQUE.md` §30.
+- Retirer, quand le flux aura tenu quelques jours, les traces de mise au point
+  `[auth] …` de `src/lib/auth.tsx` et `src/routes/index.tsx`. Elles ne
+  divulguent que des noms de paramètres et des longueurs, jamais de valeur —
+  donc rien d'urgent, mais ce sont des échafaudages.
 
 ---
 
