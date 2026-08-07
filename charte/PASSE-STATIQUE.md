@@ -1914,3 +1914,87 @@ navigateur peut faire** : ce que montre la barre d'adresse au retour de Google.
 
 Ce qui reste vrai quoi qu'il arrive : `est_mercateam()` verrouille la base. Un
 compte extérieur qui obtiendrait une session ne peut lire ni écrire une ligne.
+
+---
+
+## 30. OAuth Google — la cause réelle, trouvée par une copie d'écran
+
+### 30.1 Ma déduction était juste sur la prémisse, fausse sur la conclusion
+
+Au §29.3 j'écrivais : `detectSessionInUrl` sait lire `#access_token=…`, donc si
+le courtier renvoyait ce fragment la connexion fonctionnerait déjà ; elle ne
+fonctionne pas, **donc** le courtier ne renvoie pas ce format.
+
+La prémisse était bonne, la conclusion trop courte. Il manquait un troisième
+terme : **le fragment peut être renvoyé et détruit avant lecture.**
+
+Une copie d'écran l'a montré en une seconde, là où deux passes de lecture de
+code ne l'avaient pas vu : URL `mercaudit.lovable.app/clients`, aucun fragment,
+aucun paramètre, **aucun message d'erreur**, et la carte de connexion affichée.
+
+### 30.2 Le mécanisme
+
+`redirect_uri` vaut `window.location.origin` : le retour atterrit sur `/`. Or
+`src/routes/index.tsx` portait
+
+```ts
+beforeLoad: () => { throw redirect({ to: "/clients", replace: true }); }
+```
+
+`beforeLoad` s'exécute pendant le chargement du routeur — avant tout rendu,
+avant l'effet de montage de `FournisseurAuth`, et donc **avant que le `Proxy`
+paresseux de `client.ts` n'ait créé le client Supabase**. Et `redirect({ to })`
+reconstruit la localisation à partir de `to` seul : ni requête ni fragment ne
+sont reportés.
+
+Les jetons arrivent, la redirection les jette, `detectSessionInUrl` s'exécute
+sur une URL déjà nettoyée. **Rien n'échoue** — d'où l'absence de message. Une
+information est simplement perdue en route.
+
+Cela explique aussi pourquoi la connexion marche dans l'éditeur : en iframe, le
+SDK passe par une fenêtre surgissante, les jetons reviennent par `postMessage`
+et ne transitent jamais par l'URL. Aucune redirection ne peut les perdre.
+
+### 30.3 Ceinture et bretelles
+
+**Le report** (`d3b60d9`) — `beforeLoad` reporte `search` et `hash` sur la
+cible au lieu de les perdre, sous garde `typeof window`. Correct quel que soit
+le format renvoyé : perdre le fragment est un défaut en soi.
+
+**Le forçage** (`aa71a16`) — `void supabase.auth` au chargement de
+`src/router.tsx`, dans le navigateur seulement. Sans lui, le report reste un
+**pari sur un ordre d'exécution que rien ne contractualise** : `detectSession-
+InUrl` ne s'exécute qu'une fois, à la construction du `GoTrueClient`, et lit
+`window.location` à cet instant précis. Le forçage le fait naître avant la
+première navigation. Aucune requête réseau ajoutée : la construction est
+synchrone et locale, seul un rafraîchissement de jeton peut suivre, qui aurait
+eu lieu quelques millisecondes plus tard de toute façon.
+
+`router.tsx` plutôt que `start.ts` : ce dernier ne définit que des middlewares,
+tandis que `router.tsx` est importé par l'entrée navigateur juste avant
+`createRouter()`. Ailleurs, l'ordre serait à la discrétion de l'empaqueteur.
+
+### 30.4 Ce qui reste incertain
+
+**Le format du retour n'est toujours pas observé.** Si le courtier renvoie
+`?code=…` plutôt qu'un fragment, ni le report ni le forçage ne suffiront : le
+SDK n'expose **que** `signInWithOAuth`, aucune méthode d'échange, et
+`exchangeCodeForSession` échouerait faute de `code_verifier` posé par
+supabase-js — ce n'est pas lui qui a initié le parcours. C'est la trace
+`[auth] url d'arrivée (avant redirection)` qui tranchera.
+
+**Risque mineur non levé** : `void supabase.auth` est une lecture de propriété
+au niveau module. Rollup la conserve (une propriété peut porter un accesseur),
+mais c'est le genre d'expression qu'un réglage d'élagage agressif pourrait
+retirer — silencieusement, et **en production seulement**. Si le correctif
+échoue alors que la trace montre un fragment bien présent, c'est la première
+chose à regarder.
+
+### 30.5 Ce que cette passe apprend sur la méthode
+
+Deux passes de lecture de code ont produit un diagnostic cohérent, argumenté —
+et faux. **Une copie d'écran l'a corrigé en une seconde.** Le raisonnement à
+partir du code seul avait bien identifié la couche (la jambe de retour), mais
+attribuait la perte au courtier au lieu de la chercher dans notre routeur.
+Un accès navigateur aurait fait gagner deux allers-retours ; il reste le
+premier poste de la feuille de route.
