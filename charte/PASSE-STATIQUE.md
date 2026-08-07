@@ -1768,3 +1768,79 @@ sur-ensemble sans perte. Mais unifier ne se réduit pas à remplacer une
 fonction : `environnement-it.ts` sert de **clef de placement** (`outil|bloc`)
 et `schema-outils.ts` clefe sur le nom exact. Changer la normalisation change
 des clefs enregistrées. Cela relève de la refonte clef/libellé du §26.3.
+
+---
+
+## 28. L'« après » n'efface plus les systèmes de référence — `b09ccf0`
+
+### 28.1 Le défaut, et la preuve de la règle
+
+`etapesApresBilan` remplaçait les supports d'une étape marquée `mercateam` par
+la seule chaîne `"Mercateam"`. Tout tombait, **y compris l'ERP, le SIRH et la
+GTA**, qui restent en production après un déploiement. Le commentaire du code
+l'assumait — « le prix assumé du contrôle à trois positions » — mais le
+résultat est un schéma montré en restitution à un industriel, où son ERP a
+disparu. `trames/README.md` s'y oppose mot pour mot : « Les faire disparaître
+du schéma donnerait un avant/après flatteur et faux — et un client industriel
+le verrait. » Deux documents du même projet se contredisaient, et c'était le
+livrable client qui tranchait.
+
+La règle n'a pas été devinée, elle a été **lue dans la trame cible**, écrite à
+la main depuis les User Journeys :
+
+| | existant (141 étapes) | cible (109 étapes) |
+|---|---|---|
+| générique | Excel 49, Papier 35, Oral 24, Au jugé 16, Mail 9, Word 7, PowerPoint 5 | **aucun** |
+| système de référence | ERP 2, SIRH/GTA 2, GTA-paie 1 | **ERP 4, SIRH/GTA 2, GTA-paie 1** |
+
+*Le générique disparaît, le système de référence demeure.* Le correctif
+s'appuie donc sur une distinction qui existait déjà et qui est éprouvée —
+`TABLE_A` — plutôt que sur une nouvelle liste à maintenir : `estSpecifique` est
+exporté à côté de `estGenerique`.
+
+### 28.2 Mesure prédite avant l'envoi
+
+Les données réelles ne pouvaient rien montrer : **une seule étape marquée dans
+toute la base** (Sekurit, UC 1, ordre 6), et elle porte `Excel` — générique,
+donc supprimée avant comme après. J'ai donc demandé une simulation sur les 141
+étapes de la trame, toutes forcées `mercateam`, en annonçant le résultat
+attendu avant de l'envoyer, avec consigne de ne rien corriger en cas d'écart.
+
+**7 outils obtenus, exactement les 7 annoncés** — `Mercateam`,
+`Logiciel (ERP)`, `Logiciel (ERP / MES)`, `Logiciel (SIRH / GTA)`,
+`Logiciel (GTA / paie)`, `Logiciel (GED)`, `Réseau` — contre 1 seul avec
+l'ancien code. « Au jugé » disparaît, ce qui est tout l'objet du déploiement.
+
+Le consommateur n'est pas `ApresDeploiement.tsx` (qui lit la trame cible) mais
+le `useMemo` `apresBilan` de `clients.$code.tsx` et son jumeau dans
+`impression.$code.tsx`. Effet de bord attendu et souhaitable : une étape
+marquée porte désormais deux supports, ce qui crée un échange
+`Mercateam ↔ Logiciel (ERP)` là où il n'y en avait aucun — c'est exactement le
+« Mercateam s'y branche » du README.
+
+### 28.3 La limite, assumée et non masquée
+
+La règle automatique se trompe encore dans les deux sens : `Réseau` et
+`Logiciel (GED)` survivent alors que la cible les supprime ; `TV / écran
+atelier` serait supprimé alors que la cible le garde. **La survie d'un outil
+est un jugement, pas une propriété de sa catégorie.**
+
+L'erreur résiduelle penche du bon côté : elle montre *plus* d'outils hérités
+que la réalité, donc elle sous-vend le déploiement au lieu de le survendre.
+Pour un audit, c'est la direction sûre.
+
+Une remarque de la réalisation mérite d'être gardée : un cochage étape par
+étape **ne couvrirait que la moitié du problème**. `TV / écran atelier` est un
+outil que la cible *ajoute* — aucune case à cocher sur les supports existants
+ne peut le faire apparaître. L'arbitrage se joue donc au niveau du use case,
+où il tient en quelques décisions, et non de l'étape, où il en faudrait des
+dizaines. Reporté en feuille de route §1c.
+
+### 28.4 Une modification non demandée
+
+Le diff touche `src/routeTree.gen.ts`, hors périmètre : dix lignes retirées,
+dont le bloc `declare module '@tanstack/react-start'` qui enregistre le typage
+du routeur et `ssr: true`. Fichier généré, donc churn probable de l'outil de
+génération plutôt qu'intention — mais `tsgo` passe aussi bien avec qu'sans, ce
+qui est cohérent avec un typage affaibli et non avec une équivalence. À
+restaurer, ou à confirmer comme régénération légitime.

@@ -1,178 +1,134 @@
 # Diagnostic OS — feuille de route
 
-Fusion des pistes relevées à la lecture du code (passe du 06/08) et des deux
-demandes d'Alexis : **voir un avant/après Mercateam** et **choisir les use cases
-à la création d'un diagnostic**.
+Réécrite le 07/08/2026, **après lecture du code et de la base** plutôt que du
+document précédent.
 
-Rangé par vagues, pas par ordre de préférence : chaque vague ouvre la suivante.
+> La version antérieure annonçait comme « à faire » quatre chantiers déjà en
+> production : les vagues 1, 2, 3a et la moitié de la 4. Elle décrivait aussi
+> un « reste à trancher » — les libellés des cinq niveaux de maturité — résolu
+> depuis, les dix échelles étant rédigées dans `src/lib/maturite.ts`.
+> **Une feuille de route qui retarde sur son produit fait perdre plus de temps
+> qu'elle n'en fait gagner** : on y relit des décisions déjà prises et on
+> propose de construire l'existant. D'où la règle nouvelle ci-dessous.
 
----
-
-## Vague 1 — en cours
-
-Envoyé à Lovable le 06/08. Voir `PASSE-STATIQUE.md` pour la vérification.
-
-- **Rattacher les frictions aux étapes.** `frictions.etape_id`, nullable,
-  `ON DELETE SET NULL`. Le lien voyage dans le JSON sous forme d'`ordre`,
-  jamais d'uuid — les identifiants ne survivent pas à `importer_client_json`.
-  Pastille sur la carte du diagramme, greffée par portail : `moteur.js` reste
-  intouché.
-- **Niveau de maturité par processus.** `maturite` 1–5 nullable +
-  `maturite_note`. Pas de moyenne dans l'en-tête : les use cases ne sont pas
-  commensurables.
-
-**Reste à trancher :** les cinq niveaux n'ont de libellé dans aucune source du
-projet. Une échelle sans définition partagée dérivera d'un consultant à l'autre.
+**Règle de tenue.** Aucune ligne de ce document ne vaut si elle n'a pas été
+vérifiée contre le code ou la base. Une entrée « fait » cite son commit ou sa
+mesure ; une entrée « à faire » dit ce qui a été constaté et où.
 
 ---
 
-## Vague 2 — la trame devient un produit
+## Livré
 
-> Demande d'Alexis : « quand nouveau diagnostic, demander quel process / use
-> case sont audités pour donner un template prêt à l'emploi ».
-
-Aujourd'hui, partir de la trame suppose d'exporter un fichier JSON, le
-retrouver, l'importer. La trame est pourtant déjà en base (`template-use-case`,
-10 processus, 141 étapes) et `duplication.ts` existe.
-
-**Cible.** « Nouveau diagnostic » demande le nom du site, la date, puis affiche
-les onze use cases avec leur nom commercial et leur périmètre. On coche ceux
-qui seront audités, on obtient un diagnostic pré-rempli des seuls processus
-retenus.
-
-**Ce que ça suppose.** Une notion de *trame* distincte d'un diagnostic client :
-soit un drapeau sur `clients`, soit une table à part. Le drapeau est moins cher
-et suffit — mais il faut alors que les trames n'apparaissent pas dans la liste
-des diagnostics, ne comptent pas dans les statistiques, et ne puissent pas être
-supprimées par mégarde.
-
-**Pourquoi cette vague avant l'avant/après.** Les processus cible Mercateam
-sont du contenu de trame. Sans bibliothèque, ils n'ont nulle part où vivre.
+| Sujet | Où c'est, comment c'est vérifié |
+|---|---|
+| **Frictions rattachées aux étapes** | `frictions.etape_id`, clé **composite** `(etape_id, processus_id)` : l'étape désignée appartient forcément au même processus. `on delete set null` sur la seule colonne `etape_id` — supprimer l'étape détache la friction sans l'emporter. |
+| **Maturité par processus** | `processus.maturite` 1–5 + note, et `maturite_bilan` pour la fin de déploiement. **Dix échelles rédigées**, cinq niveaux chacune, aucune échelle générique de repli, aucune moyenne entre use cases. |
+| **La trame est un produit** | `clients.trame` (`existant` / `cible`), sélecteur des dix use cases à la création, pré-remplissage par `creerUseCases` → `recopier`. Rattachement par `processus.use_case` **uniquement**, jamais par le nom. Trame repliée hors de la liste et non supprimable. Unicité garantie en base (`clients_trame_unique`, `bf90edc`). |
+| **Avant / après** | Comparaison **par ensembles** — outils, rôles, nombre d'étapes, maturités — sans appariement étape à étape, les deux jeux ayant été écrits indépendamment. Plus un mode bilan à trois positions sur l'étape (`etapes.bilan`). |
+| **Environnement IT juste** | Placement multi-blocs `(outil, bloc)`, bloc déduit de la clef de use case, outils répétés estompés avec légende. Mesuré : 14 outils / 35 placements sur la trame, contre 14 / 14 avant. `PASSE-STATIQUE.md` §24–26. |
+| **L'« après » ne ment plus** | Une étape passée sous Mercateam **garde ses systèmes de référence** (ERP, SIRH, GTA, GED) et perd le générique et l'inconnu. Mesuré : 7 outils au lieu de 1 en simulation sur la trame (`b09ccf0`, §28). |
+| *Hors plan* | Versions complètes (prise, liste, restauration elle-même annulable), export PPTX, et **filtre de sécurité par domaine** `est_mercateam()` — sans lui, tout compte OAuth authentifié voyait tous les diagnostics. |
 
 ---
 
-## Vague 3 — l'avant / après Mercateam
+## À faire
 
-> Demande d'Alexis : « voir un avant/après Mercateam des process / use case
-> (support utilisé, nouveau process…) ».
+### 1. Justesse du livrable — ce qu'un client voit
 
-C'est la demande la plus lourde, et celle qui a le plus de valeur commerciale :
-elle transforme un état des lieux en démonstration.
+**1a. Les supports déclaratifs doivent être une catégorie, pas un mot-clé.**
+40 étapes sur 141 de la trame reposent sur « Au jugé » ou « Oral » ; sur
+Sekurit, zéro, parce que le vocabulaire y est différent. Une détection par
+mot-clé donnerait donc un indicateur qui ne fonctionne que sur nos propres
+trames. Il faut que « déclaratif » soit une propriété de l'outil, au même titre
+que générique et spécifique — alors « X % du processus repose sur du
+déclaratif » devient un chiffre défendable devant un client.
+*Coût faible : la machinerie `estGenerique` / `estSpecifique` existe déjà.*
 
-### Le modèle
+**1b. Les frictions transverses.** Une friction isolée est un incident, la même
+sur trois processus est un problème d'organisation. Les frictions étant
+désormais rattachées à des étapes, une friction transverse peut désigner
+plusieurs points précis du flux. C'est le croisement qui porte en salle.
 
-Un processus porte une **variante** : `existant` ou `cible`, et un lien vers son
-jumeau. La cible est un processus ordinaire — elle hérite donc gratuitement du
-diagramme, des frictions, des chiffres clés et des couloirs.
+**1c. L'arbitrage de survie des outils, au niveau du use case.** La règle
+automatique de `etapesApresBilan` se trompe encore dans les deux sens : sur la
+trame, `Réseau` et `Logiciel (GED)` survivent alors que la cible écrite à la
+main les supprime, et `TV / écran atelier` — que la cible **ajoute** — ne peut
+apparaître par aucune règle dérivée de l'existant. Un cochage étape par étape
+ne couvre que la moitié du problème : il sait retirer et conserver, pas
+ajouter. L'arbitrage se joue donc au niveau du use case, où il tient en
+quelques décisions, et non de l'étape, où il en faudrait des dizaines.
+*Non engagé — à concevoir avant de coder.*
 
-**Le gain le plus important est acquis sans une ligne de code
-supplémentaire :** `calculEnvIT` déduit l'environnement IT des supports des
-étapes. Si les étapes cible portent « Mercateam » là où les étapes existantes
-portent « Excel » et « Papier », l'environnement IT *après* se dessine tout
-seul, avec ses échanges. C'est exactement le slide attendu en restitution.
+### 2. Vérification — le trou le plus large
 
-### L'ergonomie à trancher
+**2a. Aucune passe navigateur n'a jamais été faite.** Les 158 points de
+`INVENTAIRE-FONCTIONNEL.md` n'ont pas été parcourus : lisibilité du graphe,
+déterminisme du schéma sur deux chargements, convergence de l'échelle
+d'impression, glisser-déposer, rendu PPTX. Tout ce qui est écrit dans
+`PASSE-STATIQUE.md` vient de la lecture du code et de mesures sur la base.
+**Personne n'a vu cette application fonctionner.**
 
-Dix use cases audités font dix onglets. Doubler les onglets pour porter les
-cibles en fait vingt, ce qui est inutilisable.
+**2b. Deux fonctionnalités livrées n'ont aucun jeu d'essai.** La trame ne porte
+ni friction ni chiffre clé — le classeur n'en contient pas, ils se relèvent en
+entretien. Et le mode bilan n'a **jamais servi** : une seule étape marquée dans
+toute la base, portant `Excel`. Ce qui vient d'être corrigé en 1c est
+structurellement juste et n'a été exercé par personne.
 
-**Recommandation : un interrupteur « Existant / Cible » au niveau de la page**,
-qui bascule tout le document d'un coup — dix onglets, deux états. L'impression
-peut alors produire les deux jeux de pages à la suite.
+### 3. Dette de cohérence
 
-### En deux temps
+**3a. Clef et libellé dans la couche schéma.** `isoles` teste `!poids.has(o)`,
+`positions` et `data-outil` sont clefés sur le nom exact : toute la couche
+schéma compare caractère à caractère, là où la couche environnement compare par
+`normaliser`. Corriger naïvement casse quatre choses dont deux avec perte
+silencieuse — positions déplacées à la main devenues introuvables, échanges
+fusionnés dont les fréquences s'additionnent. Chemin recommandé : clef
+normalisée en interne, libellé d'affichage conservé, repli de lecture sur
+l'ancienne clef, réécriture opportuniste à la première sauvegarde. **La seule
+entrée vraiment chère de ce document.** Détail en `PASSE-STATIQUE.md` §26.3.
 
-**3a.** Dupliquer un processus en cible, le marquer, l'éditer normalement.
-Comparaison au niveau du processus : nombre d'étapes, outils employés de part
-et d'autre, maturité actuelle contre maturité visée. Peu coûteux, et suffit
-déjà à produire le slide IT avant/après.
+**3b. Trois fonctions `normaliser`.** `environnement-it.ts`, `trame-cible.ts`
+(qui compacte les espaces en plus) et une copie privée dans `roles.ts`. La plus
+robuste est celle de `trame-cible.ts`, mais unifier change des clefs
+enregistrées : dépend de 3a.
 
-**3b.** Correspondance étape à étape (`origine`, porté dans le JSON par
-l'`ordre` comme pour les frictions), pour rendre sur le diagramme les étapes
-**supprimées**, **dont le support change**, et **nouvelles**. C'est le rendu
-que tout le monde a en tête, et c'est aussi la partie chère.
+**3c. Les tables de classement sont recopiées hors du code.**
+`trames/verification.py` et `mesures/recette.py` dupliquent `TABLE_A`,
+`GENERIQUES` et `TABLE_B` pour rejouer le classement indépendamment. C'est ce
+qui permet de vérifier une livraison sans croire son auteur sur parole — mais
+rien ne signale la dérive quand une table bouge côté application.
 
-### Le vrai coût n'est pas le code
+**3d. `db/schema.sql` dérive en silence.** Régénéré le 07/08 après une semaine
+d'écart : une table entière (`versions`), huit colonnes, sept contraintes, cinq
+fonctions, et **une affirmation fausse sur la sécurité** — le fichier annonçait
+un accès ouvert à tout utilisateur authentifié. `db/README.md` porte désormais
+les requêtes de comparaison. **Tant que ce contrôle est manuel, il ne sera pas
+fait.**
 
-Il faut **écrire les dix processus cible Mercateam**. Ce sont dix logigrammes,
-au même niveau de détail que les trames existantes. Tant qu'ils n'existent pas,
-la fonctionnalité est une coquille. C'est un travail de contenu, comparable à
-celui qui a produit `Templates_diagnostic_Mercateam_v2.xlsx`.
+### 4. Confort
 
-### Ce que la vague 1 apporte ici
-
-Avec la maturité en place, l'avant/après se prolonge naturellement en
-**maturité actuelle → maturité visée**, par use case. C'est l'argument ROI,
-et il ne coûte rien de plus une fois les deux briques posées.
-
----
-
-## Vague 4 — ce qui rend la restitution juste
-
-**Un outil générique ne devrait pas être enfermé dans un seul bloc.**
-*Envoyé à Lovable le 07/08, avec le correctif ci-dessous.*
-
-`calculEnvIT` court-circuite sur `if (!placements.has(clef))` : le premier
-processus rencontré décide pour tous les autres. Mesuré sur la trame : Excel,
-Word et Mail sont étiquetés « Compétences » pour les dix use cases, parce que
-UC 6 est en tête de liste. Le code fait ce qu'il annonce, mais le résultat est
-faux en restitution — Excel est justement l'outil commun de tout le site — et
-il dépend de l'ordre des onglets. Voir `PASSE-STATIQUE.md` §14.
-
-Le défaut ne touche que les outils **génériques** : un outil de la table A ou un
-outil inconnu se classe sans regarder le processus. `cible-mercateam` ne compte
-donc aucun outil multi-blocs — c'est l'« avant » qui est faux, pas l'« après ».
-
-L'unité de placement passe de l'outil au couple **(outil, bloc)**. Le schéma
-d'échanges, lui, garde **une boîte par outil** : les positions y sont indexées
-par nom, les flèches vont d'outil à outil, et six boîtes Excel multiplieraient
-les flèches pour dire quelque chose de faux — c'est le même Excel qui échange
-avec Padoa. Les outils répétés sont **estompés** dans la mosaïque, avec une
-légende qui survit à l'impression.
-
-**Le bloc d'un processus catalogué vient de sa clef de use case.** Corollaire
-découvert en mesurant : `blocDuProcessus` devine le bloc depuis le *nom*, et
-trois use cases sur dix n'y matchent rien — UC 2, UC 4, UC 5 tombaient en
-« Non classé ». `processus.use_case` existe depuis la vague 1 ; une table
-`uc1…uc10 → bloc` supprime la devinette. La table B reste, pour les processus
-libres. Fait dans le même envoi : le multi-blocs seul n'aurait fait que
-multiplier proprement un mauvais classement.
-
-**Les frictions transverses.** Une friction isolée est un incident, la même sur
-trois processus est un problème d'organisation. C'est ce que prévoyait la spec
-§8 avant d'être abandonné, et c'est le croisement qui porte en salle. La vague 1
-le rend bien plus fort : les frictions étant rattachées à des étapes, une
-friction transverse peut désigner plusieurs points précis du flux.
-
-**Marquer les supports déclaratifs comme une catégorie, pas par mot-clé.** Sur
-la trame, 40 étapes sur 141 reposent sur « Au jugé » ou « Oral ». Sur Sekurit :
-zéro, parce que le vocabulaire y est différent. Une recherche par mot-clé
-donnerait donc un indicateur qui ne fonctionne que sur nos propres trames. Il
-faut que « déclaratif » soit une propriété de l'outil, au même titre que
-générique et spécifique. Alors « X % du processus repose sur du déclaratif »
-devient un chiffre défendable devant un client.
+- **Comparer deux versions** en disant *ce qui* a changé. Le panneau liste des
+  compteurs ; après une séance de relecture, « qu'est-ce qui a bougé depuis
+  hier ? » est la question naturelle, et les deux documents sont en base.
+- **Montrer qui édite en direct.** `versions.auteur` est désormais alimenté
+  depuis le JWT, mais à deux consultants sur site la seule protection reste un
+  bandeau de conflit après coup.
+- Clignotement de la liste des versions (`placeholderData: (p) => p`).
+- L'onglet « Transverse - Preuves » annoncé par la page de garde du classeur et
+  absent du fichier — rien n'a été inventé pour combler le trou.
+- L'état du flux Google OAuth, **à revérifier** : il était signalé comme ne se
+  terminant pas, mais `est_mercateam()` lit une adresse dans le JWT, donc la
+  connexion aboutit au moins parfois.
 
 ---
 
-## Vague 5 — confort
+## Ce que ce document ne tranche pas
 
-**Comparer deux versions.** Le panneau liste des compteurs mais ne dit pas *ce
-qui* a changé. Après une séance de relecture, « qu'est-ce qui a bougé depuis
-hier ? » est la question naturelle. Les deux documents sont en base.
+**La propagation d'une correction de trame vers les sites déjà créés** a été
+écartée le 07/08 : la copie se fait à la création, puis chaque site vit sa vie.
+C'est le bon défaut pour un audit — un relevé de terrain doit pouvoir
+contredire la trame. La conséquence assumée est qu'**aucun signal n'existe**
+quand un site tourne sur une version périmée de la trame.
 
-**Remplir `auteur` et montrer qui édite.** La colonne existe et n'a jamais été
-alimentée. À deux consultants sur site, la seule protection actuelle est un
-bandeau de conflit après coup.
-
----
-
-## Réserves ouvertes, sans rapport avec les vagues
-
-- Le clignotement de la liste des versions au « Voir plus »
-  (`placeholderData: (p) => p` le supprimerait).
-- L'onglet « Transverse - Preuves » annoncé par la page de garde du classeur
-  mais absent du fichier.
-- Le flux Google OAuth ne se termine toujours pas.
-- Les 158 points de `INVENTAIRE-FONCTIONNEL.md` restent à parcourir au
-  navigateur : lisibilité du graphe, déterminisme sur deux chargements,
-  convergence de l'échelle d'impression, glisser-déposer.
+**La création des processus cible à la sélection des use cases** a été écartée
+en même temps. La trame `cible` reste une source de comparaison, pas un
+générateur.
