@@ -1494,3 +1494,82 @@ diagramme fonctionne de bout en bout, et elle y survit après restauration du
 moteur.
 
 `maturite_bilan` reste à 0 ligne renseignée, `use_case` à 26 sur 30.
+
+---
+
+## 24. Classement multi-blocs et bloc par use case
+
+Trois fichiers touchés, aucun autre : `src/lib/environnement-it.ts`,
+`src/components/diagnostic/EnvironnementIT.tsx`, et `package.json`
+(`@lovable.dev/vite-tanstack-config` 2.9.0 → 2.9.1, bump de plateforme non
+demandé, sans rapport avec le correctif). `git diff --stat src/flux/` vide.
+
+### 24.1 Les chiffres, vérifiés par deux implémentations indépendantes
+
+J'avais calculé les attendus **avant** d'envoyer le brief, en rejouant les
+tables de classement en Python sur les données réelles (`mesures/recette.py`).
+Lovable a mesuré autrement : en important le module TypeScript réel et sa
+version d'avant (`git show a6f0c29`), et en les faisant tourner sur un export
+de la base. Les deux séries coïncident case par case.
+
+| diagnostic | état | outils | placements | « Non classé » | activités | renseignées | boîtes |
+|---|---|---|---|---|---|---|---|
+| template-use-case | avant | 14 | 14 | 3 | 40 | 8 | 14 |
+| template-use-case | **après** | 14 | **35** | **2** | 43 | **11** | 14 |
+| sekurit-float-france | avant | 9 | 9 | 1 | 38 | 7 | 9 |
+| sekurit-float-france | **après** | 9 | **12** | 1 | 39 | **8** | 9 |
+| cible-mercateam | avant | 9 | 9 | 1 | 36 | 8 | 9 |
+| cible-mercateam | **après** | 9 | 9 | 1 | 36 | 8 | 9 |
+
+Deux implémentations écrites séparément qui tombent sur les mêmes 42 nombres,
+c'est ce qui distingue une recette d'une déclaration. Les trois garde-fous
+tiennent : **le nombre d'outils ne bouge pas** (on ne crée pas d'outil, on le
+place plusieurs fois), **le nombre de boîtes du schéma ne bouge pas**, et
+**`cible-mercateam` est identique en tout point** — les cinq modules Mercateam
+étant classés par la table A, ils ne dépendent pas du processus.
+
+Les non classés se comportent comme voulu : PowerPoint en sort (générique, il
+suit désormais le bloc de son use case), `Au jugé`, `Logiciel` et
+`TV / écran atelier` y restent. Un correctif qui nettoie trop est aussi faux
+qu'un correctif qui ne nettoie pas.
+
+Répétitions sur `template-use-case` : Excel 6 blocs, Mail 5, Oral 5, Papier 5,
+Word 4, PowerPoint 2. **6 outils estompés sur 14** — le marquage distingue,
+il ne délave pas la page.
+
+### 24.2 Ce que la réalisation fait mieux que ma demande
+
+J'avais décrit la différence d'ensembles de `siAvecVue` sans en tirer la
+conséquence sur l'ordre. Lovable l'a vue : les masquages sont écrits **avant**
+les ajouts, sans quoi un déplacement d'outil à l'intérieur d'un même bloc
+(renommer la ligne qui le porte) produirait deux écritures sur la même clef
+`outil|bloc` et le masquage effacerait l'ajout. Le commentaire du code le dit
+explicitement. C'est le seul cas où les deux moitiés de la différence
+retombent sur la même clef, et il est traité.
+
+La migration au format neuf se fait **à la première écriture** : `siAvecVue`
+reconstruit `corrections` intégralement, les clefs de l'ancien format
+disparaissent d'elles-mêmes. Rien à migrer, rien à programmer.
+
+### 24.3 Deux réserves, aucune bloquante
+
+**Le marquage des répétitions compare avec `toLowerCase()`**, pas avec le
+`normaliser()` du module (qui retire aussi les accents). Deux graphies d'un
+même outil différant par un accent — `Réseau` / `Reseau` — seraient vues comme
+deux outils par le marquage, alors que le reste du fichier les fusionne.
+Aucune donnée actuelle n'est concernée. La cause est identifiable :
+`normaliser` n'est pas exporté, le composant ne pouvait pas s'en servir.
+
+**Un outil ne peut toujours pas figurer deux fois dans le même bloc.** La clef
+de correction est `outil|bloc` et non `outil|bloc|activité` : ajouter Excel à
+une seconde ligne de « Compétences » le retirerait de la première au rendu
+suivant. Ce n'est **pas une régression** — avant, la clef était le seul nom
+d'outil et la limite était plus stricte encore (une seule ligne dans tout le
+schéma). Le champ « + outil » permet de l'atteindre en mode édition.
+
+### 24.4 Base inchangée
+
+4 clients, 30 processus, 393 étapes, 16 frictions, 1 étape marquée. **Aucun
+diagnostic ne porte de corrections d'environnement IT** (0 sur 4) : le
+changement de format des clefs ne s'est appliqué à rien. C'était le bon moment
+pour le faire.
