@@ -2018,3 +2018,101 @@ Reste un point d'hygiène, sans urgence : les traces `[auth] …` de
 point. Elles ne divulguent que des noms de paramètres et des longueurs, jamais
 une valeur de jeton — on peut les laisser le temps de s'assurer que le flux
 tient, puis les retirer.
+
+---
+
+## 31. Bloc 1 — les trois champs manquants du bilan
+
+Livré en deux envois : `100cfe4` (base et persistance), `75eed5e` (saisie et
+affichage). Le découpage était volontaire — un diff vérifiable vaut mieux qu'un
+gros diff survolé.
+
+### 31.1 Base et persistance — `100cfe4`
+
+```sql
+alter table etapes add column cible text not null default '';
+-- bilan des étapes : quatre états au lieu de trois
+check (bilan is null or bilan in ('mercateam','en_cours','inchangee','supprimee'))
+alter table frictions add column bilan text;
+check (bilan is null or bilan in ('resolue','persistante'))
+```
+
+Les deux `bilan` sont **nullable** à dessein : sans quoi on ne distingue pas
+« pas encore regardé » de « j'ai décidé », et la couverture d'un bilan ne se
+mesure plus.
+
+**Le point qui aurait perdu des données.** `prendre_version` fabrique ses
+instantanés avec `client_json`. Si cette fonction n'émet pas les nouveaux
+champs, tout instantané pris à partir de la migration les omet — et restaurer
+un instantané *du jour même* effacerait en silence ce qui vient d'être saisi.
+Le champ doit entrer dans le format à l'instant où il entre dans la table.
+Fait dans la même migration, vérifié : `client_json` émet `cible` et les deux
+`bilan`.
+
+Contrôles : 392 `null` + 1 `mercateam` avant **et** après ; aller-retour
+`importer_client_json(client_json(...))` identique au champ près (5 processus,
+66 étapes, 16 frictions, 11 chiffres) ; copie de test supprimée.
+
+**Décision appliquée : `en_cours` ne compte pas comme migré** dans
+`etapesApresBilan`. Une étape en cours garde ses supports actuels, comme
+« inchangée ». Si elle comptait comme acquise, un site où tout est en cours
+afficherait un environnement IT entièrement déployé — le même avant/après
+flatteur et faux que la règle des systèmes de référence vient de corriger
+(§28). On sous-vend plutôt que de survendre. Une ligne à inverser si l'on veut
+l'autre lecture.
+
+### 31.2 Saisie et affichage — `75eed5e`
+
+Quatre positions sur les cartes, contrôle à deux positions sur les frictions,
+colonne « Cible » dans la saisie rapide, câblage complet. `tsgo` à 0 erreur,
+base rigoureusement inchangée (393 étapes, 16 frictions, 4 clients, 1 étape au
+bilan, 0 friction évaluée, 0 cible) — cet envoi n'écrit aucune donnée.
+
+**La cible s'écrit en mode bilan, pas en mode modifier.** Elle appartient à la
+trajectoire de déploiement. Surtout, cela préserve l'invariant que le code
+s'était donné : les deux modes écrivent des champs strictement disjoints, donc
+ils ne peuvent pas s'écraser.
+
+Les écritures de cible et d'état de friction passent toutes deux par
+`onAvantBilan()` — l'instantané qui garde le relevé nu restaurable.
+
+**Le logo Mercateam : refusé, avec raison.** J'avais demandé de l'utiliser
+*si et seulement si* deux conditions étaient réunies. Les deux échouent :
+`LogoMercateam.tsx` fige ses couleurs (`fill="rgb(43,43,43)"`), il ne suit pas
+`currentColor` et deviendrait un pavé invisible sur l'étiquette encre ; et son
+`viewBox` de 346×48 donnerait, à 14 px de haut, un mot de 100 px de large avec
+des capitales de ~9 px — illisible, pire encore à l'impression. Le mot est
+conservé. **Poser la condition plutôt que l'instruction a évité une régression
+visuelle.**
+
+Vérifié de mon côté : `--rouge-fonce: #AD0101` existe bien dans
+`charte/tokens.css`. Sans quoi l'étiquette « toujours d'actualité » aurait été
+du texte blanc sur fond transparent — invisible, et silencieusement.
+
+**Largeur du bandeau à quatre boutons**, mesurée : ~86 px au repos (codes
+courts `M → = ✕`), ~134 px dans le pire cas (« Mercateam » écrit en toutes
+lettres) contre ~144 px utiles. Ça tient de justesse, et le bandeau étant en
+`position: absolute`, un débordement resterait visuel sans décaler la carte
+voisine. Repli disponible si la recette navigateur le contredit : garder les
+codes courts en toutes circonstances.
+
+### 31.3 Deux écarts de périmètre, tous deux acceptés
+
+`impression.$code.tsx` a été touché malgré la consigne : deux lignes, le
+renommage `edition={false}` → `mode="lecture"` plus `onEtat={rien}`. Sans quoi
+le projet ne compilait pas. Écart nécessaire, et signalé.
+
+**`routeTree.gen.ts` a de nouveau perdu son bloc `Register`** — exactement la
+récurrence annoncée au §29.1 (« ça peut se reproduire à l'identique au prochain
+commit pris au mauvais moment »). La prédiction est confirmée : ce n'est pas un
+incident isolé mais une course entre le générateur TanStack et la capture du
+commit. Le corriger à la main ne tiendra pas ; il faudrait soit exclure ce
+fichier du suivi, soit forcer sa régénération avant capture. À traiter comme un
+défaut d'outillage, pas comme une régression de code.
+
+### 31.4 Ce qui reste du bloc
+
+La **restitution imprimée** de la cible et des états de friction — troisième
+envoi, volontairement séparé. Aujourd'hui les frictions résolues s'affichent
+déjà à l'impression (le panneau est partagé), mais la colonne « Cible » vit
+dans la saisie rapide, qui n'est pas imprimée.
