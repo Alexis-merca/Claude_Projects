@@ -61,7 +61,9 @@ quelques décisions, et non de l'étape, où il en faudrait des dizaines.
 
 ### 2. Vérification — le trou le plus large
 
-**2a. Aucune passe navigateur n'a jamais été faite.** Les 158 points de
+**2a. Aucune passe navigateur n'a jamais été faite.** Liste de contrôle prête :
+`RECETTE-NAVIGATEUR.md`, 24 points ordonnés par discrétion de la panne.
+Débloquée le 07/08 par la réparation de la connexion Google. Les 158 points de
 `INVENTAIRE-FONCTIONNEL.md` n'ont pas été parcourus : lisibilité du graphe,
 déterminisme du schéma sur deux chargements, convergence de l'échelle
 d'impression, glisser-déposer, rendu PPTX. Tout ce qui est écrit dans
