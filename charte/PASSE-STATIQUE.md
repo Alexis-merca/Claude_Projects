@@ -1349,3 +1349,69 @@ marquage n'a donc rien eu à afficher — ce qui valide le point 1 de la recette
 
 Pour les exercer : sur `test-06-08`, en mode bilan, supprimer deux étapes, en
 ajouter une, changer les supports de trois autres, et regarder.
+
+---
+
+## 22. Le mode bilan, refondu — et `moteur.js` reformaté
+
+### 22.1 Le modèle correspond enfin à la demande
+
+Le jumeau est retiré. À sa place, trois colonnes sur les lignes existantes :
+`etapes.bilan` (`mercateam` / `inchangee` / `supprimee`, `null` = non évalué),
+`processus.maturite_bilan` et `maturite_bilan_note`. Contraintes vérifiées en
+base, conformes.
+
+**Les deux modes écrivent des champs disjoints**, donc le gel disparaît :
+`updateEtape(v.id, { bilan: v.etat })` est la seule écriture du mode bilan.
+
+Migration mesurée : processus 32 → 30, étapes 411 → 393. `variante`,
+`processus.origine_id` et `etapes.origine_id` sont supprimées, et l'importeur
+n'en porte plus trace. `client_json` rend `bilan` sur l'étape, `maturite_bilan`
+et `maturite_bilan_note` sur le processus. Zéro ligne renseignée
+automatiquement.
+
+**Ma prévision de recette était fausse sur un point** : j'annonçais les
+frictions inchangées, elles passent de 19 à 16. Les jumeaux portaient trois
+frictions recopiées, parties avec eux. Sekurit retrouve ses 16 d'origine — le
+comportement est juste, c'est mon attente qui ne l'était pas.
+
+### 22.2 Une réalisation meilleure que ce que j'avais demandé
+
+J'avais demandé une variante de `calculEnvIT`. Lovable a fait mieux :
+`etapesApresBilan()` transforme les étapes — exclut les `supprimee`, ramène les
+`mercateam` au seul support `« Mercateam »` — puis passe le résultat au
+`calculEnvIT` **inchangé**. La logique de classement reste à une seule source,
+et l'environnement IT « après » n'est qu'un second appel du même calcul.
+`environnement-it.ts` ne reçoit aucun ajout fonctionnel.
+
+### 22.3 `src/flux/moteur.js` a été reformaté
+
+C'est la seule interdiction absolue du projet, et elle est franchie. **378
+lignes** touchées : guillemets simples passés en doubles, retours à la ligne,
+virgules finales. Un passage de Prettier sur tout le dépôt — 44 fichiers au
+total, dont `eslint.config.js` et `.prettierignore`.
+
+**Le changement est prouvé sans effet sur le comportement.** En concaténant
+toutes les lignes retirées d'un côté, ajoutées de l'autre, puis en normalisant
+espaces, style de guillemets et virgules finales, la divergence se réduit à :
+
+| fichier | divergence |
+|---|---|
+| `moteur.js` | **4 guillemets** — Prettier a déquoté les clefs `'auto'` et `'manuel'` |
+| `mutations.js` | **une paire de parenthèses** redondantes |
+
+`{auto: x}` et `{'auto': x}` sont le même objet en JavaScript. Tout le reste est
+identique caractère pour caractère. `moteur.css` n'a pas été touché.
+
+**Ce qui est perdu n'est pas le comportement, c'est la provenance.** Le portage
+n'est plus comparable octet à octet à l'original de `diagnostic-os.html` : un
+futur diff contre la source sera noyé sous 378 lignes de bruit de mise en
+forme, et la garantie « vérifié au pixel » n'est plus attestable par
+comparaison.
+
+`.prettierignore` gagne `src/flux` **dans le même commit** : le garde-fou a été
+posé, mais après le passage du formateur.
+
+**À faire** : restaurer `src/flux/moteur.js` et `src/flux/mutations.js` dans
+leur état d'avant ce commit. `src/flux` étant désormais ignoré par Prettier, la
+restauration tient.
