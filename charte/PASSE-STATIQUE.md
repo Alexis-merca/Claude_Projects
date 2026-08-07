@@ -1268,3 +1268,84 @@ diagnostic d'essai. Reste à faire côté Alexis, avec la pastille de friction d
 Le marquage étape par étape sur les cartes — inchangée, outil changé,
 supprimée, nouvelle — n'a volontairement pas été demandé. `etapes.origine_id`
 le rend désormais possible.
+
+---
+
+## 21. Le marquage étape par étape
+
+### 21.1 La règle, vérifiée par lecture
+
+`marquerBilan(audit, jumeau)` dans `src/lib/bilan.ts` : fonction pure, deux
+cartes de marques indexées par `ordre`.
+
+- étape de bilan sans `origine_id` → `nouvelle`, sur la carte **bilan** ;
+- étape d'audit sans descendant → `supprimee`, sur la carte **audit** ;
+- couple dont les ensembles de supports diffèrent → `outil`, **sur les deux** ;
+- ensembles identiques → `continue` avant toute marque, même si le texte a
+  changé. La reformulation ne va qu'en infobulle.
+
+Les deux pièges du cahier des charges tiennent, vérifiés sur le chemin de code :
+`listeSupports` découpe sur la virgule puis `normaliser` abaisse la casse,
+retire les accents et compacte les espaces — `« Papier , excel »` et
+`« Excel, Papier »` produisent le même ensemble, donc aucune marque. Et
+plusieurs descendants sont triés par `ordre`, le premier l'emporte, le nombre
+part en infobulle : le rendu reste reproductible.
+
+### 21.2 Un piège que Lovable a vu et que je n'avais pas signalé
+
+`PastillesFrictions` repère son conteneur par `hote.previousElementSibling`.
+Recopier ce patron tel quel aurait échoué : la pastille de friction s'intercale
+désormais entre le diagramme et le nouveau composant, et son enveloppe
+`display: contents` reste un élément dans l'arbre. `MarquesBilan` prend donc
+`hote.parentElement`, avec le commentaire qui l'explique. C'est exactement le
+genre de détail qu'un copier-coller aurait cassé silencieusement.
+
+### 21.3 La collision, et le noir et blanc
+
+Pastille de friction en `top: -7; right: -7`, marque de bilan en
+`left: 6; bottom: -9` — coins opposés, plus `margin-bottom: 10px` sur les
+cartes marquées pour que l'étiquette ne morde pas la rangée suivante.
+
+Aucune marque ne repose sur la couleur : texte barré pour `supprimée`, contour
+appuyé (`inset box-shadow`) pour `nouvelle`, étiquette écrite dans les trois
+cas. Les classes sont posées depuis `styles.css`, pas dans le moteur, et
+retirées au démontage. `moteur.js` et `moteur.css` ne figurent pas au diff.
+
+Le marquage s'affiche en lecture (marques d'audit), en mode bilan (marques du
+jumeau), et à l'impression — jamais en mode modifier :
+`modeBilan ? marquage.bilan : edition ? null : marquage.audit`.
+
+### 21.4 Ce que la base raconte de la passe navigateur
+
+Alexis a exercé le mode bilan pour de vrai. Les instantanés le datent :
+
+| diagnostic | motif | auteur | heure |
+|---|---|---|---|
+| `sekurit-float-france` | `avant_bilan` | alexis@merca.team | 00:11:48 |
+| `test-alexis` | `avant_suppression_client` | alexis@merca.team | 00:22:11 |
+| `test-06-08` | `avant_bilan` | alexis@merca.team | 00:28:17 |
+
+**`auteur` est enfin renseigné.** La colonne existait depuis le §12 et n'avait
+jamais été alimentée — réserve levée : elle se remplit dès qu'un utilisateur
+agit depuis l'application authentifiée.
+
+**`test-alexis` a été supprimé par Alexis, pas par Lovable.** Le compte de
+clients est resté à 4, ce qu'une recette qui ne vérifie qu'un nombre aurait
+validé sans voir le remplacement. L'instantané `avant_suppression_client`
+existe : le diagnostic est récupérable.
+
+**Un bilan subsiste sur `sekurit-float-france`**, sur le use case Onboarding.
+Créé par Alexis à 00:11. Conséquence à connaître : ce use case est désormais
+**figé en mode modifier** tant que le jumeau existe. À supprimer si l'essai
+était exploratoire — le bouton est là.
+
+### 21.5 Non vérifié, et pourquoi
+
+**Aucune marque n'a jamais été rendue.** Les deux jumeaux en base sont des
+copies conformes : `onboarding-bilan` (8 étapes, 8 origines, 0 support changé,
+0 texte changé) et `uc10-bilan` (10 étapes, 10 origines, 0 changement). Le
+marquage n'a donc rien eu à afficher — ce qui valide le point 1 de la recette
+(0, 0, 0 juste après démarrage) et laisse les points 2 à 7 non observés.
+
+Pour les exercer : sur `test-06-08`, en mode bilan, supprimer deux étapes, en
+ajouter une, changer les supports de trois autres, et regarder.
