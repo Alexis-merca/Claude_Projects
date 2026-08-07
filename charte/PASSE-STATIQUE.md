@@ -1191,3 +1191,80 @@ Cela ne change rien au pré-remplissage : `trameExistante()` ne lit que
 était prévue pour ne pas remigrer le jour de l'avant/après.
 
 Réversible d'un clic depuis la liste.
+
+---
+
+## 20. Le mode bilan
+
+Recadrage d'Alexis : l'« après » n'est pas une trame partagée, c'est une saisie
+propre à chaque client, faite en fin de déploiement, **à partir de l'avant**.
+Ce détail crée la correspondance étape à étape que le §19 déclarait absente —
+l'après descend d'une copie de l'avant, donc chaque étape connaît son origine.
+
+### 20.1 Vérifié en base
+
+- `processus.variante text not null`, contrainte `processus_variante_valide` :
+  `variante = any (array['audit','bilan'])`.
+- `processus.origine_id` → `processus(id) on delete cascade` : détruire le
+  relevé détruit son bilan, ce qui est le bon sens de la dépendance.
+- `etapes.origine_id` → `etapes(id) on delete set null` : une étape d'audit
+  supprimée ne détruit pas l'étape de bilan qui en descendait, elle la
+  détache. C'est la même règle que pour `frictions.etape_id`.
+- **Aucune donnée touchée** : 4 clients, 28 processus, 303 étapes, 16
+  frictions. `variante` vaut `'audit'` partout, 0 jumeau, 0 étape avec origine.
+  Aucun diagnostic d'essai laissé derrière.
+
+### 20.2 Le format
+
+`client_json` porte `variante` et `origine` sur le processus, `origine` sur
+chaque étape — vérifié sur la sortie réelle, `"variante":"audit"` et
+`"origine":null` partout. `importer_client_json` traite les deux.
+
+Sans cela l'export/import perdrait le bilan, et le versionnement aussi
+puisqu'il passe par `client_json`.
+
+### 20.3 Le piège de l'environnement IT, évité au bon endroit
+
+C'était le risque principal : `calculEnvIT` lit les supports de **tous** les
+processus. Sans filtre, les outils du bilan se seraient mélangés à ceux du
+relevé, et l'environnement IT aurait affiché Mercateam à côté d'Excel comme
+s'ils coexistaient aujourd'hui.
+
+Le filtrage est fait **en un seul point**, et c'est ce qui le rend sûr :
+
+```ts
+const tousProcessus = useMemo(() => procQ.data ?? [], [procQ.data]);
+const processus = useMemo(() => processusAudit(tousProcessus), [tousProcessus]);
+```
+
+`processus` alimente les onglets, les KPI, le sélecteur et l'environnement IT —
+aucun de ces appels n'a eu besoin d'être modifié. `parProcessus`, lui, reste
+construit sur `tousProcessus` : les données des jumeaux doivent être chargées
+pour être éditables, et les clefs supplémentaires sont sans effet puisque
+`calculEnvIT` parcourt la liste qu'on lui donne.
+
+La palette est calculée sur `tousProcessus` : un même rôle garde sa teinte des
+deux côtés.
+
+### 20.4 Le gel
+
+`fige={!modeBilan && jumeau ? MESSAGE_FIGE : null}` : dès qu'un use case porte
+un jumeau, le mode modifier refuse d'écrire dessus et affiche le motif. La
+sortie existe — supprimer le jumeau rend le relevé modifiable.
+
+Le jumeau naît avec `maturite: null` plutôt qu'en copiant celle de l'audit :
+la maturité atteinte se constate, elle ne se recopie pas.
+
+Un instantané `avant_bilan` précède la création du **premier** jumeau d'un
+diagnostic, pas de chacun.
+
+### 20.5 Non vérifié
+
+**Le chemin n'a jamais été exercé** : zéro jumeau en base. Le mode, le gel, la
+recopie et la comparaison relevé-contre-bilan demandent un navigateur et un
+diagnostic d'essai. Reste à faire côté Alexis, avec la pastille de friction du
+§16 qui attend toujours.
+
+Le marquage étape par étape sur les cartes — inchangée, outil changé,
+supprimée, nouvelle — n'a volontairement pas été demandé. `etapes.origine_id`
+le rend désormais possible.
