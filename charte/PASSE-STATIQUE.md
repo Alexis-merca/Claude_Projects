@@ -2116,3 +2116,74 @@ La **restitution imprimée** de la cible et des états de friction — troisièm
 envoi, volontairement séparé. Aujourd'hui les frictions résolues s'affichent
 déjà à l'impression (le panneau est partagé), mais la colonne « Cible » vit
 dans la saisie rapide, qui n'est pas imprimée.
+
+---
+
+## 32. Bloc 1, troisième envoi — la restitution imprimée (`40898e8`)
+
+La cible vivait dans la saisie rapide, qui n'est pas imprimée : un champ que le
+client ne voit pas en restitution n'existe pas. Ajout d'une page
+« Trajectoire de déploiement » par processus, **conditionnée à la présence
+d'au moins une cible**. Elle liste les seules étapes qui en portent une —
+jamais les 66 du processus — avec l'étiquette d'état de bilan quand il y en a.
+
+Deux fichiers touchés, et deux seulement : `impression.$code.tsx` et un `export`
+ajouté devant `STYLE_ETIQUETTE` dans `MarquesBilan.tsx`. `routeTree.gen.ts` n'a
+pas dérivé cette fois.
+
+### 32.1 Ce que j'ai vérifié moi-même
+
+**La clef de la `Map` des marques.** `TableauCibles` lit `marques.get(e.ordre)`.
+Si `marquesDesEtapes` indexait par `id`, l'étiquette ne serait jamais apparue —
+sans erreur de type, sans rien à l'écran. Vérifié dans `bilan.ts` : la `Map` est
+bien indexée par `ordre`, et le commentaire le dit (« la clef du diagramme »).
+
+**L'export PPTX.** Vérifié en lisant `export-pptx.ts` plutôt qu'en le croyant :
+`document.querySelectorAll(".page-16-9")` puis `toPng` sur chaque nœud. C'est
+une photographie, pas une reconstruction — les nouvelles pages entrent seules,
+dans l'ordre du DOM. Aucune omission silencieuse possible. À noter tout de
+même : la capture est séquentielle avec un délai de 30 s par page, donc chaque
+page ajoutée allonge l'export d'autant.
+
+**La garde.** `decouper()` reçoit `d.etapes.filter(cible non vide)` ; aucune
+étape ne portant de cible, la liste est vide, `decouper` renvoie `[]` et
+`.map()` ne rend rien. Le nombre de pages est rigoureusement inchangé sur les
+quatre diagnostics.
+
+**Base inchangée**, mesurée avant et après : 393 étapes, 16 frictions,
+4 clients, 30 processus, 1 étape au bilan, 0 friction évaluée, **0 cible**.
+`tsgo --noEmit` à 0 erreur.
+
+### 32.2 Le découpage : 12 lignes, estimé et annoncé comme tel
+
+`Page` ne déborde jamais, **elle rétrécit** : elle compose à 1600 px puis met à
+l'échelle pour tenir dans le 16:9. Un tableau trop long ne dépasse donc pas de
+la page, il devient illisible — et ça ne se voit pas au moment de l'export.
+C'est la panne qu'on ne découvre qu'en salle.
+
+D'où le découpage. Le calcul retenu : échelle plafonnée à 1200/1600 = 0,75
+(zone utile de 1200 px pour une toile de 1600), zone verticale ~745 px dans le
+repère de la toile, ligne ~52 px, en-tête ~40 px → (745 − 40) / 52 ≈ 13, arrondi
+à **12** pour laisser une cible déborder sur deux lignes. Le corps sort à
+16 × 0,75 = 12 px sur la diapositive.
+
+Le chiffre est **estimé, pas mesuré**, et le commentaire du code le dit. C'est
+la bonne façon de laisser une valeur approchée dans un fichier : la prochaine
+personne saura qu'elle peut la contredire avec une mesure.
+
+### 32.3 Ce qui reste faux ou non vu
+
+**Le texte de l'étape n'est pas tronqué.** `{e.texte}` sort en entier. Une étape
+verbeuse *et* une cible longue peuvent produire une ligne bien plus haute que
+les 52 px du calcul ; au-delà de deux lignes par cellule, la page se réduit et
+le corps passe sous 12 px. Le repli est gracieux — ça reste lisible avant de
+devenir petit — mais le seuil de 12 ne protège que jusqu'à deux lignes.
+
+**Cette page n'a jamais été rendue.** Zéro cible en base : elle est juste par
+construction, et personne ne l'a vue. Elle rejoint le constat général de la
+feuille de route (§2a) — aucune passe navigateur n'a jamais été faite.
+
+**Dérive de commentaire dans `bilan.ts`.** L'en-tête annonce toujours « une
+colonne `bilan` à trois valeurs » et « le troisième état, "supprimée" » : c'était
+vrai avant `en_cours`, ça ne l'est plus. Deux phrases à corriger, à joindre au
+prochain envoi plutôt qu'à traiter seules.
