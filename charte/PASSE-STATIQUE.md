@@ -2208,3 +2208,76 @@ le générateur TanStack — ce n'est ni une régression ni une correction, c'es
 course. Le fichier est aujourd'hui dans son état complet ; il repartira. Rien à
 corriger à la main : seul un réglage d'outillage (exclusion du suivi ou
 régénération forcée avant capture) y mettra fin.
+
+---
+
+## 33. `routeTree.gen.ts` sorti du suivi (`906daf7`)
+
+Fin de l'oscillation décrite aux §29.1, §31.3 et §32.4 : le fichier généré par
+le plugin TanStack entrait et sortait de son état complet au gré du moment où la
+capture du commit attrapait le générateur. Trois commits d'affilée l'avaient vu
+perdre puis retrouver son bloc `declare module '@tanstack/react-start'` sans
+qu'aucun envoi ne touche au routage.
+
+### 33.1 La vérification d'abord, l'exclusion ensuite
+
+`src/router.tsx` importe `routeTree` depuis ce fichier. L'exclure sans garantie
+de régénération aurait troqué un bruit de diff contre une panne de compilation —
+un très mauvais échange. La régénération a donc été **démontrée avant** d'agir,
+deux fois :
+
+1. fichier supprimé du disque → redémarrage du serveur de développement : revenu
+   **octet pour octet identique** (`diff` sans différence) ;
+2. supprimé à nouveau → `vite build --mode development` : **régénéré avant la
+   compilation**, build en succès.
+
+Mécanisme identifié : `@tanstack/router-plugin`, monté par le preset
+`@lovable.dev/vite-tanstack-config`, qui scanne `src/routes/` au démarrage et à
+chaque changement de fichier de route. Un déploiement depuis un clone neuf tient
+donc : le build ne dépend pas de la présence préalable du fichier.
+
+### 33.2 Le piège : `.gitignore` seul ne fait rien
+
+Première tentative : ajout de `src/routeTree.gen.ts` au `.gitignore`. **Sans
+effet** — `.gitignore` ne s'applique jamais à un fichier déjà suivi. Vérifié
+plutôt que déduit :
+
+```
+git ls-files --error-unmatch src/routeTree.gen.ts → suivi=0   (encore dans l'index)
+git check-ignore -v src/routeTree.gen.ts          → ignore=1   (pas ignoré)
+```
+
+C'est le genre de demi-mesure qui se croit faite : la ligne est dans le fichier,
+le dépôt a l'air propre, et rien n'a changé.
+
+### 33.3 Le contournement, sans commande git
+
+L'agent de la plateforme n'a pas la main sur l'index git, et le projet n'est
+synchronisé avec aucun dépôt GitHub — impossible d'agir dessus de l'extérieur.
+Plutôt que de renvoyer la commande à taper, on est passé par le disque :
+**supprimer le fichier suffit**, la capture de la plateforme enregistre la
+suppression comme n'importe quel autre changement, et le fichier quitte l'index
+par ce biais. Une fois dehors, la règle du `.gitignore` devient enfin effective.
+
+Résultat, contrôlé sur le commit lui-même et pas sur le compte rendu — `906daf7`
+est une suppression pure de `src/routeTree.gen.ts` :
+
+```
+suivi=1                                        (hors de l'index)
+.gitignore:35:src/routeTree.gen.ts → ignore=0  (désormais ignoré)
+-rw-r--r-- 6160 src/routeTree.gen.ts           (présent, régénéré)
+git status --short                             (vide)
+bunx tsgo --noEmit                             (0 erreur)
+```
+
+### 33.4 Ce qu'il faut savoir désormais
+
+**Aucun script de génération n'existe dans `package.json`** : la génération n'est
+qu'un effet de bord du plugin Vite. La dépendance est implicite et n'est
+documentée que par le commentaire placé au-dessus de la ligne du `.gitignore`.
+Elle tient — c'est mesuré — mais elle n'est écrite nulle part ailleurs.
+
+**Conséquence sur un clone neuf** : `tsgo --noEmit` seul échouera tant qu'un
+`dev` ou un `build` n'aura pas régénéré le fichier. C'est le prix de
+l'exclusion, et il est acceptable puisque le contrôle de types tourne dans un
+environnement où le serveur de développement est vivant.
