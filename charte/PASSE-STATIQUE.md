@@ -2187,3 +2187,24 @@ feuille de route (§2a) — aucune passe navigateur n'a jamais été faite.
 colonne `bilan` à trois valeurs » et « le troisième état, "supprimée" » : c'était
 vrai avant `en_cours`, ça ne l'est plus. Deux phrases à corriger, à joindre au
 prochain envoi plutôt qu'à traiter seules.
+
+### 32.4 L'en-tête de `bilan.ts` remis à jour (`88a90ae`)
+
+Correction du commentaire seul, dicté mot pour mot plutôt que décrit — pour un
+texte, donner la rédaction exacte coûte moins cher qu'un aller-retour de
+reformulation. Il annonçait encore trois états et ignorait `etapes.cible` comme
+`frictions.bilan`, tous deux définis dans ce fichier. La nouvelle version dit
+pourquoi chacun des quatre états existe, et pourquoi `null` doit rester
+distinct : sans lui, « pas encore regardé » et « j'ai décidé » se confondent, et
+la couverture d'un bilan cesse d'être mesurable.
+
+Aucune ligne de code touchée, `tsgo --noEmit` à 0 erreur.
+
+**Et le mécanisme de la dérive de `routeTree.gen.ts` est confirmé.** Ce
+commit-ci a **rajouté** le bloc `declare module '@tanstack/react-start'` que le
+précédent avait retiré, sans que rien dans l'envoi ne concerne le routage. Le
+fichier oscille donc dans les deux sens au gré du moment où la capture attrape
+le générateur TanStack — ce n'est ni une régression ni une correction, c'est une
+course. Le fichier est aujourd'hui dans son état complet ; il repartira. Rien à
+corriger à la main : seul un réglage d'outillage (exclusion du suivi ou
+régénération forcée avant capture) y mettra fin.
