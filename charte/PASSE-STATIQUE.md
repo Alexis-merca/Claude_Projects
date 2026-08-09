@@ -2281,3 +2281,24 @@ Elle tient — c'est mesuré — mais elle n'est écrite nulle part ailleurs.
 `dev` ou un `build` n'aura pas régénéré le fichier. C'est le prix de
 l'exclusion, et il est acceptable puisque le contrôle de types tourne dans un
 environnement où le serveur de développement est vivant.
+
+### 33.5 Tentative de rendu : bloquée par l'authentification
+
+Un jeu d'essai a été posé sur le client de test `test-06-08` (quatre cibles, deux
+étiquettes de bilan dont `en_cours`) pour voir enfin la page « Trajectoire de
+déploiement » se rendre. **Le rendu sans tête n'a pas abouti** :
+`LOVABLE_BROWSER_AUTH_STATUS=signed_out`, et la route est sous le garde
+`_authenticated`. L'agent s'est arrêté sans forger de session — c'était la
+consigne, et c'est la bonne réponse.
+
+Le constat à retenir dépasse cette page : **cette application n'est vérifiable
+visuellement que par un humain connecté.** C'est la raison structurelle pour
+laquelle §2a de la feuille de route — aucune passe navigateur jamais faite —
+tient depuis si longtemps. Une session existe pourtant côté navigateur de test
+dès que l'utilisateur se connecte dans la préversion ; la vérification est donc
+possible, elle demande juste une connexion préalable.
+
+Jeu d'essai retiré, base rendue à l'identique : 393 étapes, 16 frictions,
+4 clients, 0 cible, 0 friction évaluée, et l'unique étape au bilan de Sekurit
+intacte. La page « Trajectoire de déploiement » **n'a toujours été vue par
+personne.**
