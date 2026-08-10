@@ -45,6 +45,34 @@
 
 ---
 
+## ❓ « Est-ce qu'on peut la transporter dans le coffre et la monter sur place ? »
+
+**Non. Géométriquement impossible.**
+
+| | Dimension |
+|---|---|
+| **MH500 2P repliée dans sa housse** | **146 × 123 × 35 cm** |
+| Ouverture du hayon du Duster | **98 cm** |
+| Largeur entre passages de roue | **97,7 cm** |
+| Profondeur banquette rabattue | 179 cm |
+
+La cote bloquante est le **123 cm** : elle dépasse l'ouverture du hayon *et* la largeur utile du coffre.
+
+- **À plat** → 123 cm de large, il en manque 25
+- **Sur la tranche** → 123 cm de haut, le coffre fait ~80 cm sous pavillon
+- **En diagonale** → ne marche pas : faire pivoter un rectangle de 146 × 123 dans un espace de 179 × 98 augmente l'encombrement dans les deux sens
+
+Valable pour **toutes les générations de Duster** (largeur entre passages de roue ~98–100 cm depuis 2010). Et la housse ne s'écrase pas : le socle est un panneau rigide avec le châssis et le matelas de 5 cm dedans.
+
+**Même si ça rentrait, ce serait une mauvaise idée :**
+1. Le montage se fait **à deux minimum** — hisser 48,5 kg à 1,75 m. Pas sur un parking de camping après 12 h de route.
+2. Tu n'aurais **plus de coffre** : 146 × 123 cm, c'est tout le plancher de chargement.
+3. Tu en as **besoin dès la nuit 1** (lac de Constance), donc il faudrait la monter puis la démonter le lendemain.
+
+👉 **Elle reste sur le toit tout le voyage.** Le coût réel est la conso (+100 à 160 € sur le trajet) et surtout la hauteur (2,05–2,10 m). Deux détails qui changent le confort : une **housse bien tendue** (une housse qui claque est insupportable sur 12 h de route) et l'**échelle rangée à l'intérieur**, pas sanglée sur le côté.
+
+---
+
 ## 📏 Hauteur : le piège n°1
 
 | | |
