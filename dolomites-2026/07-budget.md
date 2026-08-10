@@ -95,6 +95,7 @@
 
 ## 💡 Où économiser sans se priver
 
+0. **La CampingCard ACSI** (~30 €) : tarif fixe de basse saison sur les campings affiliés, **17–23 €/nuit au lieu de 38–48 €** → **-200 à -250 €**. Le plus gros levier du voyage, de très loin. Voir [04-dormir.md](04-dormir.md).
 1. **Arriver avant 9h à Braies** : 8 € au lieu de 44 € → **-36 €**
 2. **Télécabine plutôt que parking P2 à Alpe di Siusi** : équivalent en prix mais zéro stress, et tu peux rester après 17h
 3. **Faire le plein en Autriche** (carburant ~15–20 cents/L moins cher qu'en France) → **-30 à -50 €** sur le voyage

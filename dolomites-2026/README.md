@@ -44,7 +44,8 @@
 
 ## ✅ À faire dès maintenant (J-21)
 
-- [ ] Réserver les campings (4 bases, voir [04-dormir.md](04-dormir.md))
+- [ ] **Commander la CampingCard ACSI** (~30 €) → 17–23 €/nuit au lieu de 38–48 €, soit ~230 € d'économie
+- [ ] Réserver les campings (4 bases, voir [04-dormir.md](04-dormir.md)) — envoyer le message type « tenda da tetto / Dachzelt » à 3–4 adresses par base
 - [ ] Réserver la route à péage des Tre Cime → https://www.trecimedolomiti.it
 - [ ] Réserver le parking Lago di Braies → https://pragsparking.com
 - [ ] Réserver le parking P2 Compatsch (Alpe di Siusi) → https://www.seiseralm.it

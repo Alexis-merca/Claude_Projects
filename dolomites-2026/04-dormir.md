@@ -36,9 +36,93 @@ Ce n'est pas une contrainte, c'est même plutôt confortable : les campings des 
 
 Ce que tu gagnes : de l'électricité pour la glacière, de l'eau chaude, une machine à laver au milieu du séjour, l'esprit tranquille, et souvent le **Südtirol Guest Pass** (transports gratuits).
 
-### Les « aree di sosta camper »
+---
 
-Il existe des aires de camping-car (*sosta camper*) en Italie. Attention : **beaucoup interdisent explicitement de déployer une tente de toit, un auvent ou des tables** — l'aire sert à stationner, pas à camper. Vérifie au cas par cas. En pratique, pour ton usage, le camping classique est plus simple et à peine plus cher.
+## 🚐 Aires de camping-car : pourquoi ça ne marche pas
+
+### L'article 185 du Code de la route
+
+Tout se joue là. L'art. 185 dit que le stationnement d'un véhicule habitable **n'est pas du camping** à trois conditions cumulatives :
+
+1. le véhicule ne repose sur le sol **que par ses roues**
+2. il n'émet aucun rejet propre
+3. il **n'occupe pas plus d'espace que son propre encombrement**
+
+**Une tente de toit déployée casse la condition 3, et l'échelle casse la condition 1.** La jurisprudence est explicite sur les équivalents : ouvrir un auvent, sortir une échelle extérieure, poser table et chaises = *occupazione di suolo eccedente l'ingombro proprio*.
+
+Et au moment où tu bascules de *sosta* à *campeggio*, **tu perds la protection de l'art. 185** : ce sont alors les lois régionales et les arrêtés municipaux qui s'appliquent — c'est-à-dire exactement ceux qui interdisent le camping hors structure autorisée.
+
+👉 **Sur une aire communale ou publique : tu peux stationner, tu ne peux pas ouvrir la tente.** L'aire ne résout donc rien.
+
+---
+
+## ✅ Les 4 options qui marchent vraiment
+
+### 1. CampingCard ACSI — le meilleur plan, de loin
+
+La **CampingCard ACSI** donne accès à 3 000+ campings européens à des **tarifs fixes de basse saison** : 13, 15, 17, 19, 21, 23, 25 ou 27 € la nuit **pour 2 personnes + véhicule + emplacement + électricité**. Les tarifs sont calculés sur les moyennes de mai, juin **et septembre** — pile la période. Dans les Dolomites, ça démarre à **13 €/nuit**.
+
+| | Sans ACSI | Avec ACSI |
+|---|---|---|
+| Nuit en camping Dolomites | 38 – 48 € | **17 – 23 €** |
+| 10 nuits | 380 – 480 € | **170 – 230 €** |
+
+**Économie estimée : 200 à 250 €**, pour une carte à ~30 € amortie en 2 nuits.
+
+⚠️ Deux réserves :
+- La basse saison démarre selon les campings entre le **20 août et le 1er septembre** → tes nuits du 30–31 août peuvent encore être au tarif plein.
+- Vérifie que le camping compte ta config comme « emplacement + véhicule » et non comme un supplément tente.
+
+👉 Filtre les campings affiliés sur l'app ACSI dans chacune des 4 zones. **À 19 € la nuit avec douche chaude, électricité et machine à laver, la question de l'aire ne se pose plus.**
+
+### 2. Agricampeggi et agriturismi
+
+Fermes autorisées à recevoir des campeurs. Moins chers qu'un camping classique, cadre rural, et **souvent plus souples sur les tentes de toit** — c'est une exploitation privée qui fixe ses règles.
+
+- **camperonline.it** — listes d'agriturismi avec sosta camper par vallée
+- **Gallo Rosso / Roter Hahn** (`gallorosso.it`) — 1 600+ fermes du Tyrol du Sud
+
+### 3. Aree attrezzate privées
+
+À distinguer des aires communales : ce sont des structures d'accueil **privées**, donc l'exploitant peut autoriser le camping chez lui. Sur ton parcours :
+
+| Lieu | Base | Services |
+|---|---|---|
+| **Camper Parking Odlina**, La Villa (Alta Badia) | Base 3 | 45 places, électricité, WC, douches, saunas, barbecue |
+| **Caravan Park Sexten** — zone camper stop | Base 1 | Services complets |
+| Aire de Corvara (2 km vers Passo Campolongo) | Base 3 | ~10 places, **gratuite, sans services** — donc sans autorisation de camper |
+
+Compte 20 à 30 €/nuit pour les deux premières.
+
+### 4. Réseaux de terrains privés
+
+**Roadsurfer Spots** référence des emplacements chez des particuliers et agriculteurs, explicitement ouverts aux vans, campers **et tentes**. Couverture dense en Allemagne et Autriche → surtout utile pour tes **2 nuits d'étape**. À vérifier côté Dolomites.
+
+---
+
+## ✉️ Le message type à envoyer
+
+Aucun site web ne répond clairement à la question. Le seul moyen fiable est de demander. Le mot-clé est **« tenda da tetto »** (IT) / **« Dachzelt »** (DE).
+
+> 💡 Dans le **Tyrol du Sud, écris en allemand** : réponse plus rapide et plus aimable.
+
+**Italien**
+> Buongiorno, viaggiamo in due con un'auto (Dacia Duster) e una **tenda da tetto**. La tenda si apre sopra il veicolo e l'accesso avviene tramite una scaletta. È ammessa nella vostra struttura? Se sì, quale tariffa si applica per 2 persone + auto + elettricità, per le notti dal … al … ? Grazie mille.
+
+**Allemand**
+> Guten Tag, wir reisen zu zweit mit einem PKW (Dacia Duster) und einem **Dachzelt**. Das Zelt wird auf dem Fahrzeugdach aufgestellt, der Zugang erfolgt über eine Leiter. Ist ein Dachzelt bei Ihnen erlaubt? Wenn ja, zu welchem Preis für 2 Personen + PKW + Strom, für die Nächte vom … bis … ? Vielen Dank.
+
+👉 Envoie-le à 3–4 adresses par base. Réponses en 48 h, réservation en connaissance de cause.
+
+---
+
+## ⚠️ La zone grise, signalée mais pas recommandée
+
+Les sources italiennes mentionnent que **demander la permission à un agriculteur ou à un gardien de refuge** de se garer sur sa propriété privée permet de dormir légalement en tente de toit.
+
+C'est vrai sur le principe — terrain privé + accord du propriétaire. Mais en **Haut-Adige, la loi provinciale 16/2012 interdit le camping libre « sur tout le territoire provincial »** sans exempter formellement les terrains privés. Si tu le fais, tu t'appuies sur une tolérance, pas sur un droit.
+
+Sur une nuit, avec un accord verbal et zéro trace au matin, le risque est faible. **Ce n'est simplement pas une base sur laquelle bâtir un plan de 12 nuits.**
 
 ---
 
