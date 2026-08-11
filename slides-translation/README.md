@@ -25,7 +25,8 @@ Script les applique aux copies.
    indique :
    - les copies renommées,
    - par présentation, le nombre de remplacements effectués,
-   - la liste des entrées **non trouvées**, s'il y en a.
+   - la liste des entrées **non trouvées**, s'il y en a,
+   - les **erreurs tolérées**, s'il y en a.
 
 `runAll` est réexécutable sans risque : les renommages sont idempotents, et une
 présentation déjà traduite ne contient plus de texte français à remplacer.
@@ -61,6 +62,23 @@ table est corrigée en conséquence.
   insécables avant `: ; ! ?` et les sauts de ligne durs/souples.
 - **Pas d'entrée identité** (`['Kick off', 'Kick off']`) : inutile, et elle est
   comptée comme un remplacement pour rien.
+- **Une page de notes peut refuser le remplacement** (`This request cannot be
+  applied.`). C'est une limite de l'API Slides, pas une erreur de table : le
+  moteur l'attrape, la signale dans *ERREURS TOLÉRÉES* et continue. Une
+  exception non attrapée ferait perdre tout le reste de la traduction.
+- **Un texte réparti sur deux zones de texte distinctes ne peut pas être
+  traduit par un remplacement global.** Les entrées à saut de ligne
+  (`'Expert\nintégration & IT'`) supposent une seule zone de texte contenant les
+  deux lignes. Si elles remontent en *NON TROUVÉ*, c'est que ce sont deux zones
+  séparées, et il faut les corriger à la main dans la slide.
+
+## Coût en appels API
+
+Le moteur relève d'abord le texte de chaque page, puis n'appelle
+`replaceAllText` que sur les pages où la chaîne est effectivement présente.
+Sans ce filtrage, un deck de 13 slides coûterait `192 entrées × ~1,5 variantes ×
+28 pages`, soit plus de 8 000 appels API — largement au-delà de la limite de
+6 minutes d'exécution d'Apps Script.
 
 ## Glossaire retenu
 

@@ -56,55 +56,104 @@ function translateOne(job) {
     return b[0].length - a[0].length;
   });
 
+  // Le texte de chaque cible est relevé UNE fois, avant de remplacer quoi que
+  // ce soit. Sans ça, il faudrait un appel API par entrée et par page — soit
+  // plusieurs milliers d'appels, presque tous pour rien, et un dépassement de
+  // la limite de 6 minutes d'Apps Script.
+  var slidesText = '';
+  pres.getSlides().forEach(function (slide) {
+    slidesText += '\n' + pageText(slide);
+  });
+
+  // pres.replaceAllText() couvre toutes les slides en un seul appel. Les notes,
+  // masques et mises en page se traitent page par page.
+  var extras = [];
+  pres.getSlides().forEach(function (slide, i) {
+    var notes = slide.getNotesPage();
+    if (notes) extras.push({ page: notes, label: 'notes slide ' + (i + 1) });
+  });
+  pres.getMasters().forEach(function (master, i) {
+    extras.push({ page: master, label: 'masque ' + (i + 1) });
+    master.getLayouts().forEach(function (layout, j) {
+      extras.push({ page: layout, label: 'mise en page ' + (i + 1) + '.' + (j + 1) });
+    });
+  });
+  extras.forEach(function (e) { e.text = pageText(e.page); });
+
   var hits = 0;
   var misses = [];
+  var errors = [];
 
   pairs.forEach(function (pair) {
-    var found = 0;
+    var touched = false;
+
     variants(pair[0]).forEach(function (v) {
-      found += replaceEverywhere(pres, v, pair[1]);
+      if (slidesText.indexOf(v) !== -1) {
+        touched = true;
+        try {
+          hits += pres.replaceAllText(v, pair[1], true);
+        } catch (e) {
+          errors.push('slides — ' + pair[0] + ' (' + e.message + ')');
+        }
+      }
+      extras.forEach(function (e) {
+        if (e.text && e.text.indexOf(v) !== -1) {
+          touched = true;
+          try {
+            hits += e.page.replaceAllText(v, pair[1], true);
+          } catch (err) {
+            errors.push(e.label + ' — ' + pair[0] + ' (' + err.message + ')');
+          }
+        }
+      });
     });
-    if (found === 0) {
-      misses.push(pair[0]);
-    } else {
-      hits += found;
-    }
+
+    if (!touched) misses.push(pair[0]);
   });
 
   pres.saveAndClose();
 
-  return [
+  var report = [
     '=== ' + job.label + ' (' + job.fileId + ') ===',
     hits + ' remplacements effectués sur ' + pairs.length + ' entrées.',
     misses.length
       ? 'NON TROUVÉ (' + misses.length + ') :\n  - ' + misses.join('\n  - ')
       : 'Aucune entrée manquée.'
-  ].join('\n');
+  ];
+  if (errors.length) {
+    report.push('ERREURS TOLÉRÉES (' + errors.length + ') :\n  - ' + errors.join('\n  - '));
+  }
+  return report.join('\n');
 }
 
-/**
- * Remplace dans les slides, les mises en page, les masques et les notes.
- * Le passage sur les slides suffit dans la plupart des cas, mais les pieds de
- * page et éléments répétés vivent souvent dans le layout ou le master.
- */
-function replaceEverywhere(pres, find, replace) {
-  var n = 0;
+/** Relève tout le texte d'une page (slide, notes, masque ou mise en page). */
+function pageText(page) {
+  var out = [];
+  collectText(page.getPageElements(), out);
+  return out.join('\n');
+}
 
-  n += pres.replaceAllText(find, replace, true);
-
-  pres.getSlides().forEach(function (slide) {
-    var notes = slide.getNotesPage();
-    if (notes) n += notes.replaceAllText(find, replace, true);
+/** Parcourt les éléments d'une page, en descendant dans les groupes. */
+function collectText(elements, out) {
+  elements.forEach(function (el) {
+    try {
+      var type = el.getPageElementType();
+      if (type === SlidesApp.PageElementType.SHAPE) {
+        out.push(el.asShape().getText().asString());
+      } else if (type === SlidesApp.PageElementType.TABLE) {
+        var t = el.asTable();
+        for (var r = 0; r < t.getNumRows(); r++) {
+          for (var c = 0; c < t.getNumColumns(); c++) {
+            out.push(t.getCell(r, c).getText().asString());
+          }
+        }
+      } else if (type === SlidesApp.PageElementType.GROUP) {
+        collectText(el.asGroup().getChildren(), out);
+      }
+    } catch (e) {
+      // élément sans texte accessible : rien à relever
+    }
   });
-
-  pres.getMasters().forEach(function (master) {
-    n += master.replaceAllText(find, replace, true);
-    master.getLayouts().forEach(function (layout) {
-      n += layout.replaceAllText(find, replace, true);
-    });
-  });
-
-  return n;
 }
 
 /**
