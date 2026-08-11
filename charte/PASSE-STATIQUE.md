@@ -2302,3 +2302,103 @@ Jeu d'essai retiré, base rendue à l'identique : 393 étapes, 16 frictions,
 4 clients, 0 cible, 0 friction évaluée, et l'unique étape au bilan de Sekurit
 intacte. La page « Trajectoire de déploiement » **n'a toujours été vue par
 personne.**
+
+---
+
+## 34. Point E — la garde de concurrence sur les enfants (`92901aa`)
+
+Le seul défaut de `INSPECTION-PARCOURS.md` qui **perde des données**. Ouvert
+depuis le 07/08.
+
+### 34.1 Le vrai constat : un invariant proclamé, jamais appliqué
+
+`diagnostic.ts` affirmait en tête de fichier que l'unité de concurrence est le
+processus parent. **Cet invariant n'était appliqué nulle part** :
+`updateEtape`, `updateFriction` et `updateChiffre` écrivaient sans garde, là où
+`updateClientRow` et `updateProcessus` portaient `.eq("version", version)`.
+Deux consultants sur la même étape — le cas le plus fréquent à deux sur site —
+produisaient un « dernier écrivain gagne » silencieux.
+
+Un invariant écrit et non tenu est pire qu'une absence : on lui fait confiance.
+Le choix retenu a donc été de **rendre vrai le modèle déjà déclaré**, pas d'en
+changer. Arbitrage de l'utilisateur, entre deux options présentées : le
+processus comme unité (retenu, aucune colonne ni trigger) ou une version par
+ligne (rejeté : migration sur trois tables, et renversement d'une décision
+documentée).
+
+### 34.2 Pourquoi ça a demandé du SQL malgré tout
+
+J'avais annoncé « zéro migration ». **C'était inexact, et je l'ai corrigé avant
+d'envoyer.** La garde doit être atomique : lire `processus.version` puis écrire
+depuis le client laisse une fenêtre de course entre les deux — et surtout
+proclame une sûreté fausse, exactement la faute qu'on corrige. Comparaison et
+écriture doivent tenir dans une seule instruction.
+
+D'où trois fonctions `maj_etape` / `maj_friction` / `maj_chiffre` :
+
+```sql
+update etapes e set … where e.id = p_id
+  and (select p.version from processus p where p.id = e.processus_id) = p_version
+```
+
+Deux propriétés qui comptent autant que la garde elle-même :
+
+- **`null` signifie conflit**, jamais « rien à faire » — c'est ce que le client
+  traduit en bandeau via `ConflitDeVersion("processus")` ;
+- **la version fraîche du processus est renvoyée**. C'était le principal risque
+  du chantier : le trigger incrémente la version à chaque écriture enfant, donc
+  un consultant **seul** enchaînant deux champs aurait envoyé une version
+  périmée au second et **se serait mis en conflit avec lui-même**. La version
+  est écrite dans le cache par `setQueryData` **avant** l'invalidation, qui est
+  asynchrone.
+
+Le patch partiel n'écrit que les clefs présentes (`p_patch ? 'colonne'`), et les
+colonnes nullables (`bilan`, `etape_id`) ne passent pas par `coalesce` — sinon
+remettre une friction à « non évaluée » aurait été impossible.
+
+### 34.3 Prouvé par la mesure, pas par la relecture
+
+Sur une étape de `test-06-08`, processus en version 26 :
+
+| appel | version passée | sortie |
+|---|---|---|
+| 1 | 26 | ligne à jour, `version_processus: 27` — aucune colonne absente effacée |
+| 2 | 26 (**périmée**) | `null` → conflit |
+| 3 | 27 (fraîche) | succès, restauration du texte d'origine |
+
+Base inchangée avant et après : 410 étapes, 16 frictions, 5 clients,
+11 chiffres. `tsgo --noEmit` à 0 erreur.
+
+### 34.4 Ce que j'ai vérifié moi-même
+
+Le test de l'agent est passé par des droits élevés, donc il **ne prouvait pas**
+que l'application peut appeler ces fonctions. Contrôlé directement dans le
+catalogue :
+
+- `prosecdef = false` → `security invoker` : RLS s'applique à l'appelant, la
+  fonction n'ouvre aucun privilège ;
+- exécutable par `authenticated` → le chemin applicatif existe ;
+- exécutable par `anon` **aussi** — c'est le défaut PostgreSQL sur `PUBLIC`, pas
+  un ajout. Neutralisé par `security invoker` : les trois tables portent une
+  politique RLS avec le filtre de domaine, donc un appel anonyme se voit refuser
+  l'`UPDATE` et reçoit `null`. Aucune écriture, aucune fuite. Un
+  `revoke execute … from public` reste souhaitable par hygiène.
+
+### 34.5 Le risque résiduel, et il est réel
+
+**Toutes les écritures d'étape, de friction et de chiffre passent désormais par
+un chemin que personne n'a exercé dans un navigateur.** La preuve porte sur la
+logique SQL, pas sur l'appel depuis l'application : un nom de paramètre erroné
+ou une sérialisation `jsonb` fautive casserait *toute* l'édition, et ne se
+verrait qu'à l'usage. C'est le changement le plus risqué de la semaine, et il
+demande une vérification au navigateur avant toute autre chose.
+
+### 34.6 Le chemin du flux est plus large qu'annoncé
+
+Réponse obtenue sur `flux-mutations.ts` : `appliquerMutation` écrit sur
+`etapes` par **quatre** voies, aucune gardée — `updateEtapeSansGarde` (renommée
+pour ne pas déguiser en gardé ce qui ne l'est pas), `createEtape`,
+`deleteEtape`, et la RPC `reordonner_etapes`. Cette dernière est la plus
+sensible : un déplacement d'étape reste un « dernier écrivain gagne » sur
+**tout l'ordre du processus**, pas sur une ligne. Le second envoi devra couvrir
+les quatre, pas seulement les suppressions comme prévu initialement.
