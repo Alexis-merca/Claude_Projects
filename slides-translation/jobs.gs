@@ -23,7 +23,15 @@
 // ---------------------------------------------------------------------------
 
 function fixupAll() {
-  getFixups().forEach(function (job) {
+  var fixups = getFixups();
+
+  // Annonce d'abord ce qui va être traité. Sans ça, un jobs.gs resté en
+  // version précédente fait tourner d'anciens correctifs déjà appliqués : le
+  // journal semble normal, les decks ne bougent pas, et rien ne le signale.
+  Logger.log('LOT DE CORRECTIFS 2026-08-11-b — ' + fixups.length + ' cibles attendues :\n  - '
+    + fixups.map(function (j) { return j.label; }).join('\n  - '));
+
+  fixups.forEach(function (job) {
     Logger.log(translateOne(job));
   });
 }
