@@ -14,15 +14,24 @@ Script les applique aux copies.
 
 1. Ouvrir [script.google.com](https://script.google.com) → **Nouveau projet**.
 2. Coller tout le contenu de `translate.gs` dans l'éditeur (remplacer le
-   `myFunction` existant).
-3. Sélectionner la fonction **`translateAll`** dans le menu déroulant, puis
+   `myFunction` existant), puis enregistrer (**Ctrl+S**).
+3. Sélectionner la fonction **`runAll`** dans le menu déroulant en haut, puis
    **Exécuter**.
-4. Autoriser l'accès quand Google le demande (le script n'ouvre que les copies
-   listées dans `getJobs()`, jamais les originaux).
-5. Lire le journal d'exécution (**Ctrl+Entrée** / *Journaux*). Il indique par
-   présentation :
-   - le nombre de remplacements effectués,
+4. Autoriser l'accès quand Google le demande. L'écran d'avertissement
+   « Google n'a pas validé cette application » est normal pour un script
+   personnel : *Paramètres avancés* → *Accéder à …*. Le script n'ouvre que les
+   copies listées dans `RENAMES` et `getJobs()`, jamais les originaux.
+5. Lire le journal d'exécution (**Ctrl+Entrée** / *Journal d'exécution*). Il
+   indique :
+   - les copies renommées,
+   - par présentation, le nombre de remplacements effectués,
    - la liste des entrées **non trouvées**, s'il y en a.
+
+`runAll` est réexécutable sans risque : les renommages sont idempotents, et une
+présentation déjà traduite ne contient plus de texte français à remplacer.
+
+Les trois fonctions peuvent aussi être lancées séparément : `renameAll` (titres
+seulement), `translateAll` (traductions seulement), `runAll` (les deux).
 
 Renvoyer cette liste à Claude : une entrée non trouvée signifie que le texte réel
 diffère de ce qui avait été extrait (typographie, espace, saut de ligne), et la

@@ -12,10 +12,36 @@
 // MOTEUR
 // ---------------------------------------------------------------------------
 
-/** Point d'entrée : traite tous les jobs déclarés dans getJobs(). */
+/**
+ * POINT D'ENTRÉE PRINCIPAL — c'est cette fonction qu'il faut exécuter.
+ * Renomme les copies à harmoniser, puis applique les traductions.
+ */
+function runAll() {
+  renameAll();
+  translateAll();
+}
+
+/** Traite tous les jobs déclarés dans getJobs(). */
 function translateAll() {
   getJobs().forEach(function (job) {
     Logger.log(translateOne(job));
+  });
+}
+
+/**
+ * Harmonise les titres des copies ES : "Sitio" -> "Planta".
+ * Idempotent : relancer le script ne renomme pas deux fois.
+ */
+function renameAll() {
+  RENAMES.forEach(function (r) {
+    var file = DriveApp.getFileById(r.fileId);
+    var before = file.getName();
+    if (before === r.title) {
+      Logger.log('titre déjà à jour : ' + before);
+      return;
+    }
+    file.setName(r.title);
+    Logger.log('renommé : ' + before + '  ->  ' + r.title);
   });
 }
 
@@ -108,6 +134,33 @@ function variants(s) {
 
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// RENOMMAGES — harmonisation "Sitio" -> "Planta" sur les copies ES
+// ---------------------------------------------------------------------------
+
+var RENAMES = [
+  {
+    fileId: '1Ncedk3sKx6UaNPExB8uMdncWxgCOKQjdkJpOBT9-bwQ',
+    title: 'v06.2026 - ES - 202XXXX2_Preparación Kickoff_Grupo Planta'
+  },
+  {
+    fileId: '153SkfN3MeQZazaa8FzdEkOnuUgxe0KZg66fPkpDa8YQ',
+    title: 'v06.2026 - ES - 202XXXX2_Kickoff_Grupo Planta'
+  },
+  {
+    fileId: '1M35NO0sfVBC2L1hI6zSqfTTHaT52u0nUMHbRzkLPE4k',
+    title: 'v08.2026 - ES - 202XXXX3_BALANCE_Grupo Planta'
+  },
+  {
+    fileId: '1WsXCZY5KmyHmeta0tMmNg9VuA20oxSDviK9IO9tXpq8',
+    title: 'v08.2026 - ES - 202XXXX3_Semanales de proyecto_Grupo Planta'
+  },
+  {
+    fileId: '1xd2I9OTYRJR0e7xDETq_qu3TFzuobKj9xGTdmu5T3eE',
+    title: 'v08.2026 - ES - 202XXXX3_Comité de Dirección #x_Grupo Planta'
+  }
+];
 
 // ---------------------------------------------------------------------------
 // JOBS — quelles copies traiter, avec quelle table
