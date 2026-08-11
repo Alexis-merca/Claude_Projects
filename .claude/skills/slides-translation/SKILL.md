@@ -27,18 +27,18 @@ Dans ce dépôt, sous `slides-translation/` :
 |---|---|---|
 | `moteur.gs` | Le moteur de remplacement | Jamais |
 | `glossaire.gs` | `COMMON_EN` / `COMMON_ES`, le vocabulaire Mercateam | S'enrichit |
-| `jobs.gs` | Le lot en cours : `getJobs`, tables par deck | Remplacé à chaque lot |
+| `jobs.gs` | Le lot en cours : `getJobs`, `getFixups`, tables par deck | Remplacé à chaque lot |
 | `translate-complet.gs` | Les trois précédents concaténés | Régénéré après chaque modification |
 
-**Toujours livrer `translate-complet.gs`, jamais les fichiers séparés.** Apps
+**Ne livrer que `translate-complet.gs`, jamais les fichiers séparés.** Apps
 Script partage la portée globale entre les fichiers d'un projet, mais il faut
 les créer un par un côté éditeur. Coller un seul des trois par-dessus le
 `Code.gs` existant efface les autres : l'exécution échoue sur `translateOne is
-not defined`, ou semble se dérouler normalement sans que rien ne change. C'est
-arrivé, et la panne a coûté deux allers-retours avant d'être comprise.
+not defined`, ou — bien pire — se déroule normalement sans rien changer. Les
+deux se sont produits, et la seconde panne a coûté deux allers-retours.
 
 Régénérer après toute modification :
-`cat moteur.gs glossaire.gs jobs.gs > translate-complet.gs`
+`cd slides-translation && cat moteur.gs glossaire.gs jobs.gs > translate-complet.gs`
 
 ## Procédure pour un nouveau deck
 
@@ -49,20 +49,22 @@ Régénérer après toute modification :
 3. **Confronter au glossaire.** Un deck de déploiement Mercateam reprend
    presque toujours les mêmes blocs (feuille de route, équipe Mercateam, équipe
    partenaire, étapes du déploiement, RACI, nos attentes, MercaNews, critères
-   de Go Live, témoignages). Ils sont déjà dans `glossaire.gs` : n'écrire que
-   les entrées réellement nouvelles.
+   de Go Live, témoignages). Ils sont déjà dans `glossaire.gs`, qui couvre ~80 %
+   d'un deck standard : n'écrire que les entrées réellement nouvelles.
 4. **Écrire la table du deck** dans `jobs.gs`, et l'entrée correspondante dans
-   `getJobs()` : `map: COMMON_EN.concat(DECKn_EN)`.
-5. **Vérifier avant de livrer** (voir plus bas).
-6. **Livrer les trois fichiers** et rappeler de lancer `runAll` autant de fois
-   que le journal le demande.
-7. **Relire les copies via Drive** une fois l'exécution terminée. C'est ce qui
-   attrape ce que le rapport du script ne voit pas.
+   `getJobs()` : `map: COMMON_EN.concat(DECKn_EN)`. Un deck qui reprend les
+   blocs d'un autre concatène aussi sa table (`COMMON_EN.concat(DECK2_EN,
+   DECK3_EN)`) — les doublons sont filtrés à l'exécution.
+5. **Passer les tables au crible** (voir plus bas). Jamais de livraison sans ça.
+6. **Régénérer et livrer `translate-complet.gs`**, en rappelant de lancer
+   `runAll` autant de fois que le journal le demande (limite de 6 min).
+7. **Relire les copies via Drive** une fois l'exécution terminée, et ne conclure
+   que là-dessus. C'est ce qui attrape ce que le rapport du script ne voit pas.
 
-## Les pièges de l'API Slides
+## Les quatre pièges de l'API Slides
 
-Ces trois comportements ont chacun coûté une exécution ratée. Le moteur est
-construit autour d'eux — ne pas les « simplifier ».
+Chacun a coûté une exécution ratée. Le moteur est construit autour d'eux — ne
+pas les « simplifier ».
 
 1. **La recherche ignore les accents.** `replaceAllText('Informé', …)` matche
    `Informe`. Une entrée courte peut donc réécrire la traduction posée par une
@@ -73,20 +75,29 @@ construit autour d'eux — ne pas les « simplifier ».
 3. **Certaines formes refusent d'être lues** (`getText()` échoue, cellules
    fusionnées). Tout filtrage bâti sur le texte relevé saute silencieusement ce
    qu'il n'a pas su lire. Les slides ne sont donc pas filtrées.
+4. **Des espaces invisibles se cachent dans le texte** : insécables (` `),
+   fines (` `), autour des tirets cadratins comme au milieu d'une phrase.
+   `variants()` en essaie plusieurs formes, mais ne couvre pas les cas mixtes.
+   Une entrée qui traverse une ponctuation typographique française est à
+   découper d'office.
 
-Autres règles de rédaction des tables :
+## Règles de rédaction des tables
 
 - Les chaînes les plus longues sont traitées en premier — ne pas retrier.
 - La casse est respectée : `Paramétrage` et `paramétrage` sont deux entrées.
 - Jamais d'entrée identité (`['Kick off', 'Kick off']`).
-- Ne pas faire porter une entrée sur un saut de ligne dont on n'est pas sûr :
-  deux entrées courtes valent mieux qu'une longue qui ne matchera pas.
+- **Découper toute entrée qui traverse un tiret cadratin, une parenthèse ou un
+  saut de ligne dont on n'est pas certain.** Deux entrées courtes valent mieux
+  qu'une longue qui ne matchera pas.
+- **Se méfier des clés de moins de 4 caractères** (`GT`, `S1`) et des mots
+  génériques (`Production`, `Support`, `Phase`). Ce sont eux qui mordent sur du
+  texte voisin : `Production → Producción` a produit `Producción Manager` dans
+  un logigramme anglais. Toujours les vérifier nommément à la relecture.
 - Le texte dans les images n'est pas traduisible. Le signaler à l'utilisateur.
 
-## Vérifier avant de livrer
+## Passer les tables au crible
 
-Ne jamais livrer une table sans l'avoir passée au crible. Écrire un contrôle
-jetable en Node qui charge les tables et signale :
+Écrire un contrôle jetable en Node qui charge les tables et signale :
 
 - les entrées identité (`clé === valeur`) ;
 - les doublons de clé avec des traductions divergentes ;
@@ -97,7 +108,45 @@ Chacune de ces catégories a déjà produit un bug réel sur ce projet.
 
 Attention en testant avec un mock : Apps Script renvoie des **objets**
 d'énumération, pas des chaînes. Un mock qui utilise des chaînes fait passer un
-`===` qui échoue en vrai — c'est déjà arrivé.
+`===` qui échoue en vrai. Un bon mock reproduit aussi le pliage des accents et
+des formes illisibles, sinon il valide un moteur qui échouera.
+
+## Relire les copies : ce qui compte et ce qui ment
+
+**Le journal du script n'est pas une preuve.** Il a annoncé « Plus aucun texte
+français détecté » sur des decks qui en contenaient encore, parce qu'il ne
+vérifie que ce qu'il a dans ses tables. Cinq défauts réels n'ont été trouvés que
+par relecture : `Informado`, des semaines restées en français, `Producción
+Manager`, `Automobile` non traduit, et un fragment de phrase.
+
+**La date de modification ne prouve rien non plus** : `translateOne` appelle
+`saveAndClose()` sans condition, donc elle bouge même quand aucun remplacement
+n'a eu lieu. Elle sert dans un seul sens : *inchangée* depuis la dernière
+lecture ⇒ contenu inchangé, relecture inutile.
+
+À la relecture, chercher spécifiquement :
+
+- du français résiduel — y compris des mots sans marqueur franco-spécifique,
+  que le détecteur du script ne peut pas voir (`Automobile`) ;
+- des sentinelles `@@zz` oubliées ;
+- les dégâts des clés courtes de ce lot, nommément ;
+- les incohérences entre slides (`WORKING GROUPS (WG)` d'un côté, colonne `GT`
+  de l'autre, dans le même deck).
+
+Consigner le résultat copie par copie dans `slides-translation/verification-<date>.md`.
+
+## Corriger après coup
+
+Les correctifs repartent de **l'état actuel** du deck, pas du français
+d'origine : ils vivent dans `getFixups()`, pas dans `getJobs()`, et se lancent
+avec `fixupAll`. Toujours faire annoncer par `fixupAll` un **numéro de lot et la
+liste des cibles** en tête de journal — sans ça, un `jobs.gs` resté en version
+précédente rejoue d'anciens correctifs et le journal paraît normal.
+
+**Après deux tentatives automatiques infructueuses sur une même chaîne,
+recommander la correction manuelle.** Un espace invisible ne se voit pas depuis
+Drive ; s'entêter coûte plus qu'il ne rapporte. Donner alors le numéro de slide,
+le titre de la slide, le texte exact à remplacer et le texte de remplacement.
 
 ## Glossaire de référence
 
