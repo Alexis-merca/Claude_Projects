@@ -28,9 +28,17 @@ Dans ce dépôt, sous `slides-translation/` :
 | `moteur.gs` | Le moteur de remplacement | Jamais |
 | `glossaire.gs` | `COMMON_EN` / `COMMON_ES`, le vocabulaire Mercateam | S'enrichit |
 | `jobs.gs` | Le lot en cours : `getJobs`, tables par deck | Remplacé à chaque lot |
+| `translate-complet.gs` | Les trois précédents concaténés | Régénéré après chaque modification |
 
-L'utilisateur garde **un seul projet Apps Script** en permanence. Pour un
-nouveau lot, il ne remplace que `jobs.gs`.
+**Toujours livrer `translate-complet.gs`, jamais les fichiers séparés.** Apps
+Script partage la portée globale entre les fichiers d'un projet, mais il faut
+les créer un par un côté éditeur. Coller un seul des trois par-dessus le
+`Code.gs` existant efface les autres : l'exécution échoue sur `translateOne is
+not defined`, ou semble se dérouler normalement sans que rien ne change. C'est
+arrivé, et la panne a coûté deux allers-retours avant d'être comprise.
+
+Régénérer après toute modification :
+`cat moteur.gs glossaire.gs jobs.gs > translate-complet.gs`
 
 ## Procédure pour un nouveau deck
 

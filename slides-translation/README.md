@@ -10,16 +10,32 @@ principalement des images).
 Donc : Claude lit le FR et produit les tables de traduction, ce script Apps
 Script les applique aux copies, et l'utilisateur le lance.
 
-## Les trois fichiers
+## Un fichier à coller, trois fichiers pour travailler
 
-Un seul projet Apps Script, gardé en permanence, contenant trois fichiers. Ils
-partagent la même portée globale, l'ordre n'a pas d'importance.
+Ce qu'on colle dans Apps Script : **`translate-complet.gs`**, et lui seul.
+
+Les trois fichiers ci-dessous en sont la source, pratique pour suivre les
+modifications. Ils ne sont pas destinés à être collés séparément.
 
 | Fichier | Rôle | Fréquence de changement |
 |---|---|---|
 | `moteur.gs` | Le moteur de remplacement et ses garde-fous | Jamais |
 | `glossaire.gs` | `COMMON_EN` / `COMMON_ES` : le vocabulaire Mercateam | S'enrichit à chaque lot |
 | `jobs.gs` | Le lot en cours : `getJobs`, `RENAMES`, tables par deck | Remplacé à chaque lot |
+
+Régénérer le fichier complet après toute modification :
+
+```
+cd slides-translation && cat moteur.gs glossaire.gs jobs.gs > translate-complet.gs
+```
+
+**Pourquoi ne pas coller les trois séparément.** Apps Script partage bien la
+portée globale entre les fichiers d'un projet, donc le découpage fonctionne —
+mais il faut créer trois fichiers de script côté éditeur. Coller un seul des
+trois par-dessus le `Code.gs` existant efface les deux autres, et l'exécution
+échoue sur `translateOne is not defined` — ou, pire, semble se dérouler
+normalement sans que rien ne change. C'est arrivé. Un seul fichier supprime ce
+risque.
 
 **C'est `glossaire.gs` qui a de la valeur sur la durée.** Les decks de
 déploiement Mercateam reprennent presque toujours les mêmes blocs — feuille de
@@ -28,20 +44,18 @@ attentes, MercaNews, critères de Go Live, témoignages. Un nouveau deck est don
 déjà traduit à 80 % rien qu'avec le glossaire, et seul son contenu propre
 demande du travail.
 
-`archive/deck1.gs` garde la trace du premier lot ; il n'a pas à être collé dans
-le projet Apps Script.
+`archive/deck1.gs` garde la trace du premier lot ; il ne fait pas partie du
+fichier complet.
 
 ## Installation, une seule fois
 
 1. Ouvrir [script.google.com](https://script.google.com) → **Nouveau projet**,
    le nommer par exemple « Traduction Slides Mercateam ».
-2. Créer trois fichiers de script (**+** → *Script*) nommés `moteur`,
-   `glossaire` et `jobs`, et y coller les fichiers correspondants. Supprimer le
-   `Code.gs` par défaut.
-3. **Ctrl+S**.
+2. Tout sélectionner dans `Code.gs` et coller `translate-complet.gs`
+   par-dessus. **Ctrl+S**.
 
-Ce projet est à conserver. Pour un nouveau lot de decks, seul `jobs.gs` est à
-remplacer — et `glossaire.gs` si du vocabulaire s'est ajouté.
+Ce projet est à conserver. Pour un nouveau lot, on recolle simplement la
+nouvelle version du fichier complet.
 
 ## Traduire un nouveau deck
 
@@ -49,8 +63,8 @@ remplacer — et `glossaire.gs` si du vocabulaire s'est ajouté.
    destination. Il crée les copies EN/ES lui-même — inutile de les préparer.
 2. Claude lit le français, le confronte au glossaire, et ne rédige que les
    entrées réellement nouvelles.
-3. Il renvoie `jobs.gs` (et `glossaire.gs` s'il l'a enrichi).
-4. Coller ces fichiers dans le projet, **Ctrl+S**.
+3. Il renvoie `translate-complet.gs`.
+4. Le coller par-dessus tout le contenu du projet, **Ctrl+S**.
 5. Sélectionner **`runAll`** et **Exécuter**. Relancer jusqu'à lire
    `>>> Tous les jobs sont traités.`
 6. Demander à Claude de relire les copies : c'est ce qui attrape ce que le
