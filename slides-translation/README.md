@@ -47,13 +47,19 @@ seulement), `translateAll` (traductions seulement), `runAll` (les deux).
 
 ## Pourquoi plusieurs exécutions
 
-Apps Script coupe une exécution à 6 minutes. Un deck coûte environ 830 appels
-API (365 entrées × 1,3 variante en passe 1, puis 1 appel par entrée en passe 2),
-soit 1 à 2 minutes. Deux decks passent, quatre non.
+Apps Script coupe une exécution à 6 minutes. Les 10 cibles (5 decks × EN/ES)
+représentent environ 8 100 appels API, soit une vingtaine de minutes au total.
 
-`translateAll` refuse donc de démarrer un nouveau job au-delà de 2 min 30 et
-retient les `fileId` terminés dans les propriétés du script. Relancer `runAll`
-reprend là où ça s'était arrêté, sans refaire le travail déjà fait.
+`translateAll` mesure la durée réelle des jobs déjà passés et ne démarre le
+suivant que s'il a le temps de finir avant 5 min 30. Les `fileId` terminés sont
+retenus dans les propriétés du script : relancer `runAll` reprend là où ça
+s'était arrêté, sans refaire le travail déjà fait. Compter **environ 5
+lancements**, ou 10 si l'API est lente ce jour-là.
+
+Une exécution coupée en pleine passe 2 laisserait des sentinelles visibles dans
+le deck. Ce n'est pas grave : le job n'ayant pas été marqué terminé, la relance
+le reprend, la passe 1 ne trouve plus de français et la passe 2 remplace les
+sentinelles restantes. Le deck se répare tout seul.
 
 ## Comment lire le rapport
 

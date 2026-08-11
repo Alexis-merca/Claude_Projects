@@ -21,11 +21,13 @@ function runAll() {
   translateAll();
 }
 
-// Apps Script coupe une exécution à 6 minutes. Un deck coûte environ 830
-// appels API, soit 1 à 2 minutes : deux decks passent, quatre non. On refuse
-// donc de démarrer un nouveau job passé ce délai, et on retient les jobs
-// terminés pour que la relance reprenne où elle s'était arrêtée.
-var START_NEW_JOB_BEFORE_MS = 150 * 1000;
+// Apps Script coupe une exécution à 6 minutes. Un deck coûte de 600 à 1100
+// appels API, soit 1 h 30 à 3 minutes selon la latence du jour — trop variable
+// pour un seuil fixe. On mesure donc la durée réelle des jobs déjà passés et on
+// ne démarre le suivant que s'il a le temps de finir. Les jobs terminés sont
+// retenus pour que la relance reprenne où elle s'était arrêtée.
+var SAFE_DEADLINE_MS = 330 * 1000;   // 5 min 30, marge sur la coupure à 6 min
+var DUREE_SUPPOSEE_MS = 180 * 1000;  // estimation tant qu'aucun job n'a tourné
 
 /**
  * Traite les jobs de getJobs() qui ne l'ont pas déjà été.
@@ -36,17 +38,20 @@ function translateAll() {
   var done = JSON.parse(props.getProperty('jobsDone') || '[]');
   var t0 = new Date().getTime();
   var pending = [];
+  var pire = DUREE_SUPPOSEE_MS;
 
   getJobs().forEach(function (job) {
     if (done.indexOf(job.fileId) !== -1) {
       Logger.log('déjà traité, ignoré : ' + job.label);
       return;
     }
-    if (new Date().getTime() - t0 > START_NEW_JOB_BEFORE_MS) {
+    var debut = new Date().getTime();
+    if (pending.length || debut - t0 + pire > SAFE_DEADLINE_MS) {
       pending.push(job.label);
       return;
     }
     Logger.log(translateOne(job));
+    pire = Math.max(pire, new Date().getTime() - debut);
     done.push(job.fileId);
     props.setProperty('jobsDone', JSON.stringify(done));
   });
@@ -94,7 +99,14 @@ function renameAll() {
 function translateOne(job) {
   var t0 = new Date().getTime();
   var pres = SlidesApp.openById(job.fileId);
-  var pairs = job.map.slice().sort(function (a, b) {
+  // COMMON et les tables de deck se recouvrent volontairement. Sans ce filtre,
+  // chaque doublon coûterait deux appels API pour ne rien trouver.
+  var vus = {};
+  var pairs = job.map.filter(function (pair) {
+    if (vus[pair[0]]) return false;
+    vus[pair[0]] = true;
+    return true;
+  }).sort(function (a, b) {
     return b[0].length - a[0].length;
   });
 
@@ -409,26 +421,42 @@ var RENAMES = [
 
 function getJobs() {
   return [
-    {
-      label: 'v06.2026 - EN - Kickoff Preparation',
+    { label: 'v06.2026 - EN - Kickoff Preparation',
       fileId: '1-74bN_wHuvtnE_pU_yUFmX1UkIKbNYJaaVLjoNQl24k',
-      map: COMMON_EN.concat(DECK2_EN)
-    },
-    {
-      label: 'v06.2026 - ES - Preparación Kickoff',
+      map: COMMON_EN.concat(DECK2_EN) },
+    { label: 'v06.2026 - ES - Preparación Kickoff',
       fileId: '1Ncedk3sKx6UaNPExB8uMdncWxgCOKQjdkJpOBT9-bwQ',
-      map: COMMON_ES.concat(DECK2_ES)
-    },
-    {
-      label: 'v08.2026 - EN - Project weeklies',
+      map: COMMON_ES.concat(DECK2_ES) },
+
+    // Le Kickoff reprend les blocs du deck Préparation Kickoff (groupes de
+    // travail, 10 cas d'usage, agenda de visite), d'où la double concaténation.
+    { label: 'v06.2026 - EN - Kickoff',
+      fileId: '11KRnojbBJGLFMD_yqf4VGhAcSM_ugBNq0Hqynh32_-g',
+      map: COMMON_EN.concat(DECK2_EN, DECK3_EN) },
+    { label: 'v06.2026 - ES - Kickoff',
+      fileId: '153SkfN3MeQZazaa8FzdEkOnuUgxe0KZg66fPkpDa8YQ',
+      map: COMMON_ES.concat(DECK2_ES, DECK3_ES) },
+
+    { label: 'v08.2026 - EN - REVIEW',
+      fileId: '1j1_FjPfrTUfOkYn-orzvfOcGZ7erSAEcqut_x5J8vLM',
+      map: COMMON_EN.concat(DECK4_EN) },
+    { label: 'v08.2026 - ES - BALANCE',
+      fileId: '1M35NO0sfVBC2L1hI6zSqfTTHaT52u0nUMHbRzkLPE4k',
+      map: COMMON_ES.concat(DECK4_ES) },
+
+    { label: 'v08.2026 - EN - Project weeklies',
       fileId: '1HsDFaY7xDXLFEhF3av7f4HR2viJM79rvCQFqZGId328',
-      map: COMMON_EN.concat(DECK5_EN)
-    },
-    {
-      label: 'v08.2026 - ES - Semanales de proyecto',
+      map: COMMON_EN.concat(DECK5_EN) },
+    { label: 'v08.2026 - ES - Semanales de proyecto',
       fileId: '1WsXCZY5KmyHmeta0tMmNg9VuA20oxSDviK9IO9tXpq8',
-      map: COMMON_ES.concat(DECK5_ES)
-    }
+      map: COMMON_ES.concat(DECK5_ES) },
+
+    { label: 'v08.2026 - EN - Steering Committee',
+      fileId: '1f6HPC2V5TDCxpUb0-io4BbYfrsZuTOHJAZZd5InV8Fg',
+      map: COMMON_EN.concat(DECK6_EN) },
+    { label: 'v08.2026 - ES - Comité de Dirección',
+      fileId: '1xd2I9OTYRJR0e7xDETq_qu3TFzuobKj9xGTdmu5T3eE',
+      map: COMMON_ES.concat(DECK6_ES) }
   ];
 }
 
@@ -650,7 +678,8 @@ var DECK1_EN = [
   ['J/H', 'PD'],
 
   // Remerciements
-  ['Merci !', 'Thank you!']
+  ['Merci !', 'Thank you!'],
+
 ];
 
 // ---------------------------------------------------------------------------
@@ -864,7 +893,8 @@ var DECK1_ES = [
   ['Tous les services sont cumulables et adaptables à votre déploiement', 'Todos los servicios son acumulables y adaptables a su despliegue'],
 
   // Agradecimientos
-  ['Merci !', '¡Gracias!']
+  ['Merci !', '¡Gracias!'],
+
 ];
 
 // ---------------------------------------------------------------------------
@@ -1077,7 +1107,117 @@ var COMMON_EN = [
   ['Utilisateurs', 'Users'],
   ['Responsable', 'Responsible'],
 
-  ['Merci !', 'Thank you!']
+  ['Merci !', 'Thank you!'],
+
+  // --- blocs partagés par les decks Kickoff / BILAN / COPIL / Hebdomadaires ---
+
+  ["Lien d’inscription", 'Registration link'],
+  ['Feuille de route', 'Roadmap'],
+  ['Prochaines étapes', 'Next steps'],
+
+  // Échelle de maturité
+  ['Échelle de maturité', 'Maturity scale'],
+  ['Informel / invisible', 'Informal / invisible'],
+  ['Manuel, partiel', 'Manual, partial'],
+  ['Structuré, opérationnel', 'Structured, operational'],
+  ['Intégré, connecté', 'Integrated, connected'],
+  ['Piloté, proactif', 'Managed, proactive'],
+
+  // Tableau enjeux / maturité
+  ['Maturité\nactuelle', 'Current\nmaturity'],
+  ['Maturité cible', 'Target maturity'],
+  ['Besoins terrains', 'Field needs'],
+  ['Niveau\ncible', 'Target\nlevel'],
+  ['Gains attendus', 'Expected gains'],
+  ['Enjeux et objectifs du projet', 'Project challenges and objectives'],
+  ['Enjeux', 'Challenges'],
+  ['Protéger et pérenniser les savoir-faire critiques', 'Protect and secure critical know-how'],
+  ['Accélérer et sécuriser la montée en autonomie', 'Speed up and secure the ramp-up to autonomy'],
+  ['Installer une conformité permanente', 'Establish permanent compliance'],
+  ['Sécuriser la continuité opérationnelle', 'Secure operational continuity'],
+  ['Charge administrative ↓', 'Administrative burden ↓'],
+  ['Anticipation des pertes de savoir-faire ↑', 'Anticipation of know-how loss ↑'],
+  ['Charge admin de formation ↓', 'Training admin burden ↓'],
+  ["Pénalités & temps d'audit évités", 'Penalties & audit time avoided'],
+  ['Risque de non-conformité ↓', 'Non-compliance risk ↓'],
+  ['Temps de planning ↓', 'Scheduling time ↓'],
+  ['Sous & sur-staffing ↓', 'Under & overstaffing ↓'],
+
+  // Critères de Go Live / plan d'action
+  ['Action mise à jour', 'Action updated'],
+  ['Action terminée', 'Action completed'],
+  ['Critères de Go Live', 'Go Live criteria'],
+  ['Date\ncible', 'Target\ndate'],
+  ["Plan d'action", 'Action plan'],
+  ["Plan d’action", 'Action plan'],
+  ['100 % des collaborateurs actifs importés', '100% of active employees imported'],
+  ['Importer les intérimaires', 'Import temporary workers'],
+  ['100 % des bibliothèques compétences / habilitations digitalisées', '100% of skills / certifications libraries digitalised'],
+  ['Planifier un atelier', 'Schedule a workshop'],
+  ['100 % des postes créés et associés aux compétences/habilitations prérequises', '100% of workstations created and linked to the required skills/certifications'],
+  ['100% des utilisateurs clés formés', '100% of key users trained'],
+  ['La gouvernance (RACI et droits) est définie', 'Governance (RACI and rights) is defined'],
+  ['Une feuille de route post-déploiement est définie', 'A post-deployment roadmap is defined'],
+  ['100 % des matrices de compétences sont à jour', '100% of skills matrices are up to date'],
+  ["→ Pilote sur les postes contrôle, hastamat et CDL avec Vanessa d'ici mi-janvier",
+   '→ Pilot on the inspection, hastamat and CDL workstations with Vanessa by mid-January'],
+  ['Atelier aux autres équipes vers la semaine du 13 janvier — à planifier', 'Workshop for the other teams around the week of 13 January — to be scheduled'],
+  ['La liste des contenus / questionnaires à intégrer est définie', 'The list of content / questionnaires to load is defined'],
+  ["100 % des matrices d'habilitation sont à jour", '100% of certification matrices are up to date'],
+  ['Avoir prévenu et formé les utilisateurs clés', 'Have informed and trained the key users'],
+  ['Avoir prévenu et formé les autres champions', 'Have informed and trained the other champions'],
+  ['Les supports de formation du(des) poste(s) X sont digitalisés', 'The training materials for workstation(s) X are digitalised'],
+  ["Former les chefs d'équipes référents", 'Train the lead team leaders'],
+  ['Créer les compétences au poste', 'Create the workstation skills'],
+  ['Définir les niveaux → Julie va communiquer', 'Define the levels → Julie will communicate'],
+  ['Remplir les matrices compétences au poste 2×8 → voir les cde non clés', 'Fill in the 2-shift workstation skills matrices → check the non-key team leaders'],
+  ["Les supports d'évaluation du(des) poste(s) X sont digitalisés", 'The assessment materials for workstation(s) X are digitalised'],
+  ['Opt : X formations ont été lancées et suivies sur Mercateam', 'Opt: X trainings have been launched and tracked in Mercateam'],
+  ["PLAN D’ACTION", 'ACTION PLAN'],
+  ['CHIFFRES CLÉS', 'KEY FIGURES'],
+  ["Suivi de l’adoption", 'Adoption tracking'],
+  ['CEO & co-fondateur Mercateam', 'CEO & co-founder, Mercateam'],
+
+  // Accomplissements / points d'attention
+  ['Accomplissements', 'Achievements'],
+  ["Points d'attention", 'Points of attention'],
+  ['→ Matrices de compétences et fiches collaborateurs à jour et centralisées.', '→ Skills matrices and employee records up to date and centralised.'],
+
+  // Témoignages
+  ['DÉPLOIEMENT MERCATEAM · RESSOURCES', 'MERCATEAM DEPLOYMENT · RESOURCES'],
+  ['Témoignages', 'Testimonials'],
+  ["Découvrez les cas d’usage chez nos partenaires", 'Discover the use cases at our partners'],
+  ['Découvrez les retours de nos partenaires', 'Discover feedback from our partners'],
+  ['Lire la vidéo', 'Play video'],
+  ['Digitalisation des compétences pour anticiper la perte de savoir-faire', 'Digitalising skills to anticipate know-how loss'],
+  ['Digitalisation de\nla montée en\ncompétences pour valoriser le savoir-faire', 'Digitalising\nskills growth\nto showcase know-how'],
+  ['Gestion du planning et utilisation de la donnée', 'Schedule management and use of data'],
+  ['Luxe', 'Luxury'],
+  ['Électronique', 'Electronics'],
+  ['Centralisation des données et montée en polyvalence', 'Data centralisation and growth in versatility'],
+  ['Cosmétique', 'Cosmetics'],
+  ['Aéronautique', 'Aerospace'],
+  ['Audits simplifiés et traçabilité des compétences', 'Simplified audits and skills traceability'],
+  ['Manufacture', 'Manufacturing'],
+  ['Gestion des compétences et des formations pour gagner en polyvalence', 'Skills and training management to gain versatility'],
+  ["“Onboarding, instruction au poste, automatisation de la formation, l’outil nous a aidés à diviser par 4 notre temps de formation et son suivi.”",
+   '“Onboarding, workstation instruction, training automation — the tool helped us cut our training time and its tracking by four.”'],
+  ['Directeur industriel chez Trigano', 'Industrial Director at Trigano'],
+  ["“Mercateam nous permet de sécuriser la polyvalence en accompagnant et la montée en compétence des collaborateurs.”",
+   '“Mercateam lets us secure versatility while supporting our people’s skills growth.”'],
+  ['Responsable de site chez SEB', 'Site Manager at SEB'],
+  ["“Les managers gagnent une journée par semaine sur la réalisation des planning et nous donnent accès à une data cruciale pour améliorer la performance.”",
+   '“Managers save a day a week on building schedules, and it gives us crucial data to improve performance.”'],
+  ['Directeur industriel chez Dior', 'Industrial Director at Dior'],
+  ["“On a passé notre dernier audit NADCAP sans aucun problème grâce à Mercateam !”",
+   '“We passed our last NADCAP audit without a hitch thanks to Mercateam!”'],
+  ['Coordinateur qualité chez LISI', 'Quality Coordinator at LISI'],
+  ["“Je n'ai plus à m'inquiéter du suivi des habilitations et compétences critiques arrivant à échéance, Mercateam m’envoie un rappel plusieurs mois avant.”",
+   '“I no longer have to worry about tracking certifications and critical skills coming up for renewal — Mercateam reminds me months in advance.”'],
+  ['DRH chez Exxelia', 'HR Director at Exxelia'],
+  ["“On tient enfin LE logiciel qui nous permet de devenir parfaits en terme de qualité et passer tous nos audits !”",
+   '“We finally have THE software that lets us be flawless on quality and pass every audit!”'],
+  ['Coordinateur qualité chez Shiseido', 'Quality Coordinator at Shiseido']
 ];
 
 var COMMON_ES = [
@@ -1274,7 +1414,118 @@ var COMMON_ES = [
   ['Organisation', 'Organización'],
   ['Phase', 'Fase'],
 
-  ['Merci !', '¡Gracias!']
+  ['Merci !', '¡Gracias!'],
+
+  // --- blocs partagés par les decks Kickoff / BILAN / COPIL / Hebdomadaires ---
+
+  ["Lien d’inscription", 'Enlace de inscripción'],
+  ['Feuille de route', 'Hoja de ruta'],
+  ['Prochaines étapes', 'Próximos pasos'],
+  ['Logo client', 'Logo del cliente'],
+
+  // Escala de madurez
+  ['Échelle de maturité', 'Escala de madurez'],
+  ['Informel / invisible', 'Informal / invisible'],
+  ['Manuel, partiel', 'Manual, parcial'],
+  ['Structuré, opérationnel', 'Estructurado, operativo'],
+  ['Intégré, connecté', 'Integrado, conectado'],
+  ['Piloté, proactif', 'Gestionado, proactivo'],
+
+  // Tabla retos / madurez
+  ['Maturité\nactuelle', 'Madurez\nactual'],
+  ['Maturité cible', 'Madurez objetivo'],
+  ['Besoins terrains', 'Necesidades del terreno'],
+  ['Niveau\ncible', 'Nivel\nobjetivo'],
+  ['Gains attendus', 'Ganancias esperadas'],
+  ['Enjeux et objectifs du projet', 'Retos y objetivos del proyecto'],
+  ['Enjeux', 'Retos'],
+  ['Protéger et pérenniser les savoir-faire critiques', 'Proteger y perpetuar el saber hacer crítico'],
+  ['Accélérer et sécuriser la montée en autonomie', 'Acelerar y asegurar la progresión hacia la autonomía'],
+  ['Installer une conformité permanente', 'Instaurar una conformidad permanente'],
+  ['Sécuriser la continuité opérationnelle', 'Asegurar la continuidad operativa'],
+  ['Charge administrative ↓', 'Carga administrativa ↓'],
+  ['Anticipation des pertes de savoir-faire ↑', 'Anticipación de las pérdidas de saber hacer ↑'],
+  ['Charge admin de formation ↓', 'Carga administrativa de formación ↓'],
+  ["Pénalités & temps d'audit évités", 'Penalizaciones y tiempo de auditoría evitados'],
+  ['Risque de non-conformité ↓', 'Riesgo de no conformidad ↓'],
+  ['Temps de planning ↓', 'Tiempo de planificación ↓'],
+  ['Sous & sur-staffing ↓', 'Infra y sobredotación ↓'],
+
+  // Criterios de Go Live / plan de acción
+  ['Action mise à jour', 'Acción actualizada'],
+  ['Action terminée', 'Acción completada'],
+  ['Critères de Go Live', 'Criterios de Go Live'],
+  ['Date\ncible', 'Fecha\nobjetivo'],
+  ["Plan d'action", 'Plan de acción'],
+  ["Plan d’action", 'Plan de acción'],
+  ['100 % des collaborateurs actifs importés', '100 % de los colaboradores activos importados'],
+  ['Importer les intérimaires', 'Importar los trabajadores temporales'],
+  ['100 % des bibliothèques compétences / habilitations digitalisées', '100 % de las bibliotecas de competencias / habilitaciones digitalizadas'],
+  ['Planifier un atelier', 'Planificar un taller'],
+  ['100 % des postes créés et associés aux compétences/habilitations prérequises', '100 % de los puestos creados y asociados a las competencias/habilitaciones requeridas'],
+  ['100% des utilisateurs clés formés', '100 % de los usuarios clave formados'],
+  ['La gouvernance (RACI et droits) est définie', 'La gobernanza (RACI y derechos) está definida'],
+  ['Une feuille de route post-déploiement est définie', 'Se ha definido una hoja de ruta post-despliegue'],
+  ['100 % des matrices de compétences sont à jour', '100 % de las matrices de competencias están actualizadas'],
+  ["→ Pilote sur les postes contrôle, hastamat et CDL avec Vanessa d'ici mi-janvier",
+   '→ Piloto en los puestos de control, hastamat y CDL con Vanessa antes de mediados de enero'],
+  ['Atelier aux autres équipes vers la semaine du 13 janvier — à planifier', 'Taller para los demás equipos hacia la semana del 13 de enero — por planificar'],
+  ['La liste des contenus / questionnaires à intégrer est définie', 'La lista de contenidos / cuestionarios a integrar está definida'],
+  ["100 % des matrices d'habilitation sont à jour", '100 % de las matrices de habilitaciones están actualizadas'],
+  ['Avoir prévenu et formé les utilisateurs clés', 'Haber informado y formado a los usuarios clave'],
+  ['Avoir prévenu et formé les autres champions', 'Haber informado y formado a los demás champions'],
+  ['Les supports de formation du(des) poste(s) X sont digitalisés', 'Los materiales de formación del(de los) puesto(s) X están digitalizados'],
+  ["Former les chefs d'équipes référents", 'Formar a los jefes de equipo referentes'],
+  ['Créer les compétences au poste', 'Crear las competencias del puesto'],
+  ['Définir les niveaux → Julie va communiquer', 'Definir los niveles → Julie comunicará'],
+  ['Remplir les matrices compétences au poste 2×8 → voir les cde non clés', 'Rellenar las matrices de competencias del puesto 2×8 → ver los jefes de equipo no clave'],
+  ["Les supports d'évaluation du(des) poste(s) X sont digitalisés", 'Los materiales de evaluación del(de los) puesto(s) X están digitalizados'],
+  ['Opt : X formations ont été lancées et suivies sur Mercateam', 'Opc.: X formaciones se han lanzado y seguido en Mercateam'],
+  ["PLAN D’ACTION", 'PLAN DE ACCIÓN'],
+  ['CHIFFRES CLÉS', 'CIFRAS CLAVE'],
+  ["Suivi de l’adoption", 'Seguimiento de la adopción'],
+  ['CEO & co-fondateur Mercateam', 'CEO y cofundador de Mercateam'],
+
+  // Logros / puntos de atención
+  ['Accomplissements', 'Logros'],
+  ["Points d'attention", 'Puntos de atención'],
+  ['→ Matrices de compétences et fiches collaborateurs à jour et centralisées.', '→ Matrices de competencias y fichas de colaboradores actualizadas y centralizadas.'],
+
+  // Testimonios
+  ['DÉPLOIEMENT MERCATEAM · RESSOURCES', 'DESPLIEGUE MERCATEAM · RECURSOS'],
+  ['Témoignages', 'Testimonios'],
+  ["Découvrez les cas d’usage chez nos partenaires", 'Descubra los casos de uso en nuestros socios'],
+  ['Découvrez les retours de nos partenaires', 'Descubra las opiniones de nuestros socios'],
+  ['Lire la vidéo', 'Ver el vídeo'],
+  ['Digitalisation des compétences pour anticiper la perte de savoir-faire', 'Digitalización de las competencias para anticipar la pérdida de saber hacer'],
+  ['Digitalisation de\nla montée en\ncompétences pour valoriser le savoir-faire', 'Digitalización del\ndesarrollo de\ncompetencias para valorizar el saber hacer'],
+  ['Gestion du planning et utilisation de la donnée', 'Gestión del planning y uso del dato'],
+  ['Luxe', 'Lujo'],
+  ['Électronique', 'Electrónica'],
+  ['Centralisation des données et montée en polyvalence', 'Centralización de los datos y aumento de la polivalencia'],
+  ['Cosmétique', 'Cosmética'],
+  ['Aéronautique', 'Aeronáutica'],
+  ['Audits simplifiés et traçabilité des compétences', 'Auditorías simplificadas y trazabilidad de las competencias'],
+  ['Manufacture', 'Manufactura'],
+  ['Gestion des compétences et des formations pour gagner en polyvalence', 'Gestión de las competencias y de las formaciones para ganar polivalencia'],
+  ["“Onboarding, instruction au poste, automatisation de la formation, l’outil nous a aidés à diviser par 4 notre temps de formation et son suivi.”",
+   '“Onboarding, instrucción en el puesto, automatización de la formación: la herramienta nos ayudó a dividir por cuatro nuestro tiempo de formación y su seguimiento.”'],
+  ['Directeur industriel chez Trigano', 'Director industrial en Trigano'],
+  ["“Mercateam nous permet de sécuriser la polyvalence en accompagnant et la montée en compétence des collaborateurs.”",
+   '“Mercateam nos permite asegurar la polivalencia acompañando el desarrollo de competencias de los colaboradores.”'],
+  ['Responsable de site chez SEB', 'Responsable de planta en SEB'],
+  ["“Les managers gagnent une journée par semaine sur la réalisation des planning et nous donnent accès à une data cruciale pour améliorer la performance.”",
+   '“Los mandos ganan un día por semana en la elaboración de los plannings y nos dan acceso a datos cruciales para mejorar el rendimiento.”'],
+  ['Directeur industriel chez Dior', 'Director industrial en Dior'],
+  ["“On a passé notre dernier audit NADCAP sans aucun problème grâce à Mercateam !”",
+   '“¡Pasamos nuestra última auditoría NADCAP sin ningún problema gracias a Mercateam!”'],
+  ['Coordinateur qualité chez LISI', 'Coordinador de calidad en LISI'],
+  ["“Je n'ai plus à m'inquiéter du suivi des habilitations et compétences critiques arrivant à échéance, Mercateam m’envoie un rappel plusieurs mois avant.”",
+   '“Ya no tengo que preocuparme por el seguimiento de las habilitaciones y competencias críticas que vencen: Mercateam me avisa varios meses antes.”'],
+  ['DRH chez Exxelia', 'Directora de RRHH en Exxelia'],
+  ["“On tient enfin LE logiciel qui nous permet de devenir parfaits en terme de qualité et passer tous nos audits !”",
+   '“¡Por fin tenemos EL software que nos permite ser impecables en calidad y pasar todas nuestras auditorías!”'],
+  ['Coordinateur qualité chez Shiseido', 'Coordinador de calidad en Shiseido']
 ];
 
 // ---------------------------------------------------------------------------
@@ -1794,4 +2045,382 @@ var DECK5_ES = [
   ['CHIFFRES CLÉS', 'CIFRAS CLAVE'],
   ["Suivi de l’adoption", 'Seguimiento de la adopción'],
   ['CEO & co-fondateur Mercateam', 'CEO y cofundador de Mercateam']
+];
+
+// ---------------------------------------------------------------------------
+// DECK 3 — "Kickoff"  (contenu propre ; reprend aussi les blocs du deck 2)
+// ---------------------------------------------------------------------------
+
+var DECK3_EN = [
+  ['Présentation de Mercateam', 'Introducing Mercateam'],
+  ['Mission et démonstration de la plateforme.', 'Mission and platform demo.'],
+  ['Jalons, phases de déploiement et équipes projet.', 'Milestones, deployment phases and project teams.'],
+  ['Contexte & enjeux du projet', 'Context & project challenges'],
+  ['Enjeux, maturité actuelle et cible.', 'Challenges, current and target maturity.'],
+  ['Pilotage du déploiement', 'Steering the deployment'],
+  ['Critères de Go Live et groupes de travail.', 'Go Live criteria and working groups.'],
+  ['Kit de déploiement, formation et témoignages.', 'Deployment kit, training and testimonials.'],
+
+  ['Gestion des compétences, plannings,\nformation pour les équipes de production',
+   'Skills, scheduling and training\nmanagement for production teams'],
+  ['pays', 'countries'],
+  ['secteurs', 'sectors'],
+  ['employés', 'employees'],
+  ['Agroalimentaire', 'Food & beverage'],
+  ['Pharmaceutique', 'Pharmaceutical'],
+  ['Aéronautique, manufacture, BTP', 'Aerospace, manufacturing, construction'],
+  ['Luxe & cosmétique', 'Luxury & cosmetics'],
+
+  ['Affectation en fonction des compétences, absences, charge, etc.', 'Assignment based on skills, absences, workload, etc.'],
+  ['PLANNING AUTOMATISÉ', 'AUTOMATED SCHEDULING'],
+  ['FORMATION', 'TRAINING'],
+  ['Préparation, suivi, validation et traçabilité des formations', 'Preparation, tracking, validation and traceability of training'],
+  ['Centralisation et standardisation des compétences et habilitations', 'Centralisation and standardisation of skills and certifications'],
+  ['MATRICE DE COMPÉTENCES', 'SKILLS MATRIX'],
+  ['Une plateforme centralisée pour gérer vos équipes de production', 'One central platform to manage your production teams'],
+
+  ['NOTRE MISSION', 'OUR MISSION'],
+  ["Remettre\nl’humain au coeur de l’industrie 4.0", 'Putting people\nback at the heart of Industry 4.0'],
+  ['Démonstration de Mercateam', 'Mercateam demo'],
+
+  ['1 · Initiation', '1 · Introduction'],
+  ["Comprendre l'outil", 'Understanding the tool'],
+  ['→ Découvrir les fonctionnalités de base.', '→ Discover the basic features.'],
+  ["« Je sais où trouver l'information et comment utiliser Mercateam »", '“I know where to find information and how to use Mercateam”'],
+  ['Public : Tous les nouveaux utilisateurs', 'Audience: All new users'],
+  ['⇒ Insuffisant pour une utilisation en autonomie.', '⇒ Not enough for independent use.'],
+  ['2 · Autonomie', '2 · Autonomy'],
+  ['Opérer au quotidien', 'Operating day to day'],
+  ['→ Utiliser Mercateam dans son périmètre métier.', '→ Use Mercateam within your own business scope.'],
+  ['« Je sais utiliser Mercateam pour répondre à mes besoins métiers »', '“I can use Mercateam to meet my business needs”'],
+  ['Public : Managers de proximité, RH, HSE', 'Audience: Frontline managers, HR, HSE'],
+  ['⇒ Niveau suffisant pour la majorité des utilisateurs.', '⇒ Enough for most users.'],
+  ['3 · Maturité', '3 · Maturity'],
+  ['Devenir relais et moteur', 'Becoming a champion and driver'],
+  ['→ Porter les chantiers long terme : audits, routines, pilotage.', '→ Carry the long-term workstreams: audits, routines, steering.'],
+  ['« Je forme les nouveaux, anime la gouvernance, contribue aux standards »', '“I train newcomers, run the governance, contribute to standards”'],
+  ['Public : Utilisateurs référents, relais site, responsable transformation', 'Audience: Lead users, site champions, transformation manager'],
+  ["Une montée en compétence progressive : de la découverte à la maîtrise, jusqu'au rôle de relais interne.",
+   'A gradual skills journey: from discovery to mastery, through to the internal champion role.'],
+  ['Vous former à Mercateam', 'Training you on Mercateam'],
+
+  ['Progresser, à votre rythme', 'Progress at your own pace'],
+  ["Centre d'aide", 'Help centre'],
+  ['Articles et guides pas-à-pas accessibles à tout moment', 'Articles and step-by-step guides, available any time'],
+  ['Une réponse en direct de nos équipes depuis la plateforme', 'A live answer from our teams, from within the platform'],
+  ['Parcours de formation en ligne pour accompagner votre montée en compétence en autonomie',
+   'Online learning paths to support your independent skills growth'],
+  ["Modules de montée en compétences intégrés directement dans l'outil", 'Skills-building modules built right into the tool'],
+
+  ['LIVRABLE', 'DELIVERABLE'],
+  ['Annexes & supports', 'Appendices & materials']
+];
+
+var DECK3_ES = [
+  ['Présentation de Mercateam', 'Presentación de Mercateam'],
+  ['Mission et démonstration de la plateforme.', 'Misión y demostración de la plataforma.'],
+  ['Jalons, phases de déploiement et équipes projet.', 'Hitos, fases del despliegue y equipos de proyecto.'],
+  ['Contexte & enjeux du projet', 'Contexto y retos del proyecto'],
+  ['Enjeux, maturité actuelle et cible.', 'Retos, madurez actual y objetivo.'],
+  ['Pilotage du déploiement', 'Pilotaje del despliegue'],
+  ['Critères de Go Live et groupes de travail.', 'Criterios de Go Live y grupos de trabajo.'],
+  ['Kit de déploiement, formation et témoignages.', 'Kit de despliegue, formación y testimonios.'],
+
+  ['Gestion des compétences, plannings,\nformation pour les équipes de production',
+   'Gestión de competencias, planificación\ny formación para los equipos de producción'],
+  ['sites', 'plantas'],
+  ['pays', 'países'],
+  ['secteurs', 'sectores'],
+  ['employés', 'empleados'],
+  ['Agroalimentaire', 'Agroalimentario'],
+  ['Pharmaceutique', 'Farmacéutico'],
+  ['Aéronautique, manufacture, BTP', 'Aeronáutica, manufactura, construcción'],
+  ['Luxe & cosmétique', 'Lujo y cosmética'],
+
+  ['Affectation en fonction des compétences, absences, charge, etc.', 'Asignación en función de las competencias, ausencias, carga, etc.'],
+  ['PLANNING AUTOMATISÉ', 'PLANNING AUTOMATIZADO'],
+  ['FORMATION', 'FORMACIÓN'],
+  ['Préparation, suivi, validation et traçabilité des formations', 'Preparación, seguimiento, validación y trazabilidad de las formaciones'],
+  ['Centralisation et standardisation des compétences et habilitations', 'Centralización y estandarización de las competencias y habilitaciones'],
+  ['MATRICE DE COMPÉTENCES', 'MATRIZ DE COMPETENCIAS'],
+  ['Une plateforme centralisée pour gérer vos équipes de production', 'Una plataforma centralizada para gestionar sus equipos de producción'],
+
+  ['NOTRE MISSION', 'NUESTRA MISIÓN'],
+  ["Remettre\nl’humain au coeur de l’industrie 4.0", 'Devolver a las personas\nal centro de la industria 4.0'],
+  ['Démonstration de Mercateam', 'Demostración de Mercateam'],
+
+  ['1 · Initiation', '1 · Iniciación'],
+  ["Comprendre l'outil", 'Comprender la herramienta'],
+  ['→ Découvrir les fonctionnalités de base.', '→ Descubrir las funcionalidades básicas.'],
+  ["« Je sais où trouver l'information et comment utiliser Mercateam »", '«Sé dónde encontrar la información y cómo utilizar Mercateam»'],
+  ['Public : Tous les nouveaux utilisateurs', 'Público: Todos los nuevos usuarios'],
+  ['⇒ Insuffisant pour une utilisation en autonomie.', '⇒ Insuficiente para un uso autónomo.'],
+  ['2 · Autonomie', '2 · Autonomía'],
+  ['Opérer au quotidien', 'Operar en el día a día'],
+  ['→ Utiliser Mercateam dans son périmètre métier.', '→ Utilizar Mercateam en su ámbito profesional.'],
+  ['« Je sais utiliser Mercateam pour répondre à mes besoins métiers »', '«Sé utilizar Mercateam para responder a mis necesidades profesionales»'],
+  ['Public : Managers de proximité, RH, HSE', 'Público: Mandos intermedios, RRHH, HSE'],
+  ['⇒ Niveau suffisant pour la majorité des utilisateurs.', '⇒ Nivel suficiente para la mayoría de los usuarios.'],
+  ['3 · Maturité', '3 · Madurez'],
+  ['Devenir relais et moteur', 'Convertirse en relevo e impulsor'],
+  ['→ Porter les chantiers long terme : audits, routines, pilotage.', '→ Liderar los proyectos a largo plazo: auditorías, rutinas, pilotaje.'],
+  ['« Je forme les nouveaux, anime la gouvernance, contribue aux standards »', '«Formo a los nuevos, animo la gobernanza, contribuyo a los estándares»'],
+  ['Public : Utilisateurs référents, relais site, responsable transformation', 'Público: Usuarios referentes, relevos de planta, responsable de transformación'],
+  ["Une montée en compétence progressive : de la découverte à la maîtrise, jusqu'au rôle de relais interne.",
+   'Un desarrollo progresivo de competencias: del descubrimiento al dominio, hasta el rol de relevo interno.'],
+  ['Vous former à Mercateam', 'Formarle en Mercateam'],
+
+  ['Progresser, à votre rythme', 'Progresar a su ritmo'],
+  ["Centre d'aide", 'Centro de ayuda'],
+  ['Chat support', 'Chat de soporte'],
+  ['Articles et guides pas-à-pas accessibles à tout moment', 'Artículos y guías paso a paso accesibles en todo momento'],
+  ['Une réponse en direct de nos équipes depuis la plateforme', 'Una respuesta en directo de nuestros equipos desde la plataforma'],
+  ['Parcours de formation en ligne pour accompagner votre montée en compétence en autonomie',
+   'Itinerarios de formación en línea para acompañar su desarrollo de competencias de forma autónoma'],
+  ["Modules de montée en compétences intégrés directement dans l'outil", 'Módulos de desarrollo de competencias integrados directamente en la herramienta'],
+
+  ['LIVRABLE', 'ENTREGABLE'],
+  ['Annexes & supports', 'Anexos y materiales']
+];
+
+// ---------------------------------------------------------------------------
+// DECK 4 — "BILAN"  (contenu propre)
+// ---------------------------------------------------------------------------
+
+var DECK4_EN = [
+  ['Bilan', 'Review'],
+
+  // MercaNews printemps — variante propre à ce deck
+  ['Mercateam est officiellement\nadhérent au GIFAS.', 'Mercateam is now officially\na GIFAS member.'],
+  ["Un gage de confiance\npour le secteur de l’aéro-défense.", 'A mark of trust\nfor the aerospace & defence sector.'],
+  ['On vient à vous', "We're coming to you"],
+  ['Retrouvez-nous sur', 'Meet us at'],
+  ['les salons de votre secteur :', 'the trade shows in your sector:'],
+  ['Birmingham – 3-4 juin', 'Birmingham – 3-4 June'],
+  ['Paris – 23-24 juin', 'Paris – 23-24 June'],
+  ['MercaNews | PRINTEMPS 2026', 'MercaNews | SPRING 2026'],
+  ["Notre CEO présentera toutes nos dernières innovations lors d'un webinar exclusivement réservé aux clients Mercateam.",
+   'Our CEO will present all our latest innovations in a webinar exclusively for Mercateam customers.'],
+  ['25 juin – Inscription', '25 June – Register'],
+
+  ['Donnez de la voix à votre expérience', 'Give your experience a voice'],
+  ['Nous avons besoin de vous !', 'We need you!'],
+  ['Nous essayons de renforcer notre présence sur G2, et votre avis ferait une vraie différence. Si vous pouvez prendre 2 minutes pour nous laisser une note, cela nous aiderait beaucoup.',
+   "We're working to strengthen our presence on G2, and your review would make a real difference. If you can spare 2 minutes to leave us a rating, it would help us a lot."],
+  ["Parce que vos retours d’expérience — concrets, vécus sur le terrain — ont bien plus de poids auprès d’autres industriels que tout ce qu’on pourrait dire nous-mêmes.",
+   'Because your feedback — concrete, lived on the shop floor — carries far more weight with other manufacturers than anything we could say ourselves.'],
+  ['Un grand merci pour votre temps et votre confiance', 'Many thanks for your time and your trust'],
+  ['Donnez votre avis dès maintenant sur G2 !', 'Leave your review on G2 now!'],
+
+  ['Synthèse du projet', 'Project summary'],
+  ['SYNTHÈSE DU PROJET', 'PROJECT SUMMARY'],
+  ['Rappel du contexte', 'Context recap'],
+  ['4 mois', '4 months'],
+  ["d’accompagnement", 'of support'],
+  ['Enjeux & objectifs', 'Challenges & objectives'],
+  ['Piloter les compétences comme levier de performance & de résilience', 'Steering skills as a lever for performance & resilience'],
+  ['Charge admin ↓ · Pertes de savoir-faire anticipées', 'Admin burden ↓ · Know-how loss anticipated'],
+  ['Time-to-autonomy ↓ · Charge admin formation ↓', 'Time-to-autonomy ↓ · Training admin burden ↓'],
+  ["Pénalités & temps d'audit évités · Risque de non-conformité ↓", 'Penalties & audit time avoided · Non-compliance risk ↓'],
+  ['Temps de planning ↓ · Sous & sur-staffing ↓', 'Scheduling time ↓ · Under & overstaffing ↓'],
+  ['Interconnexion Employés & Absences · SSO', 'Employee & Absence interconnection · SSO'],
+  ['Accompagnement réalisé', 'Support delivered'],
+  ['Périmètre déployé', 'Deployed scope'],
+  ['Durée réelle', 'Actual duration'],
+  ['Utilisateurs formés', 'Users trained'],
+  ['Rappel du déroulé du déploiement', 'Recap of how the deployment unfolded'],
+  ["Critères de Go Live et plan d'action", 'Go Live criteria and action plan'],
+
+  ["Etat de l’art avant / après déploiement de Mercateam", 'State of play before / after the Mercateam deployment'],
+  ['PROCESSUS INTEGRATION DES NOUVEAUX ENTRANTS : AVANT', 'NEW JOINER ONBOARDING PROCESS: BEFORE'],
+  ['Diagnostic initial - JJMMAAAA', 'Initial diagnostic - DDMMYYYY'],
+  ['PROCESSUS INTEGRATION DES NOUVEAUX ENTRANTS : AVEC MERCATEAM', 'NEW JOINER ONBOARDING PROCESS: WITH MERCATEAM'],
+  ['Processus avec Mercateam', 'Process with Mercateam'],
+
+  ['Votre avis compte !', 'Your feedback matters!'],
+  ['Merci pour votre investissement durant ce projet', 'Thank you for your commitment throughout this project'],
+  ["Dans une démarche d’amélioration continue, partagez votre ressenti et vos recommandations sur notre accompagnement",
+   'As part of our continuous improvement, share your impressions and recommendations on our support'],
+  ['Moins de 5 minutes à remplir', 'Under 5 minutes to complete'],
+
+  ['PROCHAINES ETAPES', 'NEXT STEPS'],
+  ['Mercateam vous accompagne post-déploiement', 'Mercateam supports you after deployment'],
+  ["Tout ce qu'il faut pour être autonome et progresser, à votre rythme.", 'Everything you need to be independent and progress at your own pace.'],
+  ["Centre d'aide\n& chat support", 'Help centre\n& chat support'],
+  ['Articles et guides pas-à-pas accessibles à tout moment', 'Articles and step-by-step guides, available any time'],
+  ['Basées sur notre expérience, nos recommandations pour continuer à optimiser vos processus de gestion du savoir-faire.',
+   'Based on our experience, our recommendations to keep optimising your know-how management processes.'],
+  ['Mercateam Academy\n& modes opératoires', 'Mercateam Academy\n& standard operating procedures'],
+  ['Parcours de formation en ligne pour accompagner votre montée en compétence, en autonomie',
+   'Online learning paths to support your skills growth, independently'],
+  ['Prénom - Nom', 'First name - Last name'],
+  ['Points réguliers avec votre Customer Success dédiée pour soutenir votre montée en maturité.',
+   'Regular check-ins with your dedicated Customer Success manager to support your maturity growth.'],
+
+  ["Plan d’action pour consolider l’existant", "Action plan to consolidate what's in place"],
+  ['Cible', 'Target'],
+  ['Cartographie des compétences', 'Skills mapping'],
+  ['Fiabiliser la cartographie atelier (Overview), définir « opérationnel » par poste / Owner / Echéance',
+   'Make the shop-floor mapping reliable (Overview), define “operational” per workstation / Owner / Deadline'],
+  ['Action / Owner / Echéance', 'Action / Owner / Deadline'],
+  ["Planning d'affectation court terme", 'Short-term assignment scheduling'],
+  ['Connecter workload + absences SIRH, activer les alertes de gaps / Owner / Echéance',
+   'Connect workload + HRIS absences, switch on gap alerts / Owner / Deadline'],
+  ['Conformité & sécurité des affectations', 'Compliance & assignment safety'],
+  ['Alertes habilitations avant affectation, surveillance des expirations / Owner / Echéance',
+   'Certification alerts before assignment, expiry monitoring / Owner / Deadline'],
+  ['Les nouveaux sujets à explorer', 'New topics to explore'],
+  ['Echéance cible', 'Target deadline'],
+  ["Nouveau cas d’usage  à déployer", 'New use case to deploy'],
+  ['À définir avec le CS', 'To be defined with the CS'],
+
+  ['Gouvernance post-déploiement', 'Post-deployment governance'],
+  ['Vos rituels et accompagnement pour la suite du partenariat', 'Your rituals and support for the rest of the partnership'],
+  ['COPIL\nOpérationnel', 'Steering committee\nOperational'],
+  ['COPIL\nStratégique', 'Steering committee\nStrategic'],
+  ['COPIL Stratégique', 'Strategic steering committee'],
+  ['Atelier\nde valeur & ROI', 'Value & ROI\nworkshop'],
+  ['Atelier de valeur\n& ROI', 'Value workshop\n& ROI'],
+  ["Suivi de l'adoption terrain et de la feuille de route", 'Tracking field adoption and the roadmap'],
+  ['Mesure de la valeur générée et définition des objectifs cibles', 'Measuring the value generated and setting target objectives'],
+  ['Bilan de la trajectoire et alignement avec les enjeux industriels', 'Review of the trajectory and alignment with industrial challenges'],
+
+  ['Employés concernés', 'Employees in scope'],
+  ['Secteur ciblé', 'Target area'],
+  ['Pilote + Formation des formateurs', 'Pilot + Train-the-trainer'],
+  ['Périmètre fonctionnel', 'Functional scope'],
+  ['Compétences', 'Skills']
+];
+
+var DECK4_ES = [
+  ['Bilan', 'Balance'],
+
+  ['Mercateam est officiellement\nadhérent au GIFAS.', 'Mercateam es oficialmente\nmiembro del GIFAS.'],
+  ["Un gage de confiance\npour le secteur de l’aéro-défense.", 'Una garantía de confianza\npara el sector aeroespacial y de defensa.'],
+  ['On vient à vous', 'Vamos a su encuentro'],
+  ['Retrouvez-nous sur', 'Encuéntrenos en'],
+  ['les salons de votre secteur :', 'las ferias de su sector:'],
+  ['Birmingham – 3-4 juin', 'Birmingham – 3-4 de junio'],
+  ['Paris – 23-24 juin', 'París – 23-24 de junio'],
+  ['MercaNews | PRINTEMPS 2026', 'MercaNews | PRIMAVERA 2026'],
+  ["Notre CEO présentera toutes nos dernières innovations lors d'un webinar exclusivement réservé aux clients Mercateam.",
+   'Nuestro CEO presentará todas nuestras últimas innovaciones en un webinar reservado exclusivamente a los clientes Mercateam.'],
+  ['25 juin – Inscription', '25 de junio – Inscripción'],
+
+  ['Donnez de la voix à votre expérience', 'Dé voz a su experiencia'],
+  ['Nous avons besoin de vous !', '¡Le necesitamos!'],
+  ['Nous essayons de renforcer notre présence sur G2, et votre avis ferait une vraie différence. Si vous pouvez prendre 2 minutes pour nous laisser une note, cela nous aiderait beaucoup.',
+   'Estamos reforzando nuestra presencia en G2, y su opinión marcaría una verdadera diferencia. Si puede dedicar 2 minutos a dejarnos una valoración, nos ayudaría mucho.'],
+  ["Parce que vos retours d’expérience — concrets, vécus sur le terrain — ont bien plus de poids auprès d’autres industriels que tout ce qu’on pourrait dire nous-mêmes.",
+   'Porque sus experiencias — concretas, vividas en el terreno — tienen mucho más peso ante otros industriales que cualquier cosa que pudiéramos decir nosotros mismos.'],
+  ['Un grand merci pour votre temps et votre confiance', 'Muchas gracias por su tiempo y su confianza'],
+  ['Donnez votre avis dès maintenant sur G2 !', '¡Deje su opinión ahora en G2!'],
+
+  ['Synthèse du projet', 'Síntesis del proyecto'],
+  ['SYNTHÈSE DU PROJET', 'SÍNTESIS DEL PROYECTO'],
+  ['Rappel du contexte', 'Recordatorio del contexto'],
+  ['4 mois', '4 meses'],
+  ["d’accompagnement", 'de acompañamiento'],
+  ['Enjeux & objectifs', 'Retos y objetivos'],
+  ['Piloter les compétences comme levier de performance & de résilience', 'Pilotar las competencias como palanca de rendimiento y resiliencia'],
+  ['Charge admin ↓ · Pertes de savoir-faire anticipées', 'Carga administrativa ↓ · Pérdidas de saber hacer anticipadas'],
+  ['Time-to-autonomy ↓ · Charge admin formation ↓', 'Time-to-autonomy ↓ · Carga administrativa de formación ↓'],
+  ["Pénalités & temps d'audit évités · Risque de non-conformité ↓", 'Penalizaciones y tiempo de auditoría evitados · Riesgo de no conformidad ↓'],
+  ['Temps de planning ↓ · Sous & sur-staffing ↓', 'Tiempo de planificación ↓ · Infra y sobredotación ↓'],
+  ['Interconnexion Employés & Absences · SSO', 'Interconexión Empleados y Ausencias · SSO'],
+  ['Accompagnement réalisé', 'Acompañamiento realizado'],
+  ['Périmètre déployé', 'Alcance desplegado'],
+  ['Durée réelle', 'Duración real'],
+  ['Utilisateurs formés', 'Usuarios formados'],
+  ['Rappel du déroulé du déploiement', 'Recordatorio del desarrollo del despliegue'],
+  ["Critères de Go Live et plan d'action", 'Criterios de Go Live y plan de acción'],
+
+  ["Etat de l’art avant / après déploiement de Mercateam", 'Estado del arte antes / después del despliegue de Mercateam'],
+  ['PROCESSUS INTEGRATION DES NOUVEAUX ENTRANTS : AVANT', 'PROCESO DE INTEGRACIÓN DE NUEVOS INCORPORADOS: ANTES'],
+  ['Diagnostic initial - JJMMAAAA', 'Diagnóstico inicial - DDMMAAAA'],
+  ['PROCESSUS INTEGRATION DES NOUVEAUX ENTRANTS : AVEC MERCATEAM', 'PROCESO DE INTEGRACIÓN DE NUEVOS INCORPORADOS: CON MERCATEAM'],
+  ['Processus avec Mercateam', 'Proceso con Mercateam'],
+
+  ['Votre avis compte !', '¡Su opinión cuenta!'],
+  ['Merci pour votre investissement durant ce projet', 'Gracias por su implicación durante este proyecto'],
+  ["Dans une démarche d’amélioration continue, partagez votre ressenti et vos recommandations sur notre accompagnement",
+   'En un enfoque de mejora continua, comparta sus impresiones y recomendaciones sobre nuestro acompañamiento'],
+  ['Moins de 5 minutes à remplir', 'Menos de 5 minutos para completar'],
+
+  ['PROCHAINES ETAPES', 'PRÓXIMOS PASOS'],
+  ['Mercateam vous accompagne post-déploiement', 'Mercateam le acompaña tras el despliegue'],
+  ["Tout ce qu'il faut pour être autonome et progresser, à votre rythme.", 'Todo lo necesario para ser autónomo y progresar a su ritmo.'],
+  ["Centre d'aide\n& chat support", 'Centro de ayuda\ny chat de soporte'],
+  ['Articles et guides pas-à-pas accessibles à tout moment', 'Artículos y guías paso a paso accesibles en todo momento'],
+  ['Basées sur notre expérience, nos recommandations pour continuer à optimiser vos processus de gestion du savoir-faire.',
+   'Basadas en nuestra experiencia, nuestras recomendaciones para seguir optimizando sus procesos de gestión del saber hacer.'],
+  ['Mercateam Academy\n& modes opératoires', 'Mercateam Academy\ny procedimientos operativos'],
+  ['Parcours de formation en ligne pour accompagner votre montée en compétence, en autonomie',
+   'Itinerarios de formación en línea para acompañar su desarrollo de competencias, de forma autónoma'],
+  ['Prénom - Nom', 'Nombre - Apellido'],
+  ['Points réguliers avec votre Customer Success dédiée pour soutenir votre montée en maturité.',
+   'Reuniones periódicas con su Customer Success dedicada para apoyar su aumento de madurez.'],
+
+  ["Plan d’action pour consolider l’existant", 'Plan de acción para consolidar lo existente'],
+  ['Cible', 'Objetivo'],
+  ['Cartographie des compétences', 'Cartografía de las competencias'],
+  ['Fiabiliser la cartographie atelier (Overview), définir « opérationnel » par poste / Owner / Echéance',
+   'Fiabilizar la cartografía del taller (Overview), definir «operativo» por puesto / Owner / Plazo'],
+  ['Action / Owner / Echéance', 'Acción / Owner / Plazo'],
+  ["Planning d'affectation court terme", 'Planning de asignación a corto plazo'],
+  ['Connecter workload + absences SIRH, activer les alertes de gaps / Owner / Echéance',
+   'Conectar carga de trabajo + ausencias SIRH, activar las alertas de gaps / Owner / Plazo'],
+  ['Conformité & sécurité des affectations', 'Conformidad y seguridad de las asignaciones'],
+  ['Alertes habilitations avant affectation, surveillance des expirations / Owner / Echéance',
+   'Alertas de habilitaciones antes de la asignación, vigilancia de los vencimientos / Owner / Plazo'],
+  ['Les nouveaux sujets à explorer', 'Los nuevos temas a explorar'],
+  ['Echéance cible', 'Plazo objetivo'],
+  ["Nouveau cas d’usage  à déployer", 'Nuevo caso de uso a desplegar'],
+  ['À définir avec le CS', 'Por definir con el CS'],
+
+  ['Gouvernance post-déploiement', 'Gobernanza tras el despliegue'],
+  ['Vos rituels et accompagnement pour la suite du partenariat', 'Sus rituales y acompañamiento para la continuación de la alianza'],
+  ['COPIL\nOpérationnel', 'Comité de dirección\nOperativo'],
+  ['COPIL\nStratégique', 'Comité de dirección\nEstratégico'],
+  ['COPIL Stratégique', 'Comité de dirección estratégico'],
+  ['Atelier\nde valeur & ROI', 'Taller\nde valor y ROI'],
+  ['Atelier de valeur\n& ROI', 'Taller de valor\ny ROI'],
+  ["Suivi de l'adoption terrain et de la feuille de route", 'Seguimiento de la adopción en el terreno y de la hoja de ruta'],
+  ['Mesure de la valeur générée et définition des objectifs cibles', 'Medición del valor generado y definición de los objetivos'],
+  ['Bilan de la trajectoire et alignement avec les enjeux industriels', 'Balance de la trayectoria y alineación con los retos industriales'],
+
+  ['Employés concernés', 'Empleados afectados'],
+  ['Production', 'Producción'],
+  ['Secteur ciblé', 'Sector objetivo'],
+  ['Pilote + Formation des formateurs', 'Piloto + Formación de formadores'],
+  ['Périmètre fonctionnel', 'Alcance funcional'],
+  ['Compétences', 'Competencias']
+];
+
+// ---------------------------------------------------------------------------
+// DECK 6 — "COPIL"  (contenu propre)
+// ---------------------------------------------------------------------------
+
+var DECK6_EN = [
+  ['COPIL', 'Steering committee'],
+  ['FEUILLE DE ROUTE', 'ROADMAP'],
+  ['Points essentiels', 'Key points'],
+  ['Date cible de GO Live', 'Target GO Live date'],
+  ['Avancement du déploiement', 'Deployment progress'],
+  ["Statut des objectifs cibles", 'Status of target objectives'],
+  ['RAPPEL', 'REMINDER'],
+  ['Parcours au poste', 'Workstation learning path'],
+  ['Accomplissements', 'Achievements']
+];
+
+var DECK6_ES = [
+  ['COPIL', 'Comité de dirección'],
+  ['FEUILLE DE ROUTE', 'HOJA DE RUTA'],
+  ['Points essentiels', 'Puntos esenciales'],
+  ['Date cible de GO Live', 'Fecha objetivo de GO Live'],
+  ['Avancement du déploiement', 'Avance del despliegue'],
+  ["Statut des objectifs cibles", 'Estado de los objetivos'],
+  ['RAPPEL', 'RECORDATORIO'],
+  ['Parcours au poste', 'Itinerario en el puesto'],
+  ['Accomplissements', 'Logros']
 ];
