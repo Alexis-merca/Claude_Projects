@@ -31,8 +31,18 @@ Script les applique aux copies.
 `runAll` est réexécutable sans risque : les renommages sont idempotents, et une
 présentation déjà traduite ne contient plus de texte français à remplacer.
 
-Les trois fonctions peuvent aussi être lancées séparément : `renameAll` (titres
+Les fonctions peuvent aussi être lancées séparément : `renameAll` (titres
 seulement), `translateAll` (traductions seulement), `runAll` (les deux).
+
+## Fonctions disponibles
+
+| Fonction | Rôle |
+|---|---|
+| `runAll` | Renommage puis traduction. Le point d'entrée normal. |
+| `translateAll` | Traduction seule, sur les copies de `getJobs()`. |
+| `renameAll` | Harmonisation des titres seule. |
+| `fixupAll` | Correctifs ponctuels de `getFixups()`, qui repartent de l'état déjà traduit et non du français. À lancer une seule fois. |
+| `cleanupSentinels` | Filet de sécurité : retire les sentinelles qu'un plantage en cours de passe 2 aurait laissées visibles. À ne lancer que sur message `SENTINELLES RESTANTES`. |
 
 Renvoyer cette liste à Claude : une entrée non trouvée signifie que le texte réel
 diffère de ce qui avait été extrait (typographie, espace, saut de ligne), et la
@@ -45,6 +55,33 @@ table est corrigée en conséquence.
   - **`getJobs()`** — quelles copies traiter, avec quelle table.
   - **`DECK1_EN` / `DECK1_ES`** — les tables de traduction, une ligne par
     chaîne : `['texte français', 'traduction']`.
+
+## Trois pièges de l'API Slides, appris à la dure
+
+Ces trois comportements ont chacun coûté une exécution ratée. Ils sont
+contre-intuitifs et le code est construit autour d'eux.
+
+**1. La recherche ignore les accents.** `replaceAllText('Informé', …)` matche
+`Informe`. Une entrée courte peut donc réécrire la traduction posée par une
+entrée longue : `Informe de auditoría` était redevenu `Informado de auditoría`.
+Trier de la plus longue à la plus courte ne suffit pas. D'où le remplacement en
+**deux passes** — français → sentinelle ASCII → traduction. Une sentinelle
+`@@zz1042@@` ne peut être mordue par aucune entrée française.
+
+**2. La valeur de retour de `replaceAllText` n'est pas fiable.** Elle vaut `0`
+alors que le remplacement a bien eu lieu. Un rapport bâti dessus annonçait
+« 0 remplacement, 185 entrées non trouvées » sur une présentation intégralement
+traduite. Le contrôle se fait donc **en relisant la présentation après coup**,
+jamais en additionnant des compteurs.
+
+**3. Certaines formes refusent d'être lues.** `getText()` échoue sur certains
+éléments (et sur les cellules fusionnées d'un tableau). Tout filtrage préalable
+bâti sur le texte relevé saute donc silencieusement ce qu'il n'a pas su lire :
+les `S1 / S2 / S3` de la feuille de route étaient restés en français, alors que
+le `S4`, présent ailleurs dans une forme lisible, passait. Sur les slides, on ne
+filtre donc **pas** : `pres.replaceAllText()` les couvre toutes en un appel.
+Le filtrage ne subsiste que sur les notes, masques et mises en page, où un appel
+par page et par entrée serait trop lent.
 
 ## Points de vigilance
 

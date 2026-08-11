@@ -46,29 +46,144 @@ function renameAll() {
 }
 
 /**
- * Applique une table de traduction à une présentation.
- * Les chaînes les plus longues sont traitées en premier, pour qu'une expression
- * comme "Déploiement module Formation" soit remplacée avant le simple "Formation".
+ * Applique une table de traduction à une présentation, en deux passes.
+ *
+ * Passe 1 : chaque texte français est remplacé par une sentinelle unique.
+ * Passe 2 : chaque sentinelle est remplacée par sa traduction.
+ *
+ * Le détour par les sentinelles est indispensable : la recherche de l'API
+ * Slides ignore les accents, si bien qu'une entrée courte peut réécrire la
+ * traduction déjà posée par une entrée longue. "Informé" -> "Informado"
+ * mordait ainsi sur le "Informe de auditoría" produit juste avant. Une
+ * sentinelle en ASCII ne peut être touchée par aucune entrée française.
  */
 function translateOne(job) {
+  var t0 = new Date().getTime();
   var pres = SlidesApp.openById(job.fileId);
   var pairs = job.map.slice().sort(function (a, b) {
     return b[0].length - a[0].length;
   });
 
-  // Le texte de chaque cible est relevé UNE fois, avant de remplacer quoi que
-  // ce soit, pour n'appeler l'API que là où la chaîne existe. Sans ce filtrage
-  // il faudrait un appel par entrée et par page — des milliers d'appels,
-  // presque tous pour rien, et un dépassement de la limite de 6 minutes.
-  var scan = { chars: 0, elements: 0, errors: [] };
+  var scan = newScan();
+  var extras = collectExtras(pres, scan);
+  var errors = [];
 
-  var slidesText = '';
-  pres.getSlides().forEach(function (slide) {
-    slidesText += '\n' + pageText(slide, scan);
+  // Passe 1 — français vers sentinelles.
+  //
+  // Sur les slides, aucun filtrage : pres.replaceAllText() les couvre toutes
+  // en un seul appel, et filtrer sur le texte relevé ferait sauter tout ce que
+  // le relevé n'a pas su lire. C'est ce qui avait laissé les "S1 / S2 / S3" de
+  // la feuille de route en français, alors que le "S4" présent ailleurs dans
+  // une forme lisible, lui, passait.
+  //
+  // Sur les notes, masques et mises en page, le filtrage reste nécessaire —
+  // un appel par page et par entrée serait bien trop lent — et on note quelles
+  // pages ont reçu quelle sentinelle pour que la passe 2 les retrouve.
+  var placed = [];
+
+  pairs.forEach(function (pair, i) {
+    var token = sentinel(i);
+    placed[i] = [];
+    variants(pair[0]).forEach(function (v) {
+      replaceOn(pres, 'slides', v, token, errors);
+      extras.forEach(function (e) {
+        if (e.text && e.text.indexOf(v) !== -1) {
+          replaceOn(e.page, e.label, v, token, errors);
+          if (placed[i].indexOf(e) === -1) placed[i].push(e);
+        }
+      });
+    });
   });
 
-  // pres.replaceAllText() couvre toutes les slides en un seul appel. Les notes,
-  // masques et mises en page se traitent page par page.
+  // Passe 2 — sentinelles vers traductions. Sans filtrage : une sentinelle
+  // posée dans une forme illisible doit être retirée coûte que coûte, sinon
+  // elle resterait affichée telle quelle dans la présentation.
+  pairs.forEach(function (pair, i) {
+    var token = sentinel(i);
+    replaceOn(pres, 'slides', token, pair[1], errors);
+    placed[i].forEach(function (e) {
+      replaceOn(e.page, e.label, token, pair[1], errors);
+    });
+  });
+
+  pres.saveAndClose();
+
+  // Vérification par relecture. Le compte renvoyé par replaceAllText n'est pas
+  // fiable — il vaut 0 alors que le remplacement a bien eu lieu — donc on
+  // rouvre la présentation et on regarde ce qui reste réellement.
+  var after = newScan();
+  var check = SlidesApp.openById(job.fileId);
+  var text = '';
+  check.getSlides().forEach(function (slide) { text += '\n' + pageText(slide, after); });
+
+  var untranslated = pairs.filter(function (pair) {
+    return text.indexOf(pair[0]) !== -1;
+  }).map(function (pair) { return pair[0]; });
+
+  var stuck = text.indexOf(SENTINEL_MARK) !== -1;
+  var seconds = Math.round((new Date().getTime() - t0) / 1000);
+
+  var report = [
+    '=== ' + job.label + ' (' + job.fileId + ') ===',
+    'terminé en ' + seconds + ' s — ' + pairs.length + ' entrées appliquées, '
+      + 'vérification sur ' + after.elements + ' éléments relus',
+    untranslated.length
+      ? 'ENCORE EN FRANÇAIS (' + untranslated.length + ') :\n  - ' + untranslated.join('\n  - ')
+      : 'Plus aucun texte français détecté.'
+  ];
+  if (stuck) {
+    report.push('!!! SENTINELLES RESTANTES DANS LA PRÉSENTATION — lancer cleanupSentinels()');
+  }
+  if (scan.errors.length || after.errors.length) {
+    report.push('RELEVÉ INCOMPLET — ' + (scan.errors.length + after.errors.length)
+      + ' éléments illisibles, leur contenu ne peut pas être vérifié :\n  - '
+      + dedupe(scan.errors.concat(after.errors)).join('\n  - '));
+  }
+  if (errors.length) {
+    report.push('ERREURS TOLÉRÉES (' + errors.length + ') :\n  - '
+      + dedupe(errors).join('\n  - '));
+  }
+  return report.join('\n');
+}
+
+var SENTINEL_MARK = '@@zz';
+
+/** Jeton unique et purement ASCII, insensible aux accents et à la casse. */
+function sentinel(i) {
+  return SENTINEL_MARK + (1000 + i) + '@@';
+}
+
+/** Un remplacement tolérant : une page qui refuse n'arrête pas le traitement. */
+function replaceOn(target, label, find, replace, errors) {
+  try {
+    target.replaceAllText(find, replace, true);
+  } catch (e) {
+    errors.push(label + ' : ' + e.message);
+  }
+}
+
+/**
+ * Retire les sentinelles qu'un plantage en cours de route aurait laissées.
+ * À ne lancer qu'en cas de message "SENTINELLES RESTANTES".
+ */
+function cleanupSentinels() {
+  getJobs().concat(getFixups()).forEach(function (job) {
+    var pres = SlidesApp.openById(job.fileId);
+    var pairs = job.map.slice().sort(function (a, b) { return b[0].length - a[0].length; });
+    pairs.forEach(function (pair, i) {
+      try { pres.replaceAllText(sentinel(i), pair[1], true); } catch (e) {}
+    });
+    pres.saveAndClose();
+    Logger.log('sentinelles nettoyées : ' + job.label);
+  });
+}
+
+function newScan() {
+  return { chars: 0, elements: 0, errors: [] };
+}
+
+/** Notes, masques et mises en page, avec leur texte relevé une fois pour toutes. */
+function collectExtras(pres, scan) {
   var extras = [];
   pres.getSlides().forEach(function (slide, i) {
     var notes = slide.getNotesPage();
@@ -81,61 +196,7 @@ function translateOne(job) {
     });
   });
   extras.forEach(function (e) { e.text = pageText(e.page, scan); });
-
-  // Le filtrage n'est qu'une optimisation : si le relevé a échoué, mieux vaut
-  // être lent que de ne rien traduire. On repasse alors en force sur les
-  // slides, qui portent la quasi-totalité du texte.
-  var brute = slidesText.replace(/\s/g, '').length === 0;
-
-  var hits = 0;
-  var misses = [];
-  var errors = [];
-
-  pairs.forEach(function (pair) {
-    var found = 0;
-
-    variants(pair[0]).forEach(function (v) {
-      if (brute || slidesText.indexOf(v) !== -1) {
-        try {
-          found += pres.replaceAllText(v, pair[1], true);
-        } catch (e) {
-          errors.push('slides — ' + pair[0] + ' (' + e.message + ')');
-        }
-      }
-      extras.forEach(function (e) {
-        if (e.text && e.text.indexOf(v) !== -1) {
-          try {
-            found += e.page.replaceAllText(v, pair[1], true);
-          } catch (err) {
-            errors.push(e.label + ' — ' + pair[0] + ' (' + err.message + ')');
-          }
-        }
-      });
-    });
-
-    hits += found;
-    if (found === 0) misses.push(pair[0]);
-  });
-
-  pres.saveAndClose();
-
-  var report = [
-    '=== ' + job.label + ' (' + job.fileId + ') ===',
-    'relevé : ' + scan.elements + ' éléments, ' + scan.chars + ' caractères'
-      + (brute ? '  → AUCUN TEXTE RELEVÉ SUR LES SLIDES, passage en mode force' : ''),
-    hits + ' remplacements effectués sur ' + pairs.length + ' entrées.',
-    misses.length
-      ? 'NON TROUVÉ (' + misses.length + ') :\n  - ' + misses.join('\n  - ')
-      : 'Aucune entrée manquée.'
-  ];
-  if (scan.errors.length) {
-    report.push('RELEVÉ INCOMPLET (' + scan.errors.length + ') :\n  - '
-      + dedupe(scan.errors).join('\n  - '));
-  }
-  if (errors.length) {
-    report.push('ERREURS TOLÉRÉES (' + errors.length + ') :\n  - ' + errors.join('\n  - '));
-  }
-  return report.join('\n');
+  return extras;
 }
 
 function dedupe(list) {
@@ -218,6 +279,53 @@ function variants(s) {
   expand(function (x) { return x.replace(/\n/g, '\u000B'); });             // saut dur -> saut souple
 
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// CORRECTIFS — rattrapage des dégâts laissés par les versions précédentes
+//
+// Le deck 1 a été traduit par une version du moteur qui n'avait ni les
+// sentinelles ni le passage en force sur les slides. Deux séquelles sont
+// restées dans les copies, que ces entrées reprennent depuis l'état actuel
+// (déjà traduit) et non depuis le français.
+//
+// À ne lancer qu'une fois, via fixupAll(). Sans effet si relancé.
+// ---------------------------------------------------------------------------
+
+function fixupAll() {
+  getFixups().forEach(function (job) {
+    Logger.log(translateOne(job));
+  });
+}
+
+function getFixups() {
+  return [
+    {
+      // Les semaines vivaient dans des formes que le relevé ne savait pas lire,
+      // donc le filtrage les avait sautées. Seul "S4", présent ailleurs dans
+      // une forme lisible, était passé.
+      label: 'CORRECTIF EN — semaines S1..S3 restées en français',
+      fileId: '1bkXygGzUiBcKVJC8OfS-i8oPG3GcxMJU72ogyP9Yrt8',
+      map: [
+        ['S-3', 'W-3'],
+        ['S-2', 'W-2'],
+        ['S-1', 'W-1'],
+        ['S1', 'W1'],
+        ['S2', 'W2'],
+        ['S3', 'W3']
+      ]
+    },
+    {
+      // "Informé" -> "Informado" a mordu sur le "Informe de auditoría" posé
+      // juste avant, la recherche de l'API ignorant les accents.
+      label: 'CORRECTIF ES — "Informado" issu de la collision d\'accents',
+      fileId: '12k1HgDvDlUqQTM70kwDpGXUIyyR8bP43fWQpoEZ_vfY',
+      map: [
+        ['Informado de balance y aumento de madurez', 'Informe de balance y aumento de madurez'],
+        ['Informado de auditoría', 'Informe de auditoría']
+      ]
+    }
+  ];
 }
 
 // ---------------------------------------------------------------------------
