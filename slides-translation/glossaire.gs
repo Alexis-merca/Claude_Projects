@@ -333,7 +333,17 @@ var COMMON_EN = [
   ['DRH chez Exxelia', 'HR Director at Exxelia'],
   ["“On tient enfin LE logiciel qui nous permet de devenir parfaits en terme de qualité et passer tous nos audits !”",
    '“We finally have THE software that lets us be flawless on quality and pass every audit!”'],
-  ['Coordinateur qualité chez Shiseido', 'Quality Coordinator at Shiseido']
+  ['Coordinateur qualité chez Shiseido', 'Quality Coordinator at Shiseido'],
+
+  // Repérés à la relecture des copies, absents des premières tables.
+  ['Logo client', 'Client logo'],
+  // Le libellé GT vient de "groupe de travail" : il doit suivre WG en anglais,
+  // sinon un même deck affiche WORKING GROUPS (WG) et une colonne GT.
+  ['GT1', 'WG1'],
+  ['GT2', 'WG2'],
+  ['GT3', 'WG3'],
+  ['GT4', 'WG4'],
+  ['GT', 'WG']
 ];
 
 var COMMON_ES = [
@@ -641,5 +651,10 @@ var COMMON_ES = [
   ['DRH chez Exxelia', 'Directora de RRHH en Exxelia'],
   ["“On tient enfin LE logiciel qui nous permet de devenir parfaits en terme de qualité et passer tous nos audits !”",
    '“¡Por fin tenemos EL software que nos permite ser impecables en calidad y pasar todas nuestras auditorías!”'],
-  ['Coordinateur qualité chez Shiseido', 'Coordinador de calidad en Shiseido']
+  ['Coordinateur qualité chez Shiseido', 'Coordinador de calidad en Shiseido'],
+
+  // Repéré à la relecture : seul secteur resté en français sur la slide
+  // témoignages. Aucun mot franco-spécifique dedans, donc invisible au
+  // détecteur de résidu.
+  ['Automobile', 'Automoción']
 ];

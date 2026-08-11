@@ -334,6 +334,8 @@ function variants(s) {
   expand(function (x) { return x.replace(/\u2019/g, "'"); });              // apostrophe courbe -> '
   expand(function (x) { return x.replace(/ ([:;!?])/g, '\u00A0$1'); });    // espace insecable
   expand(function (x) { return x.replace(/ ([:;!?])/g, '\u202F$1'); });    // espace fine insecable
+  expand(function (x) { return x.replace(/ (\u2014) /g, '\u00A0$1\u00A0'); }); // tiret cadratin, espaces insécables
+  expand(function (x) { return x.replace(/ (\u2014) /g, '\u202F$1\u202F'); }); // tiret cadratin, espaces fines
   expand(function (x) { return x.replace(/\n/g, ' '); });                  // saut dur -> espace
   expand(function (x) { return x.replace(/\n/g, '\u000B'); });             // saut dur -> saut souple
 

@@ -29,32 +29,38 @@ function fixupAll() {
 }
 
 function getFixups() {
+  // Correctifs issus de la relecture des 12 copies traduites. Ils repartent de
+  // l'état actuel des decks, pas du français d'origine, et ne servent qu'une
+  // fois. Ceux du premier lot ont été appliqués et retirés.
+  var GT_EN = [
+    ['GT1', 'WG1'], ['GT2', 'WG2'], ['GT3', 'WG3'], ['GT4', 'WG4'], ['GT', 'WG'],
+    ['Logo client', 'Client logo']
+  ];
+  var AUTO_ES = [['Automobile', 'Automoción']];
+
   return [
-    {
-      // Les semaines vivaient dans des formes que le relevé ne savait pas lire,
-      // donc le filtrage les avait sautées. Seul "S4", présent ailleurs dans
-      // une forme lisible, était passé.
-      label: 'CORRECTIF EN — semaines S1..S3 restées en français',
-      fileId: '1bkXygGzUiBcKVJC8OfS-i8oPG3GcxMJU72ogyP9Yrt8',
-      map: [
-        ['S-3', 'W-3'],
-        ['S-2', 'W-2'],
-        ['S-1', 'W-1'],
-        ['S1', 'W1'],
-        ['S2', 'W2'],
-        ['S3', 'W3']
-      ]
-    },
-    {
-      // "Informé" -> "Informado" a mordu sur le "Informe de auditoría" posé
-      // juste avant, la recherche de l'API ignorant les accents.
-      label: 'CORRECTIF ES — "Informado" issu de la collision d\'accents',
-      fileId: '12k1HgDvDlUqQTM70kwDpGXUIyyR8bP43fWQpoEZ_vfY',
-      map: [
-        ['Informado de balance y aumento de madurez', 'Informe de balance y aumento de madurez'],
-        ['Informado de auditoría', 'Informe de auditoría']
-      ]
-    }
+    { label: 'CORRECTIF EN - REVIEW : G2 et gouvernance post-déploiement',
+      fileId: '1j1_FjPfrTUfOkYn-orzvfOcGZ7erSAEcqut_x5J8vLM',
+      map: DECK4_EN.slice(0, 8).concat(GT_EN) },
+    { label: 'CORRECTIF ES - BALANCE : G2, gouvernance et Producción Manager',
+      fileId: '1M35NO0sfVBC2L1hI6zSqfTTHaT52u0nUMHbRzkLPE4k',
+      map: DECK4_ES.slice(0, 8).concat(AUTO_ES, [['Producción Manager', 'Production Manager']]) },
+
+    { label: 'CORRECTIF EN - Kickoff Preparation : GT vers WG',
+      fileId: '1-74bN_wHuvtnE_pU_yUFmX1UkIKbNYJaaVLjoNQl24k', map: GT_EN },
+    { label: 'CORRECTIF EN - Kickoff : GT vers WG',
+      fileId: '11KRnojbBJGLFMD_yqf4VGhAcSM_ugBNq0Hqynh32_-g', map: GT_EN },
+    { label: 'CORRECTIF EN - Project weeklies : GT vers WG',
+      fileId: '1HsDFaY7xDXLFEhF3av7f4HR2viJM79rvCQFqZGId328', map: GT_EN },
+    { label: 'CORRECTIF EN - Steering Committee : GT vers WG',
+      fileId: '1f6HPC2V5TDCxpUb0-io4BbYfrsZuTOHJAZZd5InV8Fg', map: GT_EN },
+
+    { label: 'CORRECTIF ES - Preparación Kickoff : Automoción',
+      fileId: '1Ncedk3sKx6UaNPExB8uMdncWxgCOKQjdkJpOBT9-bwQ', map: AUTO_ES },
+    { label: 'CORRECTIF ES - Kickoff : Automoción',
+      fileId: '153SkfN3MeQZazaa8FzdEkOnuUgxe0KZg66fPkpDa8YQ', map: AUTO_ES },
+    { label: 'CORRECTIF ES - Comité de Dirección : Automoción',
+      fileId: '1xd2I9OTYRJR0e7xDETq_qu3TFzuobKj9xGTdmu5T3eE', map: AUTO_ES }
   ];
 }
 
@@ -790,6 +796,17 @@ var DECK3_ES = [
 // ---------------------------------------------------------------------------
 
 var DECK4_EN = [
+  // Ces textes vivent dans des zones séparées ou entourent un tiret cadratin :
+  // une entrée d'un seul tenant ne les attrapait pas.
+  ['Parce que vos retours d’expérience', 'Because your feedback'],
+  ['concrets, vécus sur le terrain', 'concrete, lived on the shop floor'],
+  ['ont bien plus de poids auprès d’autres industriels que tout ce qu’on pourrait dire nous-mêmes.', 'carries far more weight with other manufacturers than anything we could say ourselves.'],
+  ['COPIL', 'Steering committee'],
+  ['Opérationnel', 'Operational'],
+  ['Stratégique', 'Strategic'],
+  ['Atelier', 'Workshop'],
+  ['de valeur & ROI', 'value & ROI'],
+
   ['Bilan', 'Review'],
 
   // MercaNews printemps — variante propre à ce deck
@@ -895,6 +912,17 @@ var DECK4_EN = [
 ];
 
 var DECK4_ES = [
+  // Ces textes vivent dans des zones séparées ou entourent un tiret cadratin :
+  // une entrée d'un seul tenant ne les attrapait pas.
+  ['Parce que vos retours d’expérience', 'Porque sus experiencias'],
+  ['concrets, vécus sur le terrain', 'concretas, vividas en el terreno'],
+  ['ont bien plus de poids auprès d’autres industriels que tout ce qu’on pourrait dire nous-mêmes.', 'tienen mucho más peso ante otros industriales que cualquier cosa que pudiéramos decir nosotros mismos.'],
+  ['COPIL', 'Comité de dirección'],
+  ['Opérationnel', 'Operativo'],
+  ['Stratégique', 'Estratégico'],
+  ['Atelier', 'Taller'],
+  ['de valeur & ROI', 'de valor y ROI'],
+
   ['Bilan', 'Balance'],
 
   ['Mercateam est officiellement\nadhérent au GIFAS.', 'Mercateam es oficialmente\nmiembro del GIFAS.'],
