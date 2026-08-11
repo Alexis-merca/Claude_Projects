@@ -6,12 +6,6 @@
  * régénérer avec
  *
  *     cat moteur.gs glossaire.gs jobs.gs > translate-complet.gs
- *
- * Le découpage en trois fichiers est pratique pour suivre les modifications,
- * mais il oblige à créer trois fichiers de script côté Apps Script. Coller un
- * seul des trois par-dessus le Code.gs existant supprime les deux autres, et
- * l'exécution échoue alors sur « translateOne is not defined ». Ce fichier
- * unique supprime ce risque.
  */
 
 
@@ -357,6 +351,8 @@ function variants(s) {
   expand(function (x) { return x.replace(/ ([:;!?])/g, '\u202F$1'); });    // espace fine insecable
   expand(function (x) { return x.replace(/ (\u2014) /g, '\u00A0$1\u00A0'); }); // tiret cadratin, espaces insécables
   expand(function (x) { return x.replace(/ (\u2014) /g, '\u202F$1\u202F'); }); // tiret cadratin, espaces fines
+  expand(function (x) { return x.replace(/ /g, '\u00A0'); });              // tous les espaces insécables
+  expand(function (x) { return x.replace(/ /g, '\u202F'); });              // tous les espaces fins
   expand(function (x) { return x.replace(/\n/g, ' '); });                  // saut dur -> espace
   expand(function (x) { return x.replace(/\n/g, '\u000B'); });             // saut dur -> saut souple
 
@@ -1062,7 +1058,7 @@ function fixupAll() {
   // Annonce d'abord ce qui va être traité. Sans ça, un jobs.gs resté en
   // version précédente fait tourner d'anciens correctifs déjà appliqués : le
   // journal semble normal, les decks ne bougent pas, et rien ne le signale.
-  Logger.log('LOT DE CORRECTIFS 2026-08-11-b — ' + fixups.length + ' cibles attendues :\n  - '
+  Logger.log('LOT DE CORRECTIFS 2026-08-11-c — ' + fixups.length + ' cibles attendues :\n  - '
     + fixups.map(function (j) { return j.label; }).join('\n  - '));
 
   fixups.forEach(function (job) {
@@ -1081,28 +1077,12 @@ function getFixups() {
   var AUTO_ES = [['Automobile', 'Automoción']];
 
   return [
-    { label: 'CORRECTIF EN - REVIEW : G2 et gouvernance post-déploiement',
+    { label: 'CORRECTIF EN - REVIEW : fragment G2 restant',
       fileId: '1j1_FjPfrTUfOkYn-orzvfOcGZ7erSAEcqut_x5J8vLM',
-      map: DECK4_EN.slice(0, 8).concat(GT_EN) },
-    { label: 'CORRECTIF ES - BALANCE : G2, gouvernance et Producción Manager',
+      map: DECK4_EN.slice(0, 9) },
+    { label: 'CORRECTIF ES - BALANCE : fragment G2 restant',
       fileId: '1M35NO0sfVBC2L1hI6zSqfTTHaT52u0nUMHbRzkLPE4k',
-      map: DECK4_ES.slice(0, 8).concat(AUTO_ES, [['Producción Manager', 'Production Manager']]) },
-
-    { label: 'CORRECTIF EN - Kickoff Preparation : GT vers WG',
-      fileId: '1-74bN_wHuvtnE_pU_yUFmX1UkIKbNYJaaVLjoNQl24k', map: GT_EN },
-    { label: 'CORRECTIF EN - Kickoff : GT vers WG',
-      fileId: '11KRnojbBJGLFMD_yqf4VGhAcSM_ugBNq0Hqynh32_-g', map: GT_EN },
-    { label: 'CORRECTIF EN - Project weeklies : GT vers WG',
-      fileId: '1HsDFaY7xDXLFEhF3av7f4HR2viJM79rvCQFqZGId328', map: GT_EN },
-    { label: 'CORRECTIF EN - Steering Committee : GT vers WG',
-      fileId: '1f6HPC2V5TDCxpUb0-io4BbYfrsZuTOHJAZZd5InV8Fg', map: GT_EN },
-
-    { label: 'CORRECTIF ES - Preparación Kickoff : Automoción',
-      fileId: '1Ncedk3sKx6UaNPExB8uMdncWxgCOKQjdkJpOBT9-bwQ', map: AUTO_ES },
-    { label: 'CORRECTIF ES - Kickoff : Automoción',
-      fileId: '153SkfN3MeQZazaa8FzdEkOnuUgxe0KZg66fPkpDa8YQ', map: AUTO_ES },
-    { label: 'CORRECTIF ES - Comité de Dirección : Automoción',
-      fileId: '1xd2I9OTYRJR0e7xDETq_qu3TFzuobKj9xGTdmu5T3eE', map: AUTO_ES }
+      map: DECK4_ES.slice(0, 9) }
   ];
 }
 
@@ -1841,7 +1821,10 @@ var DECK4_EN = [
   // Ces textes vivent dans des zones séparées ou entourent un tiret cadratin :
   // une entrée d'un seul tenant ne les attrapait pas.
   ['Parce que vos retours d’expérience', 'Because your feedback'],
-  ['concrets, vécus sur le terrain', 'concrete, lived on the shop floor'],
+  // Un espace invisible se cache dans ces six mots : l'entrée d'un seul tenant
+  // a échoué deux fois là où ses deux voisines passaient. Coupée en deux.
+  ['concrets,', 'concrete,'],
+  ['vécus sur le terrain', 'lived on the shop floor'],
   ['ont bien plus de poids auprès d’autres industriels que tout ce qu’on pourrait dire nous-mêmes.', 'carries far more weight with other manufacturers than anything we could say ourselves.'],
   ['COPIL', 'Steering committee'],
   ['Opérationnel', 'Operational'],
@@ -1957,7 +1940,8 @@ var DECK4_ES = [
   // Ces textes vivent dans des zones séparées ou entourent un tiret cadratin :
   // une entrée d'un seul tenant ne les attrapait pas.
   ['Parce que vos retours d’expérience', 'Porque sus experiencias'],
-  ['concrets, vécus sur le terrain', 'concretas, vividas en el terreno'],
+  ['concrets,', 'concretas,'],
+  ['vécus sur le terrain', 'vividas en el terreno'],
   ['ont bien plus de poids auprès d’autres industriels que tout ce qu’on pourrait dire nous-mêmes.', 'tienen mucho más peso ante otros industriales que cualquier cosa que pudiéramos decir nosotros mismos.'],
   ['COPIL', 'Comité de dirección'],
   ['Opérationnel', 'Operativo'],
