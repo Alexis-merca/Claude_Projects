@@ -2402,3 +2402,85 @@ pour ne pas déguiser en gardé ce qui ne l'est pas), `createEtape`,
 sensible : un déplacement d'étape reste un « dernier écrivain gagne » sur
 **tout l'ordre du processus**, pas sur une ligne. Le second envoi devra couvrir
 les quatre, pas seulement les suppressions comme prévu initialement.
+
+---
+
+## 35. Point E, second envoi — le chemin du diagramme (`68c61c3`)
+
+### 35.1 Pourquoi le remède du premier envoi ne convenait pas ici
+
+Dans `clients.$code.tsx`, chaque écriture est un geste isolé et renvoyer la
+version fraîche suffit. **Pas ici.** Une seule `Mutation` du diagramme porte
+jusqu'à quatre écritures — `ecritures`, `creation`, `suppression`, `ordre`.
+Garder chacune avec la version lue au début du geste l'aurait fait **échouer
+sur lui-même** : la première écriture avance la version par trigger, les trois
+suivantes seraient refusées.
+
+D'où `appliquer_mutation_flux()` : **la version est vérifiée une seule fois**
+(`select … for update`), puis tout le geste est appliqué dans la même
+transaction. Bénéfice au passage, qui vaut à lui seul le déplacement : l'en-tête
+de `flux-mutations.ts` rappelait que PostgREST met chaque requête HTTP dans sa
+propre transaction — **un glisser-déposer qui échouait à mi-parcours laissait le
+diagramme à moitié muté.** Ce n'est plus possible.
+
+`reordonner_etapes` est appelée, pas réécrite : elle porte la logique de la
+contrainte différée `etapes_ordre_unique`, et l'en-tête du fichier documente ce
+piège comme déjà rencontré. Le jeton `CREATION` ne franchit pas la frontière
+SQL — le JS le remplace par `null`, la fonction y substitue l'identifiant créé,
+et `src/flux/` reste intouché.
+
+### 35.2 Prouvé par la mesure
+
+Processus « planification » de `test-06-08`, 17 étapes, version 65 :
+
+| essai | version | sortie |
+|---|---|---|
+| 1 — `ecritures` **et** `ordre` | 65 | succès, `version_processus: 83` ; **les deux volets appliqués** |
+| 2 — la même, rejouée | 65 (périmée) | `null` |
+| 3 — intégrité après réordonnancement | — | 17 étapes, `ordre` 1→17, 17 valeurs distinctes |
+
+Le premier essai est celui qui compte : il démontre qu'un geste à plusieurs
+écritures ne se met plus en conflit avec lui-même. Restauration confirmée par
+relecture ; base inchangée (410 étapes, 16 frictions, 5 clients, 11 chiffres),
+`tsgo --noEmit` à 0 erreur.
+
+La version passe de 65 à 83, soit **+18** pour un seul geste : le trigger est
+par ligne, pas par instruction. Sans conséquence — la version est un jeton de
+concurrence, pas un compteur de gestes — mais il faut le savoir avant de la lire
+comme une mesure d'activité.
+
+### 35.3 Vérifié moi-même
+
+`updateEtapeSansGarde` a disparu, et les trois `update*` passent bien par
+`majEnfant`. `appliquer_mutation_flux` : `prosecdef = false` (invoker),
+`search_path=public`, exécutable par `authenticated`. `reordonner_etapes` est
+également en invoker, donc l'appel imbriqué n'élargit aucun privilège.
+
+### 35.4 Le commentaire de `diagnostic.ts` promet plus qu'il ne tient
+
+L'en-tête réécrit au premier envoi affirme désormais : « Cet invariant **EST**
+appliqué ». **C'est vrai des mises à jour, faux des créations et des
+suppressions.** Restent sans garde, et appelées depuis l'interface :
+`createFriction`, `createChiffre`, `deleteFriction`, `deleteChiffre` — plus
+`deleteProcessus` et `deleteClientRow` au niveau parent. `deleteEtape` n'a plus
+aucun appelant : code mort.
+
+C'est exactement la faute qu'on vient de corriger, réintroduite par la
+documentation du correctif : **un invariant proclamé au-delà de ce qui est
+tenu**. Quelqu'un lisant ce fichier croira `deleteFriction` gardée. La phrase
+doit être bornée aux mises à jour, et dire ce qui reste ouvert.
+
+### 35.5 Les créations en masse : exception assumée, pas oubli
+
+`createEtape` a trois autres appelants — `modele-processus.ts`,
+`trame-use-case.ts`, `duplication.ts` — tous non gardés. Chacun **crée le
+processus juste avant** d'y insérer ses étapes : personne d'autre ne peut le
+détenir, la garde n'y aurait rien à comparer. Exception raisonnée, à écrire
+plutôt qu'à corriger.
+
+### 35.6 Où en est le point E
+
+- **Mises à jour des enfants : gardées**, par les deux chemins — champ à champ
+  et diagramme. C'est là qu'était la perte de données décrite par l'inspection.
+- **Créations et suppressions d'enfants : toujours sans garde.** Troisième et
+  dernier envoi.
