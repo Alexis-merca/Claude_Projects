@@ -57,12 +57,14 @@ function translateOne(job) {
   });
 
   // Le texte de chaque cible est relevé UNE fois, avant de remplacer quoi que
-  // ce soit. Sans ça, il faudrait un appel API par entrée et par page — soit
-  // plusieurs milliers d'appels, presque tous pour rien, et un dépassement de
-  // la limite de 6 minutes d'Apps Script.
+  // ce soit, pour n'appeler l'API que là où la chaîne existe. Sans ce filtrage
+  // il faudrait un appel par entrée et par page — des milliers d'appels,
+  // presque tous pour rien, et un dépassement de la limite de 6 minutes.
+  var scan = { chars: 0, elements: 0, errors: [] };
+
   var slidesText = '';
   pres.getSlides().forEach(function (slide) {
-    slidesText += '\n' + pageText(slide);
+    slidesText += '\n' + pageText(slide, scan);
   });
 
   // pres.replaceAllText() couvre toutes les slides en un seul appel. Les notes,
@@ -78,29 +80,32 @@ function translateOne(job) {
       extras.push({ page: layout, label: 'mise en page ' + (i + 1) + '.' + (j + 1) });
     });
   });
-  extras.forEach(function (e) { e.text = pageText(e.page); });
+  extras.forEach(function (e) { e.text = pageText(e.page, scan); });
+
+  // Le filtrage n'est qu'une optimisation : si le relevé a échoué, mieux vaut
+  // être lent que de ne rien traduire. On repasse alors en force sur les
+  // slides, qui portent la quasi-totalité du texte.
+  var brute = slidesText.replace(/\s/g, '').length === 0;
 
   var hits = 0;
   var misses = [];
   var errors = [];
 
   pairs.forEach(function (pair) {
-    var touched = false;
+    var found = 0;
 
     variants(pair[0]).forEach(function (v) {
-      if (slidesText.indexOf(v) !== -1) {
-        touched = true;
+      if (brute || slidesText.indexOf(v) !== -1) {
         try {
-          hits += pres.replaceAllText(v, pair[1], true);
+          found += pres.replaceAllText(v, pair[1], true);
         } catch (e) {
           errors.push('slides — ' + pair[0] + ' (' + e.message + ')');
         }
       }
       extras.forEach(function (e) {
         if (e.text && e.text.indexOf(v) !== -1) {
-          touched = true;
           try {
-            hits += e.page.replaceAllText(v, pair[1], true);
+            found += e.page.replaceAllText(v, pair[1], true);
           } catch (err) {
             errors.push(e.label + ' — ' + pair[0] + ' (' + err.message + ')');
           }
@@ -108,50 +113,81 @@ function translateOne(job) {
       });
     });
 
-    if (!touched) misses.push(pair[0]);
+    hits += found;
+    if (found === 0) misses.push(pair[0]);
   });
 
   pres.saveAndClose();
 
   var report = [
     '=== ' + job.label + ' (' + job.fileId + ') ===',
+    'relevé : ' + scan.elements + ' éléments, ' + scan.chars + ' caractères'
+      + (brute ? '  → AUCUN TEXTE RELEVÉ SUR LES SLIDES, passage en mode force' : ''),
     hits + ' remplacements effectués sur ' + pairs.length + ' entrées.',
     misses.length
       ? 'NON TROUVÉ (' + misses.length + ') :\n  - ' + misses.join('\n  - ')
       : 'Aucune entrée manquée.'
   ];
+  if (scan.errors.length) {
+    report.push('RELEVÉ INCOMPLET (' + scan.errors.length + ') :\n  - '
+      + dedupe(scan.errors).join('\n  - '));
+  }
   if (errors.length) {
     report.push('ERREURS TOLÉRÉES (' + errors.length + ') :\n  - ' + errors.join('\n  - '));
   }
   return report.join('\n');
 }
 
-/** Relève tout le texte d'une page (slide, notes, masque ou mise en page). */
-function pageText(page) {
-  var out = [];
-  collectText(page.getPageElements(), out);
-  return out.join('\n');
+function dedupe(list) {
+  var seen = {};
+  return list.filter(function (x) {
+    if (seen[x]) return false;
+    seen[x] = true;
+    return true;
+  });
 }
 
-/** Parcourt les éléments d'une page, en descendant dans les groupes. */
-function collectText(elements, out) {
+/** Relève tout le texte d'une page (slide, notes, masque ou mise en page). */
+function pageText(page, scan) {
+  var out = [];
+  try {
+    collectText(page.getPageElements(), out, scan);
+  } catch (e) {
+    scan.errors.push('getPageElements : ' + e.message);
+  }
+  var text = out.join('\n');
+  scan.chars += text.length;
+  return text;
+}
+
+/**
+ * Parcourt les éléments d'une page, en descendant dans les groupes.
+ *
+ * Le type est comparé via String() et non par identité : les valeurs
+ * d'énumération d'Apps Script ne survivent pas à une comparaison ===, ce qui
+ * ferait silencieusement renvoyer un relevé vide.
+ */
+function collectText(elements, out, scan) {
   elements.forEach(function (el) {
+    scan.elements++;
+    var type = 'inconnu';
     try {
-      var type = el.getPageElementType();
-      if (type === SlidesApp.PageElementType.SHAPE) {
+      type = String(el.getPageElementType());
+      if (type === 'SHAPE') {
         out.push(el.asShape().getText().asString());
-      } else if (type === SlidesApp.PageElementType.TABLE) {
+      } else if (type === 'TABLE') {
         var t = el.asTable();
         for (var r = 0; r < t.getNumRows(); r++) {
           for (var c = 0; c < t.getNumColumns(); c++) {
             out.push(t.getCell(r, c).getText().asString());
           }
         }
-      } else if (type === SlidesApp.PageElementType.GROUP) {
-        collectText(el.asGroup().getChildren(), out);
+      } else if (type === 'GROUP') {
+        collectText(el.asGroup().getChildren(), out, scan);
       }
+      // IMAGE, LINE, VIDEO, SHEETS_CHART, WORD_ART : aucun texte remplaçable
     } catch (e) {
-      // élément sans texte accessible : rien à relever
+      scan.errors.push(type + ' : ' + e.message);
     }
   });
 }
