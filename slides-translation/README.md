@@ -1,4 +1,4 @@
-# Traduction des présentations Google Slides (FR → EN / ES)
+# Bibliothèque de traduction des présentations Google Slides (FR → EN / ES)
 
 ## Pourquoi un script
 
@@ -7,32 +7,59 @@ créer des copies via Drive, mais pas modifier le texte d'une slide. Le
 contournement par export `.pptx` est impraticable (les decks pèsent 10 à 25 Mo,
 principalement des images).
 
-Donc : Claude lit le FR et produit les tables de traduction, et ce script Apps
-Script les applique aux copies.
+Donc : Claude lit le FR et produit les tables de traduction, ce script Apps
+Script les applique aux copies, et l'utilisateur le lance.
 
-## Mode d'emploi
+## Les trois fichiers
 
-1. Ouvrir [script.google.com](https://script.google.com) → **Nouveau projet**.
-2. Coller tout le contenu de `translate.gs` dans l'éditeur (remplacer le
-   `myFunction` existant), puis enregistrer (**Ctrl+S**).
-3. Sélectionner la fonction **`runAll`** dans le menu déroulant en haut, puis
-   **Exécuter**.
-4. Autoriser l'accès quand Google le demande. L'écran d'avertissement
-   « Google n'a pas validé cette application » est normal pour un script
-   personnel : *Paramètres avancés* → *Accéder à …*. Le script n'ouvre que les
-   copies listées dans `RENAMES` et `getJobs()`, jamais les originaux.
-5. Lire le journal d'exécution (**Ctrl+Entrée** / *Journal d'exécution*). Il
-   indique :
-   - les copies renommées,
-   - par présentation, le nombre de remplacements effectués,
-   - la liste des entrées **non trouvées**, s'il y en a,
-   - les **erreurs tolérées**, s'il y en a.
+Un seul projet Apps Script, gardé en permanence, contenant trois fichiers. Ils
+partagent la même portée globale, l'ordre n'a pas d'importance.
 
-`runAll` est réexécutable sans risque : les renommages sont idempotents, et une
-présentation déjà traduite ne contient plus de texte français à remplacer.
+| Fichier | Rôle | Fréquence de changement |
+|---|---|---|
+| `moteur.gs` | Le moteur de remplacement et ses garde-fous | Jamais |
+| `glossaire.gs` | `COMMON_EN` / `COMMON_ES` : le vocabulaire Mercateam | S'enrichit à chaque lot |
+| `jobs.gs` | Le lot en cours : `getJobs`, `RENAMES`, tables par deck | Remplacé à chaque lot |
 
-Les fonctions peuvent aussi être lancées séparément : `renameAll` (titres
-seulement), `translateAll` (traductions seulement), `runAll` (les deux).
+**C'est `glossaire.gs` qui a de la valeur sur la durée.** Les decks de
+déploiement Mercateam reprennent presque toujours les mêmes blocs — feuille de
+route, équipe Mercateam, équipe partenaire, étapes du déploiement, RACI, nos
+attentes, MercaNews, critères de Go Live, témoignages. Un nouveau deck est donc
+déjà traduit à 80 % rien qu'avec le glossaire, et seul son contenu propre
+demande du travail.
+
+`archive/deck1.gs` garde la trace du premier lot ; il n'a pas à être collé dans
+le projet Apps Script.
+
+## Installation, une seule fois
+
+1. Ouvrir [script.google.com](https://script.google.com) → **Nouveau projet**,
+   le nommer par exemple « Traduction Slides Mercateam ».
+2. Créer trois fichiers de script (**+** → *Script*) nommés `moteur`,
+   `glossaire` et `jobs`, et y coller les fichiers correspondants. Supprimer le
+   `Code.gs` par défaut.
+3. **Ctrl+S**.
+
+Ce projet est à conserver. Pour un nouveau lot de decks, seul `jobs.gs` est à
+remplacer — et `glossaire.gs` si du vocabulaire s'est ajouté.
+
+## Traduire un nouveau deck
+
+1. Demander à Claude de traduire le deck, en donnant son URL et le dossier de
+   destination. Il crée les copies EN/ES lui-même — inutile de les préparer.
+2. Claude lit le français, le confronte au glossaire, et ne rédige que les
+   entrées réellement nouvelles.
+3. Il renvoie `jobs.gs` (et `glossaire.gs` s'il l'a enrichi).
+4. Coller ces fichiers dans le projet, **Ctrl+S**.
+5. Sélectionner **`runAll`** et **Exécuter**. Relancer jusqu'à lire
+   `>>> Tous les jobs sont traités.`
+6. Demander à Claude de relire les copies : c'est ce qui attrape ce que le
+   rapport du script ne voit pas.
+
+À la première exécution, Google demande une autorisation. L'écran « Google n'a
+pas validé cette application » est normal pour un script personnel :
+*Paramètres avancés* → *Accéder à …*. Le script n'ouvre que les copies listées
+dans `RENAMES` et `getJobs()`, jamais les originaux.
 
 ## Fonctions disponibles
 
