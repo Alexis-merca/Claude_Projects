@@ -1,7 +1,9 @@
 # Diagnostic OS — feuille de route
 
 Réécrite le 07/08/2026, **après lecture du code et de la base** plutôt que du
-document précédent.
+document précédent. Mise à jour le 11/08/2026 : le bloc « bilan de déploiement »
+est passé en production, et la tentative de le vérifier à l'écran a échoué pour
+une raison qui méritait d'être écrite (2a).
 
 > La version antérieure annonçait comme « à faire » quatre chantiers déjà en
 > production : les vagues 1, 2, 3a et la moitié de la 4. Elle décrivait aussi
@@ -24,9 +26,10 @@ mesure ; une entrée « à faire » dit ce qui a été constaté et où.
 | **Frictions rattachées aux étapes** | `frictions.etape_id`, clé **composite** `(etape_id, processus_id)` : l'étape désignée appartient forcément au même processus. `on delete set null` sur la seule colonne `etape_id` — supprimer l'étape détache la friction sans l'emporter. |
 | **Maturité par processus** | `processus.maturite` 1–5 + note, et `maturite_bilan` pour la fin de déploiement. **Dix échelles rédigées**, cinq niveaux chacune, aucune échelle générique de repli, aucune moyenne entre use cases. |
 | **La trame est un produit** | `clients.trame` (`existant` / `cible`), sélecteur des dix use cases à la création, pré-remplissage par `creerUseCases` → `recopier`. Rattachement par `processus.use_case` **uniquement**, jamais par le nom. Trame repliée hors de la liste et non supprimable. Unicité garantie en base (`clients_trame_unique`, `bf90edc`). |
-| **Avant / après** | Comparaison **par ensembles** — outils, rôles, nombre d'étapes, maturités — sans appariement étape à étape, les deux jeux ayant été écrits indépendamment. Plus un mode bilan à trois positions sur l'étape (`etapes.bilan`). |
+| **Avant / après** | Comparaison **par ensembles** — outils, rôles, nombre d'étapes, maturités — sans appariement étape à étape, les deux jeux ayant été écrits indépendamment. Plus un mode bilan à **quatre** positions sur l'étape (`etapes.bilan`). |
 | **Environnement IT juste** | Placement multi-blocs `(outil, bloc)`, bloc déduit de la clef de use case, outils répétés estompés avec légende. Mesuré : 14 outils / 35 placements sur la trame, contre 14 / 14 avant. `PASSE-STATIQUE.md` §24–26. |
 | **L'« après » ne ment plus** | Une étape passée sous Mercateam **garde ses systèmes de référence** (ERP, SIRH, GTA, GED) et perd le générique et l'inconnu. Mesuré : 7 outils au lieu de 1 en simulation sur la trame (`b09ccf0`, §28). |
+| **Le bilan de déploiement, complet** | Quatrième état `en_cours` sur l'étape, bilan à deux états sur la friction (`resolue` / `persistante`), `cible` en texte libre par étape ; saisie à l'écran, et page « Trajectoire de déploiement » à l'impression, conditionnée à la présence d'au moins une cible. Les trois champs entrent dans `client_json` **dès la migration** — sans quoi tout instantané pris ensuite les aurait omis, et une restauration du jour même les aurait effacés en silence. `100cfe4`, `75eed5e`, `40898e8` ; §31–32. **Rendu à l'écran par personne** (voir 2b). |
 | *Hors plan* | Versions complètes (prise, liste, restauration elle-même annulable), export PPTX, et **filtre de sécurité par domaine** `est_mercateam()` — sans lui, tout compte OAuth authentifié voyait tous les diagnostics. |
 
 ---
@@ -70,11 +73,23 @@ d'impression, glisser-déposer, rendu PPTX. Tout ce qui est écrit dans
 `PASSE-STATIQUE.md` vient de la lecture du code et de mesures sur la base.
 **Personne n'a vu cette application fonctionner.**
 
-**2b. Deux fonctionnalités livrées n'ont aucun jeu d'essai.** La trame ne porte
+Tentative du 09/08, et son résultat : le rendu sans tête de
+`/impression/test-06-08` a été **bloqué par le garde `_authenticated`**, le
+navigateur de test n'ayant aucune session
+(`LOVABLE_BROWSER_AUTH_STATUS=signed_out`). Aucun contournement n'a été tenté.
+Le constat dépasse cette page — **cette application n'est vérifiable
+visuellement que par un humain connecté**, et c'est la raison structurelle pour
+laquelle cette entrée traîne depuis l'origine. Le déblocage est connu et tient
+en une action : se connecter dans la fenêtre de préversion, la session devient
+alors disponible au tour suivant. `PASSE-STATIQUE.md` §33.5.
+
+**2b. Trois fonctionnalités livrées n'ont aucun jeu d'essai.** La trame ne porte
 ni friction ni chiffre clé — le classeur n'en contient pas, ils se relèvent en
-entretien. Et le mode bilan n'a **jamais servi** : une seule étape marquée dans
-toute la base, portant `Excel`. Ce qui vient d'être corrigé en 1c est
-structurellement juste et n'a été exercé par personne.
+entretien. Et le bilan n'a **quasiment jamais servi**, mesuré le 11/08 sur
+393 étapes et 16 frictions : **1 étape marquée** (Sekurit, `mercateam`),
+**0 friction évaluée**, **0 cible**. Les trois champs livrés ce week-end sont
+donc justes par construction et exercés par personne ; la page « Trajectoire de
+déploiement » n'a jamais été affichée une seule fois.
 
 ### 3. Dette de cohérence
 
@@ -105,6 +120,18 @@ fonctions, et **une affirmation fausse sur la sécurité** — le fichier annon�
 un accès ouvert à tout utilisateur authentifié. `db/README.md` porte désormais
 les requêtes de comparaison. **Tant que ce contrôle est manuel, il ne sera pas
 fait.**
+
+**3e. Trois approximations laissées dans le code du 09/08, toutes signalées sur
+place plutôt que dissimulées.** Le seuil de **12 lignes par page** de la
+trajectoire imprimée est un calcul, jamais une mesure (§32.2) : la première
+recette navigateur le confirmera ou le fera descendre. Le **texte de l'étape
+n'y est pas tronqué** — au-delà de deux lignes par cellule, la page se réduit et
+le corps passe sous 12 px (§32.3). Enfin, **aucun script de génération n'existe
+dans `package.json`** : depuis que `routeTree.gen.ts` est sorti du suivi
+(`906daf7`, §33), il n'est plus régénéré que par effet de bord du plugin Vite —
+dépendance implicite, documentée nulle part ailleurs que dans le commentaire du
+`.gitignore`. Conséquence assumée : `tsgo --noEmit` seul échoue sur un clone
+neuf tant qu'un `dev` ou un `build` n'a pas tourné.
 
 ### 4. Confort
 
