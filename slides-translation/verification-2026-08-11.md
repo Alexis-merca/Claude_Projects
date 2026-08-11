@@ -15,16 +15,17 @@ adrien@mercea.team, notes de construction internes, textes dans les captures.
                               donc rien à convertir ; aucun "WG" parasite ailleurs. Zéro français.
 - Deck 3 EN (Kickoff)       : OK. Slide WG et tableau WG/WG1..WG4 cohérents (contradiction levée).
                               "Logo client" -> "Client logo" appliqué. Aucun "WG" parasite. Zéro français.
-- Deck 4 EN (BILAN/REVIEW)  : relu après le run. Tout OK sauf le fragment G2
-                              "concrets, vécus sur le terrain" (slide 3).
-                              modifiedTime = 15:58 UTC = heure du run fixupAll, inchangé depuis :
-                              la correction manuelle des 6 mots n'a pas encore été faite.
-- Deck 4 ES (BILAN/BALANCE) : idem. Production Manager et Automoción corrigés.
-                              Même fragment G2 restant. Correction manuelle non faite.
+- Deck 4 EN (BILAN/REVIEW)  : OK. Plus aucun français. La slide G2 "Give your experience a voice"
+                              a été SUPPRIMÉE du deck, et non corrigée : le fragment
+                              "concrets, vécus sur le terrain" est parti avec elle.
+                              La slide de feedback "Your feedback matters!" est toujours là.
+- Deck 4 ES (BILAN/BALANCE) : idem, slide "Dé voz a su experiencia" supprimée.
+                              Production Manager et Automoción corrigés.
 - Deck 2 ES (Prép Kickoff)  : OK. Automoción appliqué. "Responsable / de Alianza" conforme au glossaire.
                               GT conservé (correct en ES). Zéro français.
 - Deck 3 ES (Kickoff)       : OK. Automoción appliqué. GT conservé (correct en ES). Zéro français.
 
-## Bilan : 12 copies relues, 11 sans réserve
-Seul reste ouvert : le fragment G2 "concrets, vécus sur le terrain" sur la slide 3
-des deux BILAN (EN et ES). Correction manuelle recommandée.
+## Bilan final : 12 copies relues, aucun français résiduel
+Aucune sentinelle oubliée, aucun dégât collatéral des clés courtes (GT, Production).
+À confirmer côté métier : la suppression de la slide G2 dans les deux BILAN est-elle
+volontaire ? Elle règle le fragment récalcitrant, mais retire aussi la demande d'avis.
