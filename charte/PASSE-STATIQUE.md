@@ -2484,3 +2484,92 @@ plutôt qu'à corriger.
   et diagramme. C'est là qu'était la perte de données décrite par l'inspection.
 - **Créations et suppressions d'enfants : toujours sans garde.** Troisième et
   dernier envoi.
+
+---
+
+## 36. Point E fermé — créations et suppressions (`a7b26d3`, `ecb0fed`)
+
+### 36.1 Ce qui est livré
+
+Quatre fonctions gardées — `creer_friction`, `creer_chiffre`,
+`supprimer_friction`, `supprimer_chiffre` — sur le modèle exact des `maj_*` :
+version du processus comparée **dans la même instruction** que l'écriture,
+`null` = conflit, version fraîche renvoyée. Plus la garde sur `deleteProcessus`,
+qui détruit un use case entier et restait le pire cas de la liste.
+
+`deleteEtape` supprimée : plus aucun appelant depuis que
+`appliquer_mutation_flux` fait la suppression en SQL.
+
+**Une suppression qui ne trouve pas sa ligne renvoie `null` elle aussi** — donc
+un conflit. Mieux vaut un bandeau de trop qu'une disparition silencieuse.
+
+L'en-tête de `diagnostic.ts` porte désormais l'inventaire exact : ce qui est
+gardé et par quel moyen, **et ce qui ne l'est pas avec la raison** — les trois
+chemins de création en masse, et `deleteClientRow`. La phrase « cet invariant
+EST appliqué », qui promettait au-delà de ce qui était tenu (§35.4), est
+corrigée.
+
+### 36.2 Le défaut que la preuve avait sauté
+
+L'envoi a prouvé la création et la suppression d'une **friction**, jamais celles
+d'un **chiffre**. C'est précisément là que ça cassait.
+
+```
+chiffres_non_vide  CHECK (valeur <> '' OR libelle <> '')
+```
+
+C'est un **OU**, et `creer_chiffre` insérait `'', ''` : la contrainte était
+violée à tous les coups, la création d'un chiffre clé aurait levé une exception
+à l'usage. Attrapé en relisant les contraintes, pas en lisant le compte rendu.
+
+**Le chemin qu'on ne mesure pas est celui qui casse.** C'est la deuxième fois
+cette semaine qu'exiger une mesure par chemin, plutôt qu'une mesure globale,
+attrape un défaut.
+
+Corrigé (`ecb0fed`) : le libellé provisoire va dans `libelle`, **`valeur` reste
+vide**. Un faux chiffre serait pire qu'un libellé à compléter — quelqu'un
+pourrait le lire comme une donnée. Convention unique, « À préciser », partagée
+avec les frictions.
+
+### 36.3 Le vrai constat : deux boutons cassés depuis toujours
+
+Les deux contraintes existaient **avant** ce chantier, et les anciens appels de
+l'écran les violaient toutes les deux :
+
+- `createFriction({texte: ""})` contre `frictions_texte_non_vide` ;
+- `createChiffre({valeur: "", libelle: ""})` contre `chiffres_non_vide`.
+
+**Les boutons « ajouter une friction » et « ajouter un chiffre clé » n'ont
+jamais pu fonctionner.** Personne ne s'en est aperçu. C'est la mesure la plus
+parlante du peu d'usage réel de l'application — et la meilleure justification de
+la recette navigateur, qui reste le prochain chantier.
+
+Étendue vérifiée sur les autres chemins, aucun n'est concerné :
+`modele-processus.ts` ne crée ni friction ni chiffre ; `trame-use-case.ts` et
+`duplication.ts` recopient des lignes déjà conformes ; `importer_client_json`
+filtre déjà — **mais en silence**, les lignes sautées ne sont pas signalées à
+l'importateur. À noter pour plus tard.
+
+### 36.4 Vérifié moi-même
+
+Les cinq fonctions : `prosecdef = false` (invoker), `search_path=public`,
+exécutables par `authenticated`. La migration corrective a fait un `drop` puis un
+`create` avec une signature différente **sans réémettre le `grant`** — ça
+fonctionne par le défaut PostgreSQL sur `PUBLIC`, mais c'est implicite là où les
+autres sont explicites. À reprendre avec le `revoke execute … from public`
+recommandé au §34.4.
+
+Base à l'identique : 410 étapes, 16 frictions, 5 clients, 11 chiffres, aucune
+ligne « À préciser » résiduelle.
+
+**Une étape de plus porte un bilan** : Sekurit, onboarding, étape 2, `mercateam`.
+Ce n'est pas un résidu de test — c'est une écriture réelle faite depuis le
+navigateur. Premier usage constaté du mode bilan par un humain.
+
+### 36.5 Le point E est fermé
+
+Mises à jour, créations, suppressions, et le geste du diagramme : tout ce qui
+écrit un enfant depuis l'interface passe par une garde de version, prouvée par
+un refus mesuré. `deleteClientRow` reste seule sans garde — un appelant unique,
+`clients.index.tsx`, qui **dispose de la version du client**. La garde y serait
+immédiate ; il ne manque qu'une décision.
