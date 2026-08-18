@@ -91,6 +91,15 @@ entretien. Et le bilan n'a **quasiment jamais servi**, mesuré le 11/08 sur
 donc justes par construction et exercés par personne ; la page « Trajectoire de
 déploiement » n'a jamais été affichée une seule fois.
 
+> **Correction du 18/08 — le zéro sur les cibles ne voulait pas dire ce qu'on
+> croyait.** Il n'était pas dû au non-usage mais à une panne : le bouton
+> « Saisie rapide », seul point d'entrée de `etapes.cible`, ne se montait
+> jamais. La fonctionnalité était **inatteignable**, pas délaissée. Corrigé et
+> prouvé au navigateur (`b2650b6`, `PASSE-STATIQUE.md` §46). Reste vrai pour
+> les frictions évaluées et la maturité de bilan, dont la saisie, elle,
+> fonctionne. **Un compteur à zéro admet deux lectures ; on avait retenu la
+> rassurante sans la vérifier.**
+
 ### 3. Dette de cohérence
 
 **3a. Clef et libellé dans la couche schéma.** `isoles` teste `!poids.has(o)`,

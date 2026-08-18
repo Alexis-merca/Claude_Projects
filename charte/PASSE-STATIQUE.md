@@ -3187,3 +3187,143 @@ rapide » ne se monte pas (`RETOURS-USAGE.md` n° 2), ce qui rend `etapes.cible`
 inatteignable depuis l'interface. Corrigé ensuite.
 
 **Un angle mort nommé** : le défaut I, ci-dessus.
+
+---
+
+## 46. Le bouton qui n'avait jamais existé — 18/08/2026
+
+Correction du seul défaut que la recette navigateur ait trouvé par elle-même
+(`RETOURS-USAGE.md` n° 2). Commit Lovable `b2650b6`, un seul fichier,
+une seule fonction : `BoutonSaisieRapide` dans `clients.$code.tsx`.
+
+### 46.1 Mon hypothèse était fausse, et fausse dans le sens confortable
+
+J'avais écrit dans le brief que le défaut devait être **intermittent** :
+l'effet ne tourne qu'au montage (`[hote]`), donc si le diagramme n'est pas
+encore rendu à cet instant, la cible reste `null`. J'ai même bâti tout un
+raisonnement là-dessus — « pire qu'une panne franche, il a pu marcher une
+fois sous les yeux de quelqu'un ».
+
+La mesure DOM dit autre chose. Le conteneur `[data-diagram-slot]` a quatre
+enfants dans cet ordre : le diagramme, le `div.contents` de
+`PastillesFrictions`, celui de `MarquesBilan`, puis l'hôte du bouton. Donc
+`hote.previousElementSibling` désignait **toujours** une enveloppe de portails,
+**jamais** le diagramme. `querySelector(".flux__entete .rangee")` y renvoyait
+`null` à tous les coups, quel que soit l'ordre de rendu.
+
+Le défaut n'était pas intermittent : il était **total**. Ce bouton n'a jamais
+fonctionné, pas une fois, depuis qu'il a été écrit.
+
+Et ma mauvaise hypothèse était la confortable — elle laissait croire qu'il
+avait marché parfois, donc que quelqu'un l'avait vu marcher. La bonne réponse
+est plus dure : personne ne l'a jamais vu.
+
+### 46.2 La preuve que la fonctionnalité était inerte
+
+`etapes.cible` est livrée depuis le 09/08 avec sa page « Trajectoire de
+déploiement » à l'impression. La saisie rapide est le **seul** endroit d'où on
+peut l'écrire. Mesure en base : **0 cible sur 411 étapes**.
+
+On avait mis ce zéro au compte du non-usage — c'est écrit tel quel dans
+`FEUILLE-DE-ROUTE.md` §2b, « exercés par personne ». C'était faux. Ce n'était
+pas du non-usage, c'était de l'**inatteignable**. Une fonctionnalité, sa
+migration, sa saisie, sa page d'impression : trois envois, livrés justes, et
+zéro chemin utilisateur pour y accéder.
+
+**Un compteur à zéro admet deux lectures — « personne ne s'en sert » et
+« personne ne peut s'en servir » — et on avait retenu la rassurante sans la
+vérifier.**
+
+### 46.3 Le même piège, déjà rencontré et déjà documenté
+
+En relisant les voisins : `MarquesBilan` porte depuis sa naissance ce
+commentaire —
+
+> *Le parent, et non le frère précédent : `PastillesFrictions` s'intercale
+> entre le diagramme et nous, et son enveloppe `display: contents` reste un
+> élément dans l'arbre.*
+
+Quelqu'un avait donc déjà buté sur exactement ce piège, l'avait compris, et
+l'avait écrit noir sur blanc dans le fichier d'à côté. `PastillesFrictions`
+marche parce qu'il est le **premier** après le diagramme — son frère précédent
+est le bon par accident de position. `BoutonSaisieRapide` est le troisième, et
+il est le seul des trois à n'avoir jamais reçu le traitement.
+
+**Une leçon écrite dans un fichier ne protège pas le fichier d'à côté.** Le
+commentaire de `MarquesBilan` était juste, présent, lisible — et sans effet sur
+le composant situé douze lignes plus bas dans le même JSX.
+
+### 46.4 La correction, et pourquoi elle ne boucle pas
+
+```ts
+const conteneur = hote.closest<HTMLElement>("[data-diagram-slot]");
+const relever = () => {
+  const trouvee = conteneur.querySelector<HTMLElement>(".flux__entete .rangee");
+  setCible((avant) => (avant === trouvee ? avant : trouvee));
+};
+relever();
+const obs = new MutationObserver(relever);
+obs.observe(conteneur, { subtree: true, childList: true });
+```
+
+`closest` plutôt que `parentElement` : plus robuste que `MarquesBilan`, car
+insensible à l'insertion d'un niveau d'enveloppe.
+
+L'observateur est nécessaire, pas décoratif : le moteur réécrit tout le
+balisage à chaque mutation, la `.rangee` d'origine est **détruite et
+remplacée**. Sans nouvelle recherche, le portail se décrocherait au premier
+glisser-déposer.
+
+La réentrance est le vrai risque — poser le portail insère un nœud **dans** la
+rangée observée. La garde est la comparaison de nœuds : au second tour on
+retrouve la même rangée, `setCible` reçoit la même référence, React ne rend
+pas, la chaîne s'arrête. Même patron que `PastillesFrictions`. Mesuré :
+**0 mutation du slot au repos sur 5 s**.
+
+### 46.5 Ce qui a été prouvé au navigateur, et non par lecture
+
+Sur `test-06-08`, `tsgo --noEmit` à 0 erreur :
+
+1. mode modifier → bouton présent, `parent: "rangee"` ;
+2. bascule sur un autre processus → présent ;
+3. retour → présent ;
+4. modification d'un texte d'étape (reconstruction du balisage) → **survit** ;
+5. 0 mutation au repos ;
+6. clic → table ouverte, colonnes `N° · Rôle · Action relevée · Supports ·
+   Cible · Ordre` ; en mode bilan la cellule **Cible est éditable** ; écriture
+   `PREUVE-RECETTE-CIBLE` → **relue en base** ; remise à vide → `cibles = 0`.
+
+Le point 6 est le seul qui compte vraiment : c'est **le chemin qui n'avait
+jamais existé pour un utilisateur**, parcouru en entier pour la première fois.
+
+### 46.6 Trois écarts que l'agent signale de lui-même
+
+- **Pas de copie jetable**, contrairement à ma consigne : `read_query` est en
+  lecture seule, l'`insert` a été refusé, et aucun outil ne permettrait de
+  détruire la copie ensuite. Repli assumé sur `test-06-08` avec aller-retour à
+  l'identique. Vérifié : aucun client `recette-saisie-rapide` en base.
+- **`versions` 20 → 22.** Les écritures d'essai ont déclenché deux instantanés
+  automatiques (`quotidien`, `avant_bilan`) sur `test-06-08`. Irrémédiable : il
+  n'existe **aucune suppression d'instantané**, ni dans `PanneauVersions.tsx`,
+  ni dans `src/lib/versions.ts`, ni par requête en lecture seule. La base n'est
+  donc pas rendue *rigoureusement* à l'identique, et c'est dit plutôt que
+  passé sous silence.
+- **Piège pour la prochaine recette** : en mode bilan la cellule Cible est un
+  `textarea`. `inner_text` y renvoie `''` même quand la valeur existe — il faut
+  lire `value`. Ce n'est pas un défaut, c'est une manière de se tromper.
+
+### 46.7 Vérification de mon côté
+
+Contre le **diff**, pas contre le rapport : un seul fichier touché, une seule
+fonction, aucune écriture ailleurs. `latest_commit_sha` = `b2650b6`.
+
+Contre la **base**, ce jour : `cibles 0`, aucun client résiduel d'essai. Les
+compteurs ont bougé depuis la mesure de l'agent — `clients 6, processus 39,
+etapes 532, frictions 17, chiffres 12, versions 23` — mais l'écart s'explique
+entièrement par un client réel créé à 13:12, **`danone-bailleul`** (8 use cases,
+121 étapes), postérieur au commit de 11:54. Ce n'est pas une dérive de la
+recette : c'est un audit qui commence.
+
+**Réserve honnête** : je constate que le commit est le dernier du projet, pas
+que le déploiement publié sur `mercaudit.lovable.app` l'ait embarqué. Si le
+bouton n'apparaît pas côté utilisateur, c'est la première chose à regarder.

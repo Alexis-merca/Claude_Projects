@@ -63,7 +63,7 @@ repose.
 
 ## 2026-08-18
 
-### 2. Le bouton « Saisie rapide » ne se monte pas — **CASSÉ**
+### 2. Le bouton « Saisie rapide » ne se monte pas — **CASSÉ → RÉSOLU le 18/08**
 
 **Où** : écran de diagnostic, en-tête du diagramme de flux, mode modifier.
 
@@ -92,4 +92,22 @@ qu'au montage (`[hote]`) et lit `hote.previousElementSibling` pour trouver
 panne franche : il a pu marcher une fois, sous les yeux de quelqu'un, et ne plus
 jamais se reproduire.
 
-**Non corrigé** : la passe était une passe de constat.
+**Cette hypothèse était fausse, et fausse du côté rassurant.** La mesure DOM
+montre que `[data-diagram-slot]` contient, dans l'ordre : le diagramme, le
+`div.contents` de `PastillesFrictions`, celui de `MarquesBilan`, puis l'hôte du
+bouton. Le frère précédent était donc **toujours** une enveloppe de portails,
+jamais le diagramme, quel que soit l'ordre de rendu. Le défaut n'était pas
+intermittent, il était **total** : ce bouton n'a jamais fonctionné une seule
+fois depuis qu'il a été écrit.
+
+Conséquence : le « 0 cible en base après dix jours » n'était pas du non-usage,
+comme `FEUILLE-DE-ROUTE.md` §2b le supposait, mais de l'**inatteignable**.
+
+**Résolu** (`b2650b6`, `PASSE-STATIQUE.md` §46). La cible se cherche depuis
+`hote.closest("[data-diagram-slot]")` et un `MutationObserver` la reprend à
+chaque reconstruction du balisage, avec la garde de réentrance de
+`PastillesFrictions`. Prouvé au navigateur jusqu'au bout du chemin réel :
+bouton présent, survivant à la bascule d'onglet et à une mutation du diagramme,
+0 mutation au repos ; puis clic, mode bilan, colonne Cible éditable, écriture
+relue en base, remise à vide. **C'est la première fois que ce chemin est
+parcouru en entier.**
