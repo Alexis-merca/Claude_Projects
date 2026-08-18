@@ -132,8 +132,15 @@ introduite par soi-même, l'écrire comme telle.
 Chacun a coûté cher à établir. Ils sont écrits dans le code, à l'endroit où on
 risque de les défaire.
 
-**`src/flux/` est intouchable.** `moteur.js`, `moteur.css`, `mutations.js` : le
-moteur du diagramme. On peut greffer autour (portails React), jamais dedans.
+**`src/flux/` : Lovable est la source, le dépôt est un miroir.** Décision du
+18/08/2026. Jusque-là le moteur du diagramme était maintenu dans ce dépôt et
+`src/flux/` en était un import intouchable ; c'est **inversé**. On corrige
+désormais dans Lovable, et `flux/` ici suit.
+
+Conséquence à ne pas manquer : `flux/geometrie.test.cjs` compare les tracés du
+moteur à ceux de `diagnostic-os.html`. Toute correction de géométrie doit donc
+être reportée **dans le mono-fichier aussi**, sinon le test compare deux
+algorithmes différents et désigne la correction comme la régression.
 
 **Les trois modes d'écran écrivent des champs disjoints.** `lecture`,
 `modifier`, `bilan`. Le mode modifier écrit le relevé ; le mode bilan écrit

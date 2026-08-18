@@ -2858,3 +2858,50 @@ s'applique à toutes les instructions quelle qu'en soit la source ; ou accepter
 que le moteur vive désormais dans Lovable et faire du dépôt le miroir. **Le
 statu quo est le seul mauvais choix** : deux sources qui divergent sans que
 personne ne le sache.
+
+---
+
+## 41. Inversion : Lovable devient la source du moteur
+
+Décision de l'utilisateur, 18/08/2026, après la divergence de §40 : **le projet
+vit dans Lovable**. Le moteur du diagramme n'est plus maintenu ici et importé
+là-bas ; c'est l'inverse. `flux/` dans ce dépôt devient un **miroir**.
+
+### 41.1 Vérification de l'alignement
+
+Lecture intégrale de `src/flux/moteur.js` côté Lovable, comparée à la copie
+locale :
+
+- **23 exports, mêmes noms, même ordre** — de `PASTELS` à `acheverRendu` ;
+- constantes, utilitaires, géométrie, balisage : identiques ;
+- **une seule divergence, celle de §40** : le tracé des flèches, désormais
+  rapatrié.
+
+Le commentaire du correctif a été aligné **au mot près** sur celui de Lovable,
+dans `flux/moteur.js` et dans `diagnostic-os.html`. Un miroir qui diverge d'un
+commentaire est un miroir dont on finit par douter.
+
+**Rien n'a été envoyé à Lovable** : sa copie était déjà en avance, c'est le
+dépôt qui la rattrape. La direction du flux est bien celle qu'a décidée
+l'utilisateur.
+
+### 41.2 Ce que l'inversion change dans les règles
+
+L'invariant « `src/flux/` est intouchable » a gouverné tous les briefs de ce
+projet. Il est **remplacé** dans `REPRISE.md` : on corrige désormais dans
+Lovable, et le dépôt suit.
+
+**Mais une contrainte survit à l'inversion, et il ne faut pas la perdre :**
+`flux/geometrie.test.cjs` compare les tracés produits par le moteur à ceux de
+`diagnostic-os.html`. Toute correction de géométrie doit donc être reportée
+**dans le mono-fichier également**, faute de quoi le test compare deux
+algorithmes différents et désigne la correction comme la régression. C'est
+exactement ce qui serait arrivé au premier lancement après §40.
+
+### 41.3 Ce qui reste non vérifié
+
+**Le test de géométrie n'a pas pu être lancé** : `playwright-core` n'est pas
+installé dans ce dépôt, qui n'a pas de `package.json`. L'alignement des trois
+copies est établi par lecture et par égalité de texte, jamais par exécution.
+C'est la seule vérification qui manque, et elle ne coûtera rien le jour où un
+environnement permettra de la faire.

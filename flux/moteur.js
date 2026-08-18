@@ -533,9 +533,9 @@ export function tracerFleches(zone, etapes, options = {}) {
     const dx = x2 - x1, dy = y2 - y1;
     const mx = x1 + dx / 2;
     /* Le rayon doit tenir dans l'écart horizontal ET vertical : sinon les deux
-       quarts de cercle se chevauchent, le tracé repart en arrière et la pointe
-       déborde sur les cartes. Sous 2 px de rayon utile, ou si les cartes se
-       chevauchent horizontalement, on trace un simple segment. */
+       quarts de cercle se chevauchent et la flèche part à l'envers, avec une
+       pointe qui déborde sur les cartes. Sous 2 px de rayon utile, on trace
+       un simple segment droit. */
     const r = Math.min(9, Math.abs(dx) / 2 - 2, Math.abs(dy) / 2);
     const s = dy > 0 ? 1 : -1;
     const d = (Math.abs(dy) < 2 || r < 2 || dx <= 0)
