@@ -2641,3 +2641,66 @@ gravité, mais à corriger si l'on touche à ce fichier.
 depuis l'agent. Le banc reproduisait le chemin exact de l'enveloppe, ce qui est
 la meilleure approximation possible — mais c'est une approximation, et seul
 l'usage tranchera.
+
+---
+
+## 38. Retrait de la comparaison à la trame générique (`74d44f4`)
+
+Décision produit de l'utilisateur, prise en regardant l'application : l'encart
+« Cible de référence Mercateam » sous chaque diagramme, **et** la page pleine du
+même nom dans la restitution imprimée, disparaissent. Sa raison : *le bilan se
+fait sur le processus réel du site, et un audit Mercateam n'est pas générique*.
+
+J'ai étendu la question avant d'agir. Il demandait le retrait de l'encart ;
+l'argument valait tout autant — et davantage — pour la page imprimée, celle que
+le client lit. Arbitrage confirmé : les deux. **5 pages de moins sur un audit à
+cinq use cases** (14 → 9).
+
+### 38.1 Le piège désamorcé : la palette
+
+`paletteStable` est une **fonction pure de la liste des noms** qu'on lui donne :
+chaque rôle occupe la place déterminée par l'empreinte de son nom **dans cette
+liste**. La palette est construite sur l'union des rôles du site et de ceux de
+la trame cible.
+
+Retirer `rolesCible` en même temps que l'affichage aurait donc **repeint des
+rôles n'ayant aucun rapport avec la trame**, sur tout l'écran et dans tous les
+PDF — un document réédité n'aurait plus ressemblé à celui de la veille, sans le
+moindre signal. C'est le type d'erreur qui ne se voit qu'en comparant deux
+exports à un mois d'écart.
+
+La requête est donc conservée, et un commentaire en majuscules explique
+au-dessus qu'elle **ne sert plus qu'à figer les couleurs** et n'est pas du code
+mort. Sans cette phrase, elle serait supprimée au prochain nettoyage.
+
+### 38.2 Le résumé de l'agent contredisait son propre code
+
+Son compte rendu disait « palette conservée à l'identique ». Son résumé disait
+« retiré `rolesCible` et `useTrameCible` ». **Les deux ne pouvaient pas être
+vrais.**
+
+Le diff a tranché : `useTrameCible()` est toujours appelé dans les deux
+fichiers, le `useMemo` de `rolesCible` est inchangé, et l'appel à
+`paletteStable` apparaît en ligne de contexte, intact. C'est le **résumé** qui
+était faux.
+
+**Règle à retenir : vérifier contre le diff, jamais contre le récit.** Un compte
+rendu et un résumé produits par la même machine peuvent se contredire, et rien
+ne signale lequel croire. Ici, la contradiction portait précisément sur le seul
+point dont j'avais écrit qu'une erreur y serait invisible.
+
+### 38.3 Ce qui a été gardé
+
+`comparer()`, `synthese()`, `chargerTrameCible()`, `normaliser()` et les types
+de `trame-cible.ts` sont intacts : le prochain envoi les réutilise pour comparer
+le site **à son propre bilan** (défaut **G**). `ApresDeploiement.tsx` reste en
+place, avec une note d'en-tête disant qu'il n'est temporairement plus référencé
+et pourquoi — pas de fichier orphelin muet.
+
+Retirés proprement : la propriété `comparable` et son calcul, l'état `apres`,
+l'import `estTrame` dans les deux fichiers. `tsgo --noEmit` à 0 erreur, base
+inchangée.
+
+**Vu autrement, cette décision et le point G sont les deux moitiés d'un même
+geste** : on retire la comparaison à un modèle théorique, on met à la place
+celle qui a du sens — où ce site était, où il en est.
