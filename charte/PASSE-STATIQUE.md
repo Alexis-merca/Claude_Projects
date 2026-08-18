@@ -3121,3 +3121,69 @@ de mon côté ; `versions` revient à 20.
 maturité, et absence de repli sans use case), **3.8** (glisser-déposer), et
 **toute la section D** — dont **2.10**, la ligne de maturité de la page
 « Avant / après », qui n'a toujours jamais été exercée.
+
+---
+
+## 45. Recette navigateur — fin de la première traversée
+
+Troisième passe, sept points, tous réussis. **La recette est parcourue** pour ce
+qui ne demande pas un œil humain — vingt-cinq contrôles au total sur trois
+passes, dix-huit jours après la première ligne de code.
+
+Base annoncée revenue à l'identique (5/31/411/16/11/20). **Je n'ai pas pu le
+vérifier moi-même** : ma requête de contrôle a été refusée. C'est donc une
+affirmation de l'agent, pas une mesure de ma part.
+
+### 45.1 Les résultats
+
+**3.3** — une seule pastille de friction, sur la bonne carte, relevé carte par
+carte. **3.4** — libellé d'échelle affiché avec use case, **aucun libellé sans**
+use case : pas de repli inventé. **3.8** — glisser-déposer sur un autre couloir
+(`role` change) et sur une **frontière** (`role` + `role2`), vérifié en base.
+
+**2.10 — le dernier chemin livré sans avoir jamais été exercé.**
+
+```
+Maturité : 2/5 à l'audit — Visibilité basique, pas de contrôle sur charge…
+        → 4/5 au bilan — Anticipation des besoins, réduction mesurable…
+```
+
+Deux valeurs distinctes, libellés de l'échelle du use case. Le piège annoncé au
+§39 — la page comparant la maturité d'audit avec elle-même et affichant
+« 2 → 2 » — est évité.
+
+**2.12** frictions résolues barrées (`line-through`, `opacity 0.65`) et
+étiquetées, persistantes étiquetées. **2.9** aucune ligne « aucun outil » sur les
+trois pages d'environnement IT.
+
+**2.11 — mon seuil de 12 lignes cesse d'être une estimation.** 15 cibles dont
+deux de ~300 caractères : découpage 12 + 3, numérotation `(1/2)` et `(2/2)`,
+échelle **0,750**, hauteur de contenu 733 px pour une zone qui l'accepte. Le
+calcul posé au §32.2 et traîné depuis comme « estimé, jamais mesuré » est juste.
+
+### 45.2 La meilleure ligne du rapport n'était pas demandée
+
+**2.8** est réussi — 0,750 sur les douze pages d'un diagnostic, sur les dix d'un
+autre. Et l'agent ajoute de lui-même que **la boucle de convergence n'est jamais
+sollicitée** : la largeur plafonne à 1200/1600 avant que la hauteur ne morde.
+
+Donc le défaut **I** — l'échelle qui abandonne après 40 tours sans le dire —
+reste **non observé**. Ni corrigé, ni infirmé : jamais atteint, faute de contenu
+assez haut.
+
+**Réussir un contrôle et avoir éprouvé le risque qu'il vise sont deux choses
+différentes.** Un rapport qui ne fait pas cette distinction transforme un angle
+mort en case cochée. Celui-ci la fait.
+
+### 45.3 Ce que la traversée laisse ouvert
+
+**Pour un œil humain**, sur un artefact produit et non un DOM : **2.2** et
+**2.3** (l'estompage des outils répétés et sa légende survivent-ils au PDF puis
+au PPTX ?), et **2.5 bis** (les quatre marques restent-elles distinctes en noir
+et blanc ?).
+
+**Un défaut ouvert**, trouvé par la recette elle-même : le bouton « Saisie
+rapide » ne se monte pas (`RETOURS-USAGE.md` n° 2), ce qui rend `etapes.cible`
+inatteignable depuis l'interface. Corrigé ensuite.
+
+**Un angle mort nommé** : le défaut I, ci-dessus.
