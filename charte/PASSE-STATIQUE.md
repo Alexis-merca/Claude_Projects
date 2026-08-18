@@ -2704,3 +2704,89 @@ inchangée.
 **Vu autrement, cette décision et le point G sont les deux moitiés d'un même
 geste** : on retire la comparaison à un modèle théorique, on met à la place
 celle qui a du sens — où ce site était, où il en est.
+
+---
+
+## 39. Point G — le site comparé à son propre bilan (`fd72fc6`)
+
+Point 11 des exigences d'origine, « Partiel » depuis le 07/08, et seconde moitié
+du geste de §38 : on avait retiré la comparaison à un modèle théorique, on met à
+la place celle qui a du sens.
+
+Nouvelle page d'impression **« Avant / après le déploiement »**, une par
+processus portant un bilan, placée après la page du processus et ses pages de
+trajectoire. Elle affiche la phrase de `synthese(c, "bilan")`, puis trois
+colonnes — **« Ce qui disparaît »**, **« Ce qui arrive »**, **« Ce qui
+demeure »** —, les deux nombres d'étapes avec l'écart, et la maturité quand les
+deux sont posées.
+
+### 39.1 Le calcul, monté sur l'existant
+
+```ts
+comparer(
+  { processus: p, etapes },
+  { processus: { ...p, maturite: p.maturite_bilan }, etapes: etapesApresBilan(etapes) },
+)
+```
+
+Rien de neuf : `comparer()` était déjà générique, `synthese(…, "bilan")` déjà
+écrite avec son écart chiffré, `etapesApresBilan()` déjà utilisée par
+l'environnement IT. Il manquait l'appelant.
+
+**Le `{ ...p, maturite: p.maturite_bilan }` était le point à ne pas rater** :
+passer le même processus des deux côtés aurait affiché « 2 → 2 », un mensonge
+sur le seul chiffre qu'un directeur d'usine regarde.
+
+**Pas de section « rôles »**, et c'est écrit en commentaire : `etapesApresBilan`
+ne touche pas à `processus.roles`, les deux côtés sont identiques par
+construction. Sans la phrase, quelqu'un « corrigerait » l'oubli.
+
+### 39.2 Le rendu partagé, sans partager les mots
+
+Extraction de `Comparaison.tsx` (`Ensemble`, `TrioComparaison`), **libellés
+passés par l'appelant**. Raison donnée, et bonne : ce qui se partage, c'est la
+mise en forme des trois ensembles ; « ce qui apparaît dans la trame » n'est pas
+« ce qui arrive chez ce site ». `ApresDeploiement` consomme le même composant et
+garde sa formulation.
+
+### 39.3 Preuve sur données réelles, et une correction qui m'était due
+
+Sekurit, processus « Planification » (17 étapes, une seule marquée `mercateam`,
+support `Excel`) :
+
+```
+disparaissent : —
+arrivent      : Mercateam
+demeurent     : Au jugé, Excel, Logiciel (SIRH / GTA), Oral, Papier
+étapes        : 17 à l'audit / 17 au bilan
+```
+
+Cohérent avec les données : l'étape 6 perd `Excel` — générique, donc non
+conservé — au profit de `Mercateam`, mais `Excel` reste porté par sept autres
+étapes, donc il « demeure ». Aucune suppression, donc 17/17.
+
+**J'avais écrit dans le brief que Sekurit portait deux étapes marquées.**
+C'était vrai le matin même, faux au moment de l'envoi — l'utilisateur en avait
+retiré une en testant. L'agent a vérifié en base plutôt que de me croire et m'a
+corrigé. **Une prémisse mesurée reste vraie jusqu'à ce qu'elle ne le soit plus :
+une base vivante périme les mesures aussi vite qu'on les prend.**
+
+### 39.4 Ce qui reste non vérifié
+
+**La ligne de maturité n'a pas été exercée** : ni `maturite` ni
+`maturite_bilan` ne sont posées sur ce processus, la garde de `comparer()`
+masque donc la ligne. Le chemin est confirmé par lecture du code, pas par une
+mesure. C'est précisément le chemin où une erreur afficherait un faux chiffre —
+à tester dès qu'un diagnostic portera les deux maturités.
+
+**Redondance à corriger** : la phrase de `synthese` dit déjà « 17 étapes à
+l'audit / 17 au bilan », et le bloc de détail la répète. Le même fait deux fois
+sur une page client.
+
+**Débordement** : analysé et écarté — ~95 outils par colonne avant que la page
+ne rétrécisse, contre 5 à 15 dans un diagnostic réel. Le raisonnement est écrit,
+rien n'a été bricolé.
+
+Base au moment de l'envoi : **411 étapes** (une de plus qu'hier), 16 frictions,
+5 clients, 11 chiffres, 1 étape au bilan. Le décompte de référence bouge parce
+que l'application est enfin utilisée.
