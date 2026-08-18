@@ -9,6 +9,18 @@ faudrait-il pour s'en apercevoir ?* Une erreur affichée à l'écran est bénign
 on la voit. Une donnée perdue en silence ou un chiffre faux sur un slide client
 ne se découvre qu'après coup, et parfois jamais.
 
+**Revu le 18/08/2026.** Le produit a bougé depuis la première rédaction : le
+bilan est passé de trois à **quatre** positions, la comparaison à la trame
+générique a été **retirée**, et trois surfaces neuves sont apparues (état des
+frictions, page « Trajectoire de déploiement », page « Avant / après le
+déploiement »). Les points concernés sont corrigés ci-dessous : les faire
+tourner dans leur version d'origine aurait produit de **faux échecs**.
+
+**Déjà vérifié, inutile d'y revenir** : le diagramme ne perd plus sa place à
+chaque écriture (défaut F, confirmé par l'utilisateur dans le navigateur le
+18/08), et l'édition d'un champ fonctionne après le passage aux écritures
+gardées.
+
 **Contexte.** Tout ce qui est écrit dans `PASSE-STATIQUE.md` vient de la
 lecture du code et de mesures en base. La panne OAuth du 07/08 a montré la
 limite de cette méthode : deux passes de lecture avaient produit un diagnostic
@@ -55,6 +67,14 @@ puis modifier la même dans l'onglet B **sans recharger**.
 *Signe que c'est faux :* l'onglet B écrit sans protester et la modification de
 A disparaît. C'est le seul comportement que `db/README.md` déclare
 « réellement inacceptable ».
+
+**Le contrepoids, tout aussi important :** dans un **seul** onglet, enchaîner
+deux modifications sur deux étapes différentes, puis ajouter une friction, puis
+la supprimer. *Attendu :* aucun bandeau de conflit. Les écritures gardées
+renvoient la version fraîche précisément pour qu'un consultant seul ne se bloque
+jamais lui-même ; un bandeau ici voudrait dire que la garde est trop serrée et
+l'outil inutilisable à une personne. **Les deux moitiés de ce contrôle valent
+ensemble** : l'une sans l'autre ne prouve rien.
 
 **1.5 — La suppression d'une étape détache-t-elle la friction sans l'emporter ?**
 Rattacher une friction à une étape, puis supprimer l'étape.
@@ -106,11 +126,43 @@ flèche `Mercateam ↔ Logiciel (ERP)` apparaît dans le schéma.
 *Signe que c'est faux :* il ne reste que Mercateam. C'est le défaut corrigé
 (§28) — un site sans ERP, ce qu'un industriel repère immédiatement.
 
-**2.5 — Les trois positions du bilan font-elles ce qu'elles annoncent ?**
-Marquer une étape « supprimée » : elle doit disparaître de l'« après ».
-Marquer « inchangée » : elle doit rester **avec ses supports d'origine**.
-*Signe que c'est faux :* une étape « inchangée » perd ses outils, ou une
-« supprimée » subsiste.
+**2.5 — Les quatre positions du bilan font-elles ce qu'elles annoncent ?**
+« supprimée » : l'étape disparaît de l'« après ». « inchangée » : elle reste
+**avec ses supports d'origine**. **« en cours » : elle reste elle aussi avec ses
+supports d'origine**, exactement comme « inchangée » — c'est délibéré, la
+projection ne montre que l'acquis.
+*Signe que c'est faux :* une « inchangée » ou une « en cours » perd ses outils,
+une « supprimée » subsiste, ou une « en cours » est traitée comme migrée — ce
+qui gonflerait l'« après » et le rendrait flatteur et faux.
+
+**2.5 bis — La distinction tient-elle SANS la couleur ?** Imprimer une page
+portant les quatre marques, **en noir et blanc**. *Attendu :* « Mercateam »
+contour plein, « en cours » contour **pointillé**, « supprimée » texte
+**barré**, « inchangée » sans contour.
+*Signe que c'est faux :* deux états indiscernables. C'est l'invariant le plus
+ancien du projet, et le seul que l'impression peut casser sans que l'écran le
+montre.
+
+**2.10 — La page « Avant / après le déploiement » dit-elle vrai ?**
+Poser une maturité d'audit **et** une maturité de bilan sur un processus, y
+marquer des étapes, puis imprimer.
+*Attendu :* la ligne de maturité affiche deux valeurs **différentes** — celle de
+l'audit puis celle du bilan.
+*Signe que c'est faux :* « 2 → 2 ». La page comparerait alors la maturité
+d'audit avec elle-même. **Ce chemin n'a jamais été exercé** : aucun processus ne
+porte les deux maturités, la ligne ne s'affiche donc jamais.
+
+**2.11 — La page « Trajectoire de déploiement » reste-t-elle lisible ?**
+Renseigner une dizaine de cibles, dont une longue, puis imprimer.
+*Attendu :* une page par tranche de 12 étapes, corps lisible.
+*Signe que c'est faux :* texte minuscule. Le seuil de 12 lignes est un **calcul,
+jamais une mesure**, et le texte de l'étape n'y est pas tronqué.
+
+**2.12 — L'état des frictions sort-il à l'impression ?**
+Marquer des frictions « résolue » et « toujours d'actualité », puis imprimer.
+*Attendu :* les résolues barrées et étiquetées, les persistantes étiquetées.
+*Signe que c'est faux :* aucune distinction sur le papier — la couleur seule
+n'aurait pas survécu.
 
 **2.6 — Le multi-blocs se voit-il correctement dans la mosaïque ?**
 Sur `template-use-case`, Excel doit apparaître dans **6 blocs**, Mail 5, Oral
@@ -149,8 +201,18 @@ rôles et leurs supports. **Sans maturité ni bilan** — ils appartiennent au
 site, pas à la trame.
 
 **3.2 — Le renommage d'un processus ne casse pas le rattachement.** Renommer
-« UC 7 » en « Habilitations Sekurit », recharger, vérifier que la comparaison à
-la trame cible fonctionne toujours (elle passe par `use_case`, jamais le nom).
+« UC 7 » en « Habilitations Sekurit », recharger, puis créer un nouveau site en
+cochant ce use case : il doit se pré-remplir depuis la trame. Le rattachement
+passe par `use_case`, jamais par le nom.
+*Note :* ce point testait à l'origine la comparaison à la trame cible,
+**retirée le 18/08** — un audit Mercateam n'est pas générique.
+
+**3.10 — Les deux boutons d'ajout fonctionnent-ils ?** « Ajouter une friction »
+et « ajouter un chiffre clé ». *Attendu :* une ligne apparaît, portant
+« À préciser ».
+*Signe que c'est faux :* une erreur. Ces deux boutons **n'ont jamais pu
+fonctionner** jusqu'au 17/08 — les contraintes de base rejetaient les champs
+vides qu'ils envoyaient, et personne ne s'en était aperçu.
 
 **3.3 — Les pastilles de friction sur les cartes du diagramme.** Jamais
 vérifiées (§17.6). Rattacher une friction à une étape, la pastille doit
