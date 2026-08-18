@@ -530,11 +530,16 @@ export function tracerFleches(zone, etapes, options = {}) {
     const y1 = a.y + a.h / 2;
     const x2 = b.x - 3;
     const y2 = b.y + b.h / 2;
-    const mx = x1 + (x2 - x1) / 2;
-    const r = Math.max(2, Math.min(9, (x2 - x1) / 2 - 2));
-    const s = y2 > y1 ? 1 : -1;
-    const d = Math.abs(y1 - y2) < 2
-      ? `M${x1},${y1} L${x2},${y1}`
+    const dx = x2 - x1, dy = y2 - y1;
+    const mx = x1 + dx / 2;
+    /* Le rayon doit tenir dans l'écart horizontal ET vertical : sinon les deux
+       quarts de cercle se chevauchent, le tracé repart en arrière et la pointe
+       déborde sur les cartes. Sous 2 px de rayon utile, ou si les cartes se
+       chevauchent horizontalement, on trace un simple segment. */
+    const r = Math.min(9, Math.abs(dx) / 2 - 2, Math.abs(dy) / 2);
+    const s = dy > 0 ? 1 : -1;
+    const d = (Math.abs(dy) < 2 || r < 2 || dx <= 0)
+      ? `M${x1},${y1} L${x2},${y2}`
       : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
 
     /* Le lien est porté par l'étape qui reçoit la flèche. */

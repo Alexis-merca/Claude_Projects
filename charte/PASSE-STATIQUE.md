@@ -2790,3 +2790,71 @@ rien n'a été bricolé.
 Base au moment de l'envoi : **411 étapes** (une de plus qu'hier), 16 frictions,
 5 clients, 11 chiffres, 1 étape au bilan. Le décompte de référence bouge parce
 que l'application est enfin utilisée.
+
+---
+
+## 40. `src/flux/` a été modifié — divergence rapatriée
+
+L'utilisateur a envoyé quatre instructions directement à l'agent pendant que
+mon envoi tournait : bouton glissant à quatre états avec le logo, retrait des
+aplats noirs, **correction d'une flèche cassée**, et contour violet pour
+« Mercateam ». Mes briefs portent toujours la consigne « `src/flux/` est
+intouchable » ; ces instructions-là ne la portaient pas.
+
+**Résultat : l'agent a modifié `src/flux/moteur.js`** pour corriger la flèche.
+C'est exactement le cas que l'invariant existait pour empêcher.
+
+### 40.1 Le diagnostic de la flèche était juste
+
+```js
+const r = Math.max(2, Math.min(9, (x2 - x1) / 2 - 2));   // avant
+```
+
+Le `Math.max(2, …)` impose un rayon d'au moins 2 px **même quand l'écart
+horizontal ne le permet pas**. Deux cartes proches et décalées de quelques
+pixels : les deux quarts de cercle se chevauchent, `mx - r` passe avant `x1`,
+le tracé repart en arrière et la pointe déborde sur la carte. La correction
+borne le rayon par l'écart horizontal **et** vertical, et se replie sur un
+segment droit sous 2 px utiles ou quand `dx <= 0`.
+
+Bon diagnostic, bonne correction — mais au mauvais endroit.
+
+### 40.2 Pourquoi c'était un problème, et pas un détail
+
+`flux/moteur.js` est maintenu **ici**, dans ce dépôt, avec cinq fichiers de
+tests. La copie de Lovable en est un import. Une correction qui n'existe que
+côté Lovable est une correction que **le prochain import écrase en silence**.
+
+Pire : `flux/geometrie.test.cjs` est un test de non-régression qui **compare
+les tracés de flèches produits par `flux/moteur.js` à ceux de
+`diagnostic-os.html`**, le mono-fichier de référence. Corriger un seul des deux
+fait diverger deux algorithmes que le test exige identiques — il aurait échoué
+au premier lancement, en désignant la correction comme la régression.
+
+Vérifié : le code fautif était **identique dans les deux sources**,
+`flux/moteur.js:534` et `diagnostic-os.html:2378`. Le bug venait de l'origine ;
+il n'avait simplement jamais été vu, faute d'usage.
+
+### 40.3 Ce que j'ai fait
+
+Rapatrié la correction **à l'identique dans les deux fichiers**, au caractère
+près, pour que les trois copies convergent et que l'invariant du test — « le
+moteur seul reproduit le mono-fichier » — reste vrai.
+
+**Je n'ai pas pu lancer le test** : `playwright-core` n'est pas installé dans ce
+dépôt (aucun `package.json` à la racine), alors que `geometrie.test.cjs`
+l'exige. La convergence est donc établie par lecture et par égalité de texte,
+pas par exécution. À lancer dès qu'un environnement le permet.
+
+### 40.4 La leçon
+
+L'invariant « `src/flux/` est intouchable » ne tient que si **chaque** consigne
+le rappelle. Une instruction envoyée directement, sans ce garde-fou, le franchit
+sans que rien ne s'y oppose — l'agent n'a aucun moyen de le connaître.
+
+Deux remèdes possibles, à trancher : inscrire la règle dans la connaissance
+permanente du projet Lovable (`set_project_knowledge`), pour qu'elle
+s'applique à toutes les instructions quelle qu'en soit la source ; ou accepter
+que le moteur vive désormais dans Lovable et faire du dépôt le miroir. **Le
+statu quo est le seul mauvais choix** : deux sources qui divergent sans que
+personne ne le sache.
