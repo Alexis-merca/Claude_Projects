@@ -3612,3 +3612,76 @@ suivi.**
 
 Base à la référence `6|39|532|17|12|23`, aucune donnée d'essai résiduelle,
 **aucun instantané créé** — deuxième passe navigateur consécutive sans trace.
+
+---
+
+## 50. Les quatre retouches, et la première note interne — 18/08/2026
+
+Correctif de l'envoi 3. Commit Lovable `6dd1518`. Les quatre points sont
+faits, et vérifiés contre le catalogue et le diff.
+
+### 50.1 `creer_friction` rejoint `creer_chiffre`
+
+L'asymétrie est levée : `p_etape uuid default null`, ancienne signature à cinq
+arguments supprimée, `revoke` de `public` et `anon`, `grant` à `authenticated`
+et `service_role` **reposés explicitement**. Vérifié dans le catalogue : les
+sept fonctions gardées portent désormais exactement le même jeu de droits —
+`postgres`, `authenticated`, `service_role`, et rien d'autre. Pas de dérive.
+
+`ajouterFriction` redevient **une seule écriture**. La friction flottante n'est
+plus atteignable.
+
+### 50.2 La règle qui manquait, écrite comme une règle
+
+Le correctif ne se contente pas de rendre le compteur visible en lecture : il
+énonce le principe dont l'absence avait produit le trou.
+
+> *La présence d'un contenu se signale TOUJOURS à l'écran ; seule l'invitation
+> à en ajouter est réservée à l'édition.*
+
+D'où deux conditions désormais **distinctes** là où il n'y en avait qu'une :
+`marqueurChiffres` est indépendant d'`affordance`, `fleche` ne l'est pas. Le
+défaut venait de ce que « il y a quelque chose ici » et « tu peux en ajouter »
+partageaient un seul booléen — deux idées différentes portées par une seule
+variable finissent toujours par se contredire quelque part.
+
+L'asymétrie écran/impression est écrite en tête du composant, avec sa raison
+(un « 2 » muet sur une carte imprimée poserait une question sans réponse en
+salle) et l'interdit explicite : *ne « corrigez » pas l'asymétrie*. Sans cette
+dernière phrase, quelqu'un la réparerait de bonne foi.
+
+### 50.3 Le commentaire remis d'aplomb
+
+Réécrit au passé, nommant les vrais responsables — `PastillesFrictions` et
+`MarquesBilan` — puis notant que leur fusion n'a laissé qu'une enveloppe, ce
+qui ne change rien à la leçon puisque `closest` résiste quel qu'en soit le
+nombre. L'histoire est de nouveau vraie, et la leçon survit à ce qui l'a
+rendue caduque.
+
+### 50.4 La première note interne de l'application
+
+Base à la référence sur tous les compteurs suivis — `6|39|532|17|12|23`,
+`supports` de l'étape d'essai remis à `Excel`, aucune friction ni aucun chiffre
+d'essai — **sauf une** : une `note_interne` valant `ok`, sur
+`sekurit-float-france / onboarding`, étape 1.
+
+Ce n'est pas un résidu d'agent : les preuves de cet envoi et du précédent ont
+toutes été menées sur `test-06-08`, et Sekurit n'a servi qu'à des mesures en
+lecture. Selon toute vraisemblance, **c'est l'utilisateur qui a essayé le champ
+lui-même dans la préversion.**
+
+C'est donc la première écriture humaine dans un champ livré ce jour-là. À
+comparer avec `etapes.cible`, livrée le 09/08 et restée à zéro pendant dix
+jours parce que son seul point d'entrée ne se montait pas (§46). Ici, le trajet
+existe et il a été emprunté dans l'heure. **Un « ok » vaut mieux qu'un compteur
+à zéro qu'on interprète.**
+
+### 50.5 Ce que la série laisse ouvert
+
+- La visibilité des chiffres à l'impression : **écartée sciemment**, pas
+  oubliée. La décision est écrite dans le composant.
+- L'état de bilan des frictions reste au panneau du bas : périmètre assumé de
+  l'envoi 3.
+- Les trois points de recette qui demandent un œil humain (§45.3) : **2.2**,
+  **2.3** et **2.5 bis**, sur artefact produit — et il faudrait maintenant y
+  ajouter que la pastille imprimée doit rester identique après cette série.
