@@ -2905,3 +2905,67 @@ installé dans ce dépôt, qui n'a pas de `package.json`. L'alignement des trois
 copies est établi par lecture et par égalité de texte, jamais par exécution.
 C'est la seule vérification qui manque, et elle ne coûtera rien le jour où un
 environnement permettra de la faire.
+
+---
+
+## 42. Les règles quittent le brief pour devenir permanentes
+
+Deux corrections de fond, décidées après la question « `REPRISE.md` est-il
+toujours nécessaire ? ». Réponse : oui, mais il portait deux choses de natures
+opposées, et l'une pourrissait.
+
+### 42.1 `REPRISE.md` cesse de décrire l'état courant
+
+Écrit le 13/08, il portait le 18/08 **cinq affirmations fausses** : un journal
+« §1 à §35 » qui en comptait 41, « 410 étapes » pour 411, un « point E, envoi 3
+en cours » clos depuis, et deux défauts « en attente » livrés — dont l'un
+confirmé par l'utilisateur lui-même.
+
+C'est la faute exacte que la feuille de route avait été réécrite pour ne plus
+commettre. **Et elle est pire ici** : c'est le premier fichier qu'on lit, donc
+celui qu'on croit sans vérifier.
+
+Sections « Où on en est » et « Prochaines étapes » supprimées, chiffres de base
+supprimés, références à des numéros de section supprimées. À la place, une table
+qui dit **où vit chaque question** — le journal pour l'état, la feuille de route
+pour la suite, l'inspection pour les dettes, les retours d'usage pour le
+terrain, et **la base elle-même pour les décomptes, jamais un chiffre recopié**.
+332 → 273 lignes.
+
+Le fichier porte désormais l'avertissement : *si tu y ajoutes un état, une date
+ou un décompte, tu réintroduis le défaut*.
+
+### 42.2 Les invariants passent dans la connaissance permanente de Lovable
+
+`set_project_knowledge` était **vide**. Les invariants ne vivaient que dans mes
+briefs — donc ils ne s'appliquaient qu'aux instructions que j'écrivais.
+
+C'est précisément ce qui a permis l'incident de §40 : l'utilisateur a demandé
+directement de corriger une flèche, sa consigne ne portait pas la règle sur
+`src/flux/`, et l'agent n'avait **aucun moyen de la connaître**. Le reproche ne
+lui revenait pas ; il revenait à l'endroit où la règle était rangée.
+
+Y sont désormais inscrits : les huit invariants de fond (marque jamais par la
+couleur seule, modes disjoints, `en_cours` non migré, systèmes de référence
+conservés, `client_json` dans la même migration, processus comme unité de
+concurrence, impression qui rétrécit au lieu de déborder, copie de référence du
+moteur hors de Lovable) ; la charte graphique avec ses pièges — General Sans 600
+jamais 700, pas de vert, ne jamais baisser un contraste ; et la méthode — une
+preuve n'est pas une migration, prouver le refus et pas seulement le succès,
+mesurer chaque chemin, signaler les écarts plutôt que les lisser.
+
+**Ces règles s'appliquent maintenant à toutes les instructions, quelle qu'en
+soit la source** — y compris celles que l'utilisateur envoie directement, sans
+passer par moi. C'est le vrai correctif de §40 ; le rapatriement du code n'en
+était que la réparation.
+
+### 42.3 Le partage qui en résulte
+
+| Où | Quoi | Pour qui |
+|---|---|---|
+| Connaissance Lovable | invariants, charte, exigences de preuve | l'agent, à chaque instruction |
+| `REPRISE.md` | produit, topologie, démarche de vérification, décisions | une session Claude qui reprend |
+| `PASSE-STATIQUE.md` | l'état, les mesures, ce qui reste faux | quiconque veut savoir où on en est |
+
+La démarche de vérification reste hors de Lovable : elle dit comment **contrôler
+l'agent**, elle n'a pas à être lue par lui.

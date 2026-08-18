@@ -54,7 +54,7 @@ interne de Lovable. Le dépôt git ne contient que la charte, les mesures et les
 trames — pas une ligne de `src/`. Conséquences :
 
 - on ne modifie jamais le code directement, **on écrit des briefs** ;
-- on n'a aucune prise sur l'index git de Lovable (voir §7, `routeTree.gen.ts`) ;
+- on n'a aucune prise sur l'index git de Lovable (voir « Pièges connus ») ;
 - si l'accès Lovable se ferme, le code part avec.
 
 **Connecter le projet Lovable à GitHub est la première amélioration
@@ -64,8 +64,9 @@ modifier les sources directement.
 
 ### Les documents à lire, dans cet ordre
 
-1. `charte/PASSE-STATIQUE.md` — **le journal**, §1 à §35. Chaque entrée cite son
-   commit et sa mesure. C'est la mémoire du projet.
+1. `charte/PASSE-STATIQUE.md` — **le journal**, tenu par sections numérotées.
+   Chaque entrée cite son commit et sa mesure. C'est la mémoire du projet, et
+   **sa dernière section est le point de reprise**.
 2. `charte/INSPECTION-PARCOURS.md` — les onze points du parcours attendu
    confrontés au code réel, avec les défauts **A** à **J**. C'est la carte des
    dettes.
@@ -185,92 +186,33 @@ périmée de la trame.
 
 ---
 
-## 5. Où on en est
+## 5. Où on en est — **ce document ne le dit pas**
 
-### Livré et vérifié
+C'est délibéré. Une porte d'entrée qui décrit l'état courant vieillit en
+quelques jours et devient un piège : on la lit en premier, donc on la croit sans
+vérifier. Ce fichier a commis exactement cette faute entre le 13 et le 18/08 —
+il annonçait un journal de 35 sections quand il en comptait 41, un chantier
+« en cours » clos depuis, et deux défauts « en attente » déjà livrés.
 
-- **Le bloc bilan complet** (§31–32) : quatrième état `en_cours`, bilan des
-  frictions (`resolue` / `persistante`), `cible` en texte libre par étape ;
-  saisie à l'écran et page « Trajectoire de déploiement » à l'impression.
-- **`routeTree.gen.ts` sorti du suivi** (§33). Il oscillait à chaque commit.
-  Attention : `.gitignore` seul ne dé-suit pas un fichier déjà suivi — il a
-  fallu le supprimer du disque pour qu'il quitte l'index.
-- **Point E, garde de concurrence** (§34–35) : les mises à jour des enfants sont
-  gardées par les deux chemins — champ à champ (`maj_etape`, `maj_friction`,
-  `maj_chiffre`) et diagramme (`appliquer_mutation_flux`, qui rend au passage un
-  geste du diagramme **atomique** : plus de diagramme à moitié muté).
+**L'état vit ailleurs, et à un seul endroit chacun :**
 
-### En cours au moment d'écrire
+| Question | Fichier |
+|---|---|
+| Qu'a-t-on fait, mesuré, et que reste-t-il faux ? | `PASSE-STATIQUE.md`, la dernière section |
+| Que reste-t-il à faire, et dans quel ordre ? | `FEUILLE-DE-ROUTE.md` |
+| Quelles dettes le code porte-t-il ? | `INSPECTION-PARCOURS.md`, défauts A à J |
+| Qu'a constaté l'utilisateur en s'en servant ? | `RETOURS-USAGE.md` |
+| Combien de lignes en base ? | La base elle-même — `query_database`, jamais un chiffre recopié |
 
-**Point E, troisième envoi** — créations et suppressions d'enfants
-(`creer_friction`, `creer_chiffre`, `supprimer_friction`, `supprimer_chiffre`),
-garde de version sur `deleteProcessus`, retrait de `deleteEtape` devenue code
-mort, et **correction du commentaire de tête de `diagnostic.ts`** qui affirme
-« cet invariant EST appliqué » alors que ce n'est vrai que des mises à jour.
+**Commence toujours par lire la dernière section de `PASSE-STATIQUE.md`.** Elle
+dit où le travail s'est arrêté, ce qui a été prouvé, et ce qui ne l'a pas été.
 
-À vérifier au retour : `tsgo` à 0, la preuve du refus **avant** celle du succès,
-la base rendue à l'identique, et les droits des nouvelles fonctions
-(`security invoker`, exécutable par `authenticated`).
+Ce fichier-ci ne porte que ce qui ne vieillit pas : le produit, la topologie, la
+démarche, les invariants, les pièges, les décisions tranchées. Si tu y ajoutes
+un état, une date ou un décompte, tu réintroduis le défaut.
 
-### Chiffres de référence de la base
 
-410 étapes, 16 frictions, 5 clients, 11 chiffres clés, 1 étape au bilan
-(Sekurit), 0 friction évaluée, 0 cible. Le client `xxx-xx` est une création
-manuelle de test. `test-06-08` est le client de test : **c'est là qu'on écrit
-des jeux d'essai, jamais sur Sekurit ni sur les trames.**
-
----
-
-## 6. Prochaines étapes, dans l'ordre
-
-**1. Finir le point E** (envoi 3 en cours), puis relire le commentaire de
-`diagnostic.ts` pour vérifier qu'il ne promet plus que ce qu'il tient.
-
-**2. La recette navigateur.** C'est le plus gros trou. `RECETTE-NAVIGATEUR.md`
-est écrit, 24 points ordonnés par discrétion de la panne, **jamais parcouru**.
-Tout ce qui est écrit dans `PASSE-STATIQUE.md` vient de la lecture du code et de
-mesures en base. L'utilisateur a confirmé le 13/08 que l'édition fonctionne à
-l'écran — c'est le seul point vérifié dans un navigateur à ce jour.
-
-**Contrainte à connaître : cette application n'est vérifiable visuellement que
-par un humain connecté.** Un rendu sans tête est bloqué par le garde
-`_authenticated`. Le déblocage : que l'utilisateur se connecte dans la fenêtre
-de préversion Lovable, la session devient alors disponible au tour suivant.
-
-**3. Les retours d'usage.** L'utilisateur a commencé à parcourir l'application
-et va envoyer des points d'amélioration. Format convenu : en vrac, une ligne par
-point, avec **où** (client + écran), **ce qu'il a vu vs ce qu'il attendait**, et
-une seule étiquette **CASSÉ** ou **MIEUX**. À ranger dans
-`charte/RETOURS-USAGE.md` en les croisant avec l'inspection — plusieurs seront
-des confirmations terrain de défauts déjà connus.
-
-**4. Les défauts ouverts de l'inspection**, par ordre de gravité :
-
-- **D** — la projection « après » hérite des corrections de l'« avant ». Les
-  deux blocs `EnvironnementIT` reçoivent le même `client.si`, clefé
-  `outil|bloc` sans notion d'avant/après. Un outil masqué à la main dans le
-  relevé est aussi masqué dans la projection.
-- **G** — aucune page ne confronte le relevé du site à **son propre bilan**. La
-  page « Cible de référence » compare à la trame générique.
-  `synthese(comparaison, "bilan")` est écrite dans `trame-cible.ts` et **jamais
-  appelée** depuis l'impression.
-- **F** — le défilement du diagramme n'est mémorisé nulle part, et le zoom vit
-  dans un `useRef` perdu au rechargement.
-- **I** — l'échelle d'impression abandonne après 40 tours (~14 s) sans le dire ;
-  la capture PPTX a un délai de 30 s par page et un repli en définition simple
-  qui ne prévient pas non plus.
-- **J** — l'ordre des onglets (`processus.rang`) n'est pas modifiable, alors que
-  l'ordre de restitution est un choix éditorial.
-
-**5. Les dettes de cohérence** (§3 de la feuille de route) : le déclaratif comme
-catégorie d'outil plutôt que mot-clé (coût faible, forte valeur client), puis
-l'unification des clefs dans la couche schéma — **la seule entrée vraiment
-chère**, qui casse quatre choses dont deux avec perte silencieuse, et qui ne se
-tente pas sans recette préalable.
-
----
-
-## 7. Pièges connus
+## 6. Pièges connus
 
 **`routeTree.gen.ts`** — généré par le plugin TanStack, désormais hors suivi.
 Conséquence assumée : `tsgo --noEmit` seul échoue sur un clone neuf tant qu'un
@@ -298,7 +240,7 @@ sera pas fait.
 
 ---
 
-## 8. Décisions déjà tranchées — ne pas les rouvrir
+## 7. Décisions déjà tranchées — ne pas les rouvrir
 
 - **Le processus est l'unité de concurrence**, pas la ligne. Arbitré par
   l'utilisateur : pas de colonne `version` sur les enfants, pas de migration sur
@@ -319,7 +261,7 @@ sera pas fait.
 
 ---
 
-## 9. Ton et exigences de l'utilisateur
+## 8. Ton et exigences de l'utilisateur
 
 Il veut **la vérité sur l'état réel**, pas des comptes rendus rassurants. Ce qui
 lui est utile : les écarts signalés, les approximations annoncées comme telles,
