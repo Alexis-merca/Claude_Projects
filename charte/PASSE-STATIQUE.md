@@ -3433,3 +3433,90 @@ d'un diagnostic contient les notes internes. C'est nécessaire — sans quoi une
 restauration les effacerait — mais ce fichier n'est donc pas un artefact à
 remettre à un client. Le livrable client reste le PDF et le PPTX, d'où la note
 est absente.
+
+---
+
+## 48. Un seul propriétaire pour la surcouche des cartes — 18/08/2026
+
+Envoi 2 : la correction que le §47.4 avait mise au jour, puis un refactor
+préparatoire. Commit Lovable `e8b8e83`.
+
+### 48.1 A — `recopier` transmet enfin le rattachement
+
+Une ligne, celle qui manquait, avec la même remise en correspondance que les
+frictions. Et surtout, l'exclusion de `note_interne` est passée d'accident à
+décision : elle est maintenant **écrite dans l'en-tête de la fonction**, à côté
+de la règle du bilan qu'elle prolonge.
+
+> *Le bilan ne se recopie jamais : il appartient au diagnostic, pas à la trame.
+> La note interne d'étape non plus : une note de travail de consultant relève
+> de l'audit en cours, pas du modèle.*
+
+**Un comportement juste par accident et un comportement juste par décision se
+ressemblent jusqu'au jour où quelqu'un touche au code.** Le premier ne survit
+pas à ce jour-là.
+
+### 48.2 B — trois observateurs deviennent un
+
+`PastillesFrictions` et `MarquesBilan` greffaient chacun leurs portails sur les
+mêmes `.flux__carte[data-etape]`, **chacun avec son `MutationObserver`** sur le
+même conteneur, donc deux gardes de réentrance concurrentes — et l'envoi 3
+devait en ajouter une troisième.
+
+Fondus en `SurcoucheCartes.tsx` : un observateur, une garde `memesNoeuds`, une
+liste de cartes, toutes les surcouches posées dessus. `MarquesBilan.tsx` devient
+un module de formes qui ne greffe plus rien. `BoutonSaisieRapide` reste à part —
+son ancre est l'en-tête, pas la carte.
+
+Le conteneur se résout par `closest("[data-diagram-slot]")`, le seul des trois
+mécanismes qui ait résisté : `previousElementSibling` avait déjà coûté le défaut
+du §46, `parentElement` marche mais casse à l'insertion d'un niveau d'enveloppe.
+
+### 48.3 Ce que j'ai vérifié, et pourquoi c'était le bon point
+
+Un refactor qui doit « ne rien changer » se vérifie sur **la condition
+d'affichage**, pas sur le rendu — c'est là que l'équivalence se perd.
+
+L'ancien code gatait depuis le parent :
+
+```tsx
+{modeBilan || marques.size ? <MarquesBilan marques={marques} edition={modeBilan} …/> : null}
+```
+
+Le nouveau l'internalise : `bilanActif = edition || marques.size > 0`. Les trois
+cas coïncident. Y compris le nettoyage des classes, qui était le point le plus
+fragile : quand `bilanActif` retombe, React exécute le nettoyage de la passe
+précédente **avant** d'entrer dans le corps qui retourne aussitôt — les classes
+`carte-bilan-*` sont donc bien retirées, là où un `if` mal placé les aurait
+laissées collées.
+
+Site d'impression relu séparément : `<SurcoucheCartes/>` sans `edition` donne
+`bilanActif = marques.size > 0`, soit le gate d'origine au caractère près. Les
+six exports utilisés ailleurs sont conservés — le résumé de l'agent n'en citait
+que quatre, ce qui aurait suffi à m'inquiéter si je m'étais arrêté au résumé.
+
+Base à la référence, et **`versions` n'a pas bougé** : l'agent a mené ses
+mesures sans entrer en mode modifier, qui aurait déclenché un instantané. C'est
+la première fois qu'une passe navigateur ne laisse aucune trace du tout.
+
+### 48.4 Une preuve substituée, et pourquoi je l'ai refusée
+
+L'agent a signalé — honnêtement, deux fois — que son test de bascule d'onglet
+échouait, et l'a remplacé par une bascule en mode bilan.
+
+Ce substitut ne vaut rien, et il faut voir pourquoi : passer de lecture à bilan
+ne change ni `edition` sur le diagramme ni la liste d'étapes. **Le moteur ne
+reconstruit donc rien.** Les cartes restent les mêmes nœuds, `memesNoeuds`
+renvoie vrai, `cartes` n'est jamais réécrit — le test ne peut pas échouer, quoi
+qu'on ait cassé. Il prouve que la surcouche s'affiche en mode bilan, pas qu'elle
+survit à une reconstruction.
+
+Ce qui reconstruit vraiment, c'est une **mutation du contenu** : modifier le
+texte d'une étape en mode modifier passe par `appliquerMutation`, invalide la
+requête, et la carte d'origine est détruite puis remplacée.
+
+**Un test qui ne peut pas échouer n'est pas une preuve faible, c'en est
+l'absence** — et il coûte plus cher qu'un trou déclaré, parce qu'il occupe la
+case. Le risque réel est ici faible (même logique d'observateur, seule la
+résolution du conteneur change), mais « faible » n'est pas « prouvé », et ce qui
+se décrocherait part dans un PDF client. Refait en tête de l'envoi 3.
