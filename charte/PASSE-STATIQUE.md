@@ -2573,3 +2573,71 @@ Mises à jour, créations, suppressions, et le geste du diagramme : tout ce qui
 un refus mesuré. `deleteClientRow` reste seule sans garde — un appelant unique,
 `clients.index.tsx`, qui **dispose de la version du client**. La garde y serait
 immédiate ; il ne manque qu'une décision.
+
+---
+
+## 37. Le diagramme garde sa place (`0b6b774`)
+
+Premier retour d'usage réel du projet (`RETOURS-USAGE.md`, 17/08) : à chaque
+écriture, le défilement horizontal repartait au début et le zoom se
+réinitialisait. Défaut **F** de l'inspection, écrit le 07/08 avec la mention
+« à confirmer au navigateur ». Confirmé par l'usage, dix jours plus tard.
+
+### 37.1 Mon hypothèse était fausse, la mesure l'a corrigée
+
+J'avais brieffé en supposant **deux causes distinctes** : le balisage reconstruit
+pour le défilement, et l'observateur du diagramme remettant le zoom à 100 % pour
+le second — en m'appuyant sur le commentaire de `impression.$code.tsx` qui
+décrit ce comportement.
+
+La mesure dit autre chose. Banc d'essai isolé, rendu dans un vrai navigateur :
+
+- `.flux-defile` appartient au balisage produit par le moteur. À chaque
+  mutation, React réécrit l'`innerHTML` de l'hôte : le conteneur est
+  **remplacé**, pas vidé. Mesuré — le nœud avant et après n'est pas le même.
+- **Le moteur ne remet rien à 100 %.** Il écrit `zoom:1` en dur dans le style de
+  `.flux` à chaque reconstruction, et l'enveloppe repose la vraie valeur après
+  coup.
+
+**Une seule cause, pas deux** : le balisage neuf naît sans ces valeurs, et tout
+se joue dans la fenêtre entre sa naissance et le moment où l'enveloppe les
+repose. Avoir demandé un diagnostic *avant* le correctif a évité de traiter un
+symptôme inexistant.
+
+### 37.2 Le correctif, et la boucle évitée
+
+Tout dans `DiagrammeAvecZoom.tsx` ; `src/flux/` et `clients.$code.tsx`
+inchangés — un seul fichier au diff.
+
+- **Défilement** : écoute `scroll` **en capture sur l'hôte**, nœud que React ne
+  remplace jamais — donc aucune réattache quand le conteneur interne est
+  reconstruit. Position gardée en continu, jamais relevée « juste avant » la
+  reconstruction, où elle est déjà perdue.
+- **Restauration** dans un `useLayoutEffect` à chaque rendu **et** dans la même
+  image que `acheverRendu` : avant peinture, donc aucun saut visible.
+- **Zoom** : on repose la propriété CSS sur `.flux`, **jamais dans le curseur**,
+  et seulement si elle diffère. Une propriété de style ne déclenche ni `input`,
+  ni `change`, et l'observateur n'écoute que `childList` — la boucle que
+  j'avais signalée comme le vrai risque est structurellement impossible. Un
+  drapeau `enCours` protège en plus contre la réentrance.
+
+**Preuve de l'absence de boucle** : au repos, le compteur de mutations de style
+reste figé (447 puis 447 sur trois secondes). C'est le contrôle qui manquait le
+plus, et il a été fait.
+
+Trois mutations successives : `scrollLeft` reste à 500, `zoom` à 0,7. Après
+rechargement, le zoom revient à 70 % — mémorisé par processus dans
+`sessionStorage`, ce qui clôt au passage le second volet du défaut F (zoom perdu
+au rechargement).
+
+### 37.3 Ce qui reste imparfait
+
+La clef de `sessionStorage` est `flux:zoom:<id>` où `id` est le **code** du
+processus, un slug, pas son uuid — l'appelant passe `processus.code`. Deux
+clients ayant un processus de même code partageraient donc leur zoom. Sans
+gravité, mais à corriger si l'on touche à ce fichier.
+
+**La page réelle n'a pas été testée** : aucune session ne peut être ouverte
+depuis l'agent. Le banc reproduisait le chemin exact de l'enveloppe, ce qui est
+la meilleure approximation possible — mais c'est une approximation, et seul
+l'usage tranchera.
