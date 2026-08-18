@@ -12,7 +12,7 @@ déduits ensuite, pas demandés à l'utilisateur.
 
 ## 2026-08-17
 
-### 1. Le diagramme perd sa place à chaque écriture — **CASSÉ**
+### 1. Le diagramme perd sa place à chaque écriture — **CASSÉ → RÉSOLU le 18/08**
 
 **Où** : écran de diagnostic, diagramme de flux, en mode modifier.
 
@@ -49,3 +49,12 @@ avec la mention qu'il n'avait pas été vérifié. Il a fallu qu'un humain se se
 de l'application pour qu'il devienne prioritaire. C'est l'argument le plus net
 en faveur de la recette navigateur : la lecture du code trouve les défauts, elle
 ne dit pas lesquels font mal.
+
+**Résolu** (`0b6b774`, §37), et **confirmé par l'utilisateur dans le navigateur**
+le 18/08 : « ça marche, plus de saut ». Premier défaut de l'inspection dont la
+correction est vérifiée par l'usage et non par une mesure d'agent.
+
+Le diagnostic mesuré a contredit l'hypothèse du brief : une seule cause, pas
+deux. Le moteur ne remet rien à 100 % — le balisage neuf naît simplement sans
+défilement ni zoom, et tout se joue dans la fenêtre avant que l'enveloppe les
+repose.

@@ -136,7 +136,7 @@ que sur `patchClient`, `patchProcessus`, `majRoles` et `ecrireBilan` ; les
 mutations d'étapes, frictions et chiffres tombent dans un `toast.error`
 générique.
 
-### F. Le défilement n'est pas mémorisé (point 4)
+### F. Le défilement n'est pas mémorisé (point 4) — **RÉSOLU le 18/08**
 
 Le **zoom** est traité correctement : il appartient à la page, dans une `Map`
 par processus qui survit au démontage de l'onglet par Radix — le commentaire de
@@ -149,6 +149,15 @@ horizontale. Sur un diagramme large, chaque édition ramène vraisemblablement l
 vue au début. À confirmer au navigateur, mais aucun code ne s'en occupe.
 
 Second point : le zoom vit dans un `useRef` — **perdu au rechargement**.
+
+> **Résolu** (`0b6b774`, `PASSE-STATIQUE.md` §37), confirmé par l'utilisateur
+> dans le navigateur. La cause réelle, mesurée, n'était pas celle supposée ici :
+> le moteur ne remet pas le zoom à 100 %, il produit un balisage neuf où
+> `.flux-defile` est **remplacé** et `.flux` naît à `zoom:1`. Une seule cause
+> pour les deux symptômes. Correction dans l'enveloppe React : mémorisation
+> continue en capture sur l'hôte, restauration avant peinture. Le zoom est en
+> plus mémorisé par processus dans `sessionStorage`, ce qui clôt ce second
+> point.
 
 ### G. L'export du bilan ne compare pas le site à lui-même (point 11)
 
