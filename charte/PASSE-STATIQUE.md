@@ -3520,3 +3520,95 @@ l'absence** — et il coûte plus cher qu'un trou déclaré, parce qu'il occupe 
 case. Le risque réel est ici faible (même logique d'observateur, seule la
 résolution du conteneur change), mais « faible » n'est pas « prouvé », et ce qui
 se décrocherait part dans un PDF client. Refait en tête de l'envoi 3.
+
+---
+
+## 49. Le popup d'étape — 18/08/2026
+
+Envoi 3 : la carte du diagramme devient la porte d'entrée de tout ce que
+l'étape porte. Commit Lovable `af8061d`.
+
+### 49.1 La preuve d'abord, et elle passe
+
+La survie à une reconstruction, refusée au §48.4 parce que le test ne pouvait
+pas échouer, a été refaite correctement : en mode modifier, modification du
+texte d'une étape — ce qui passe par `appliquerMutation`, invalide la requête
+et fait détruire puis remplacer les cartes. Pastilles et marques se reposent.
+0 mutation du slot au repos.
+
+### 49.2 Deux choses meilleures que ce que j'avais demandé
+
+**La sûreté de l'impression est déduite, pas déclarée.** Je m'attendais à un
+drapeau « mode impression ». L'agent a fait mieux : `interactif = onOuvrir !=
+null`, et la vue d'impression ne passe simplement pas `onOuvrir`. Il n'y a donc
+rien à penser à désactiver — l'absence du rappel EST la désactivation. Un
+booléen se serait oublié un jour ; celui-ci ne peut pas.
+
+**La flèche est passée en haut-droite**, là où je l'avais demandée en bas. Le
+raisonnement de l'agent est meilleur que le mien : flèche et pastille
+s'excluent — l'une n'apparaît que quand l'autre est absente — donc elles
+peuvent partager le coin, et le problème des 27 px libres disparaît au lieu
+d'être contourné.
+
+**Et la mesure que j'avais exigée est dans le code, avec son calcul** : carte la
+plus étroite 121 px, rail de bilan 88 px depuis `left: 6`, reste 27 px — moins
+de deux cases du sélecteur. D'où le compteur composé dans la pastille plutôt
+qu'un marqueur distinct. Une décision de placement qui cite son chiffre ne se
+rediscutera pas de mémoire dans trois mois.
+
+La géométrie est en outre factorisée dans une constante `PASTILLE` partagée par
+le `span` et le `button` : les deux formes de la même marque **ne peuvent plus
+diverger**, ce qui est la vraie garantie que l'écran et le papier resteront
+d'accord.
+
+### 49.3 Ce que j'ai relevé
+
+**Un défaut réel : la création de friction est en deux écritures.**
+`creer_friction` n'a pas de `p_etape`, contrairement à `creer_chiffre`. Le
+popup crée donc, puis rattache. Deux écritures ne sont pas atomiques : si la
+seconde échoue, il reste une friction **détachée** — l'utilisateur a demandé
+« ajoute une friction à cette étape » et obtient une friction flottante.
+
+Le plus instructif est que l'agent a écrit lui-même, deux fonctions plus haut,
+la raison exacte pour laquelle c'est mauvais — *« un chiffre qui existerait un
+instant détaché resterait orphelin si le second geste échouait »* — et l'a
+signalé sans le corriger, faute d'avoir la fonction SQL sous la main.
+**Un principe correctement énoncé ne s'applique pas tout seul à côté.** C'est
+la troisième fois en deux jours que cette forme se présente (§46.3, §47.4).
+
+**Un trou que le rapport ne voyait qu'à moitié.** L'agent signale que le
+compteur composé ne s'affiche pas à l'impression. Le trou est plus large :
+`affordance = edition || modeBilan`, donc une carte portant **uniquement** des
+chiffres ne rend rien du tout **en mode lecture** non plus. Le segment n'existe
+que si la carte porte aussi une friction.
+
+Décision de l'utilisateur : le signal se voit **à l'écran dans tous les modes,
+lecture comprise ; l'impression ne change pas**. Asymétrie assumée, donc à
+écrire dans le composant — sinon quelqu'un la « réparera » en croyant corriger
+un oubli.
+
+**Un commentaire qui réécrit l'histoire.** Celui de `BoutonSaisieRapide` dit
+désormais que `SurcoucheCartes` s'intercalait, avec un « l'un d'eux » resté au
+pluriel. Au moment du défaut, `SurcoucheCartes` n'existait pas. Dans un code où
+les commentaires tiennent lieu de mémoire, **un commentaire faux coûte plus
+cher qu'un commentaire absent** : le second fait chercher, le premier fait
+conclure.
+
+### 49.4 Une troncature, et ce qu'elle dit du terrain
+
+L'agent a vidé `clients.$code.tsx` avec un `sed` mal échappé, l'a restauré
+depuis git, et l'a dit. J'ai relu le fichier entier : `PageDiagnostic`,
+`SectionProcessus`, `BoutonSaisieRapide`, toutes les mutations, toutes les
+boîtes de dialogue. Rien ne manque.
+
+C'est exactement l'accident que je m'étais infligé le 17 sur
+`RECETTE-NAVIGATEUR.md`. Deux fois en deux jours, sur des outils différents,
+par la même cause : une écriture en flux sur un fichier qu'on n'a pas relu
+juste avant. La leçon n'est pas « faire attention » — c'est que **git est le
+seul filet, et qu'il n'a fonctionné ici que parce que le fichier était déjà
+suivi.**
+
+### 49.5 État
+
+Base à la référence `6|39|532|17|12|23`, aucune donnée d'essai résiduelle,
+**aucun instantané créé** — deuxième passe navigateur consécutive sans trace.
