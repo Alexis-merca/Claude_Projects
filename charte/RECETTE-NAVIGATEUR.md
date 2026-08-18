@@ -173,8 +173,12 @@ ou six boîtes Excel dans le schéma (les flèches deviennent illisibles et
 mentent).
 
 **2.7 — « Non classé » contient-il bien ce qu'il doit ?**
-Sur `template-use-case` : `Au jugé`, `Logiciel` et `TV / écran atelier` doivent
-y rester ; PowerPoint **ne doit plus y être**.
+Sur `template-use-case` : `Au jugé` et `Logiciel` doivent y rester ; PowerPoint
+**ne doit plus y être**.
+*Corrigé le 18/08 :* l'attendu citait aussi `TV / écran atelier`, **qui n'existe
+pas dans `template-use-case`** — l'unique étape qui le porte est dans
+`cible-mercateam`. Erreur de la recette, pas du produit ; c'est la passe
+elle-même qui l'a mise au jour.
 *Signe que c'est faux :* PowerPoint en « Non classé » — la collision
 `erp` / Pow**erp**oint serait revenue.
 

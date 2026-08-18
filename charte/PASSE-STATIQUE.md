@@ -2969,3 +2969,83 @@ passer par moi. C'est le vrai correctif de §40 ; le rapatriement du code n'en
 
 La démarche de vérification reste hors de Lovable : elle dit comment **contrôler
 l'agent**, elle n'a pas à être lue par lui.
+
+---
+
+## 43. Première passe de recette — onze points, onze réussites
+
+Dix-huit jours après la première ligne de code, `RECETTE-NAVIGATEUR.md` a enfin
+été parcourue — sa partie prouvable **sans navigateur**, soit la base et le
+calcul pur. Le constat central du projet depuis le 07/08 — « personne n'a vu
+cette application fonctionner » — recule pour la première fois autrement que
+par une correction ponctuelle.
+
+Base rendue à l'identique, vérifiée de mon côté : 5 clients, 31 processus,
+411 étapes, 16 frictions, 11 chiffres, 20 instantanés, **aucun client résiduel**.
+Les trames n'ont reçu que des lectures.
+
+### 43.1 Niveau 1 — les cinq points irréversibles
+
+Tous réussis, sur une copie jetable de Sekurit détruite en fin de passe.
+
+**1.1, le plus grave, tient** : l'instantané `avant_suppression_client` **survit
+à la destruction du client** — aucune cascade ne l'emporte — et se restaure à
+l'identique, 5 processus / 65 étapes / 16 frictions / 11 chiffres. Le dialogue
+de confirmation promettait que rien n'est perdu ; c'est vrai.
+
+1.2 la restauration prend bien son propre instantané avant d'écraser. 1.3 le
+réordonnancement ne touche que `ordre` — texte, rôle, phase et supports
+identiques sur toutes les étapes. 1.5 la friction survit à la suppression de son
+étape, `etape_id` à `null`. 1.6 `clients_trame_unique` refuse un second client en
+trame `existant`.
+
+### 43.2 Niveau 2 — le livrable ne ment pas
+
+**2.4, que la recette désigne comme le contrôle le plus important, est vérifié
+sur données réelles pour la première fois :**
+
+```
+ordre 1  avant=[Logiciel (ERP), Excel, Papier]  apres=[Mercateam, Logiciel (ERP)]
+ordre 4  avant=[Logiciel (SIRH / GTA)]          apres=[Mercateam, Logiciel (SIRH / GTA)]
+```
+
+L'ERP et le SIRH restent, le générique tombe. La règle de §28 fait exactement ce
+qu'elle annonce.
+
+**2.5** : `supprimee` disparaît de l'après, `inchangee` **et `en_cours`** gardent
+leurs supports d'origine. L'invariant « en cours ne compte pas comme migré » est
+mesuré, plus seulement écrit.
+
+**2.6** : six outils, six valeurs attendues, six valeurs obtenues — Excel 6
+blocs, Mail 5, Oral 5, Papier 5, Word 4, PowerPoint 2.
+
+**2.1 — le déterminisme du schéma, promesse écrite jamais vérifiée.** Réussi, et
+au-delà de la demande : deux calculs successifs donnent des sorties identiques,
+**et un troisième avec les entrées présentées en ordre inverse donne encore la
+même sortie**. C'est la forme forte de l'engagement de `schema-outils.ts` — le
+placement ne dépend pas de l'ordre d'arrivée des données.
+
+**3.9** : aller-retour JSON identique champ à champ.
+
+### 43.3 Le seul défaut trouvé est dans la recette, pas dans le produit
+
+**2.7** attendait `TV / écran atelier` dans le « Non classé » de
+`template-use-case`. Cet outil **n'y existe pas** : l'unique étape qui le porte
+appartient à `cible-mercateam`. L'attendu désignait le mauvais client.
+
+Corrigé dans la recette. C'est instructif : **une liste de contrôle se vérifie
+aussi elle-même à l'usage**, et un attendu faux aurait fait chercher un bug
+inexistant à chaque passe.
+
+### 43.4 Ce qui reste, et qui est maintenant débloqué
+
+**La session navigateur est disponible** (`LOVABLE_BROWSER_AUTH_STATUS =
+injected`) depuis que l'utilisateur s'est connecté à la préversion. Toute la
+partie interactive devient exécutable : le point **1.4** — la garde de version
+sur deux onglets, et son contrepoids, l'absence de faux conflit à un seul
+onglet —, le glisser-déposer, l'édition de l'environnement IT, le déplacement
+des boîtes du schéma.
+
+Restent hors de portée d'un agent : ce qui demande un jugement visuel —
+lisibilité à l'impression, estompage survivant au PDF et au PPTX, distinction
+des quatre marques en noir et blanc.
