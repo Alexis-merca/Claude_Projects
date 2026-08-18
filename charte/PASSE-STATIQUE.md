@@ -3327,3 +3327,109 @@ recette : c'est un audit qui commence.
 **Réserve honnête** : je constate que le commit est le dernier du projet, pas
 que le déploiement publié sur `mercaudit.lovable.app` l'ait embarqué. Si le
 bouton n'apparaît pas côté utilisateur, c'est la première chose à regarder.
+
+---
+
+## 47. Le chiffre clé rejoint l'étape — 18/08/2026
+
+Envoi 1 d'une fonctionnalité en trois temps : rendre modifiables depuis la
+carte du diagramme les frictions, les chiffres clés et une note de travail de
+l'étape. Aujourd'hui, la base seule. Commit Lovable `fef681a`.
+
+### 47.1 Ce que la base gagne
+
+**`chiffres.etape_id`**, copie exacte du modèle des frictions — je l'ai imposé
+comme une copie, pas comme une inspiration :
+
+```sql
+foreign key (etape_id, processus_id) references etapes (id, processus_id)
+  on delete set null (etape_id)
+```
+
+Deux garanties tiennent de cette forme, et d'aucune autre : l'étape désignée
+**appartient forcément au même processus** (une clef simple ne le dirait pas),
+et supprimer une étape **détache** le chiffre au lieu de l'emporter. Un chiffre
+clé est un fait recueilli en entretien : il survit au redécoupage du flux.
+L'index unique que cette clef composite exige, `etapes_id_processus_uniq`,
+existait déjà.
+
+**`etapes.note_interne`**, texte non nul par défaut vide. Le nom porte
+l'interdit : cette note **n'apparaît jamais dans la restitution client**. C'est
+délibéré — dans six mois, quelqu'un qui parcourt le schéma pour enrichir une
+page d'impression doit lire la règle dans le nom de la colonne, pas dans un
+document qu'il n'ouvrira pas. Un `comment on column` la redit en base.
+
+Piège écarté au passage : `etapes.lien` ressemble à un champ libre mais est
+contraint à `'' | 'manuel' | 'auto'` — c'est le type de liaison du diagramme.
+Le recycler aurait cassé le tracé des flèches.
+
+### 47.2 L'invariant, tenu pour la deuxième fois
+
+Les deux champs entrent dans `client_json` **et** dans `importer_client_json`
+**dans la même migration**. Ce n'est pas de la propreté, c'est la seule forme
+qui ne perd pas de données : un instantané est pris automatiquement à
+l'ouverture en édition, donc si `client_json` ignore un champ neuf, tout
+instantané pris ensuite l'omet — et une restauration le jour même **l'efface
+sans un mot**. C'est la règle posée au §31 pour les trois champs de bilan ;
+c'est la deuxième fois qu'elle sert.
+
+Détail de forme repris tel quel des frictions : le rattachement s'exporte par
+**`ordre` d'étape**, jamais par identifiant — les identifiants changent à la
+restauration. `importer_client_json` reconstruit la correspondance
+ordre → nouvel id, et tolère l'absence dans les deux sens : une note absente
+devient `''` et non `null`, une `etape` absente ou hors bornes donne un chiffre
+transverse, « ce qui est un état normal ».
+
+### 47.3 Un piège déjà payé, évité cette fois
+
+`creer_chiffre` gagne un `p_etape` optionnel, pour qu'un chiffre créé depuis le
+popup soit rattaché **dès l'insertion** : un chiffre qui existerait un instant
+détaché resterait orphelin si le second geste échouait.
+
+Changer sa signature obligeait à supprimer l'ancienne — garder les deux rendait
+l'appel ambigu. Et **supprimer une fonction perd ses droits**. La migration
+repose donc explicitement le `revoke … from public, anon` et le
+`grant execute … to authenticated`. C'est exactement l'écueil du §29, où des
+`revoke` écrits au motif du nom avaient manqué trois fonctions. Les quatre
+autres fonctions passent par `create or replace`, qui conserve les droits.
+
+### 47.4 Ce que mon brief avait oublié
+
+`recopier`, dans `trame-use-case.ts`, recopie un processus de la trame vers un
+site neuf. Il remet soigneusement en correspondance `frictions.etape_id` vers
+les copies — et **ne passe pas `etape_id` aux chiffres**. La machinerie
+nécessaire, `parOrdre` et `ordreDe`, est construite douze lignes plus haut pour
+les frictions.
+
+Mon brief nommait `client_json` et `importer_client_json`. Il ne nommait pas
+`recopier`. L'agent a fait ce qui était demandé ; c'est la demande qui était
+incomplète.
+
+**Latent, pas actif** : mesuré, la trame porte 0 chiffre, donc rien n'a été
+perdu. Mais c'est la fonctionnalité en cours de construction qui invite à en
+saisir — le trou se serait ouvert juste après la livraison.
+
+**La leçon est la même qu'au §46, un cran plus haut.** Là-bas, une règle écrite
+dans un fichier n'avait pas protégé le fichier d'à côté. Ici, un invariant que
+j'ai énoncé correctement — « tout chemin qui écrit ce champ doit le connaître »
+— n'a couvert que les chemins que j'ai su nommer. **Énumérer les appelants est
+un travail de lecture, pas de mémoire**, et je ne l'avais pas fait.
+
+### 47.5 Vérification de mon côté
+
+Contre la base, pas contre le rapport : colonnes, contrainte, index et
+signatures relus dans le catalogue ; `maj_chiffre` vérifié sur le point qui
+compte — `nullif(p_patch->>'etape_id','')::uuid` avec la clef présente écrit
+bien `NULL`, donc **détacher est possible**, ce qu'un `coalesce` aurait
+silencieusement interdit ; fragments de `client_json` et
+`importer_client_json` relus ligne à ligne sur les chiffres et la note.
+
+Compteurs `6|39|532|17|12|23`, identiques à ma mesure de référence. Aucun
+client d'essai résiduel. Aucun composant React touché, comme le brief
+l'exigeait.
+
+**Conséquence assumée, notée ici pour ne pas la redécouvrir** : l'export JSON
+d'un diagnostic contient les notes internes. C'est nécessaire — sans quoi une
+restauration les effacerait — mais ce fichier n'est donc pas un artefact à
+remettre à un client. Le livrable client reste le PDF et le PPTX, d'où la note
+est absente.
