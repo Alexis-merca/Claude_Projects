@@ -58,3 +58,38 @@ Le diagnostic mesuré a contredit l'hypothèse du brief : une seule cause, pas
 deux. Le moteur ne remet rien à 100 % — le balisage neuf naît simplement sans
 défilement ni zoom, et tout se joue dans la fenêtre avant que l'enveloppe les
 repose.
+
+---
+
+## 2026-08-18
+
+### 2. Le bouton « Saisie rapide » ne se monte pas — **CASSÉ**
+
+**Où** : écran de diagnostic, en-tête du diagramme de flux, mode modifier.
+
+**Vu** : aucun bouton « Saisie rapide » dans le DOM. Le conteneur cible
+`.flux__entete .rangee` existe pourtant (1 nœud), y compris après bascule
+d'onglet de processus et retour.
+
+**Attendu** : le bouton, greffé par portail depuis `BoutonSaisieRapide`.
+
+**Trouvé par** : la seconde passe de recette navigateur, pendant l'exécution
+d'un tout autre contrôle. C'est le premier défaut que la recette découvre par
+elle-même, sans qu'on le cherche.
+
+**Pourquoi c'est grave, et bien plus que le confort qu'il paraît.** La saisie
+rapide est le seul endroit d'où l'on peut écrire **`etapes.cible`**. Si le
+bouton ne se monte pas, la cible — livrée le 09/08, avec sa page
+« Trajectoire de déploiement » à l'impression — **n'est atteignable par
+personne**. Toute cette fonctionnalité serait inerte depuis sa livraison, ce qui
+expliquerait qu'aucune cible ne figure en base après dix jours.
+
+**Cause probable, à confirmer** : l'effet de `BoutonSaisieRapide` ne s'exécute
+qu'au montage (`[hote]`) et lit `hote.previousElementSibling` pour trouver
+`.flux__entete .rangee`. Si le diagramme n'est pas encore rendu à cet instant,
+`cible` reste `null` et le portail ne se pose jamais. Le défaut serait donc
+**intermittent** — dépendant de l'ordre de rendu —, ce qui est pire qu'une
+panne franche : il a pu marcher une fois, sous les yeux de quelqu'un, et ne plus
+jamais se reproduire.
+
+**Non corrigé** : la passe était une passe de constat.

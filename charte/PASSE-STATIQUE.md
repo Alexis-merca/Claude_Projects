@@ -3049,3 +3049,75 @@ des boîtes du schéma.
 Restent hors de portée d'un agent : ce qui demande un jugement visuel —
 lisibilité à l'impression, estompage survivant au PDF et au PPTX, distinction
 des quatre marques en noir et blanc.
+
+---
+
+## 44. Seconde passe — la garde tient à travers l'interface, et un défaut tombe
+
+Sept points exécutés dans un navigateur authentifié, sur une copie jetable.
+Base rendue à l'identique, vérifiée de mon côté : 5 clients, 31 processus,
+411 étapes, 16 frictions, 11 chiffres, 20 instantanés.
+
+### 44.1 Le point 1.4 est prouvé de bout en bout
+
+Le point E avait été prouvé fonction par fonction en SQL. **Rien ne garantissait
+que le refus se traduise en bandeau à l'écran** — avant le correctif de §34, les
+mutations d'enfants tombaient dans un `toast.error` générique et le bandeau ne
+s'affichait jamais.
+
+**A1 :** deux onglets sur la même étape. L'onglet A écrit. L'onglet B, non
+rechargé, est refusé, et le DOM porte le texte exact : *« Ce processus a été
+modifié par quelqu'un d'autre. Rechargez pour voir la version à jour. »* En
+base, la valeur de A survit ; aucune trace de l'écriture de B.
+
+**A2 :** un seul onglet, quatre opérations enchaînées — deux étapes, ajout puis
+suppression d'une friction. **Zéro conflit.** C'est la moitié qu'on oublie de
+tester : une garde qui refuserait ici rendrait l'outil inutilisable à une
+personne seule.
+
+Les deux ensemble prouvent ce que ni l'une ni l'autre ne prouvait.
+
+### 44.2 L'environnement IT, chemin vierge, tient
+
+Aucun diagnostic ne portait de correction manuelle. Les trois gestes survivent
+au rechargement. **« Recalculer » efface les corrections, conserve la structure
+(76 lignes avant et après) et les positions manuelles**, avec un instantané
+`avant_recalcul` par clic. Une boîte déplacée à `566/272` revient exactement à
+`446.29/273.7` après « Replacer automatiquement ».
+
+Ajoutent au tableau : les deux boutons d'ajout réparés livrent bien « À
+préciser », et la création d'un site depuis la trame donne trois onglets
+pré-remplis **sans maturité ni bilan**.
+
+### 44.3 Le défaut, trouvé par accident pendant un autre contrôle
+
+**Le bouton « Saisie rapide » ne se monte pas.** Sa cible
+`.flux__entete .rangee` existe, mais aucun bouton n'apparaît dans le DOM, même
+après bascule d'onglet et retour.
+
+**La conséquence dépasse le confort.** La saisie rapide est **le seul endroit
+d'où l'on peut écrire `etapes.cible`**. Si le bouton ne se monte pas, la cible —
+livrée le 09/08 avec sa page imprimée — n'est atteignable par personne, et toute
+cette fonctionnalité est inerte depuis sa livraison. Ce qui expliquerait qu'après
+dix jours **aucune cible ne figure en base**.
+
+Cause probable : l'effet de `BoutonSaisieRapide` ne tourne qu'au montage et lit
+`previousElementSibling` pour trouver sa cible ; si le diagramme n'est pas encore
+rendu, le portail ne se pose jamais. Le défaut serait donc **intermittent**, ce
+qui est pire qu'une panne franche.
+
+Consigné dans `RETOURS-USAGE.md`. **Non corrigé** : passe de constat.
+
+### 44.4 Écart signalé par l'agent, et traité
+
+Six instantanés de clients de test subsistaient — leur survie est précisément ce
+que prouve le point 1.1, mais c'était du résidu. L'agent l'a **annoncé plutôt
+que passé sous silence**, n'ayant pas l'accès en écriture pour les retirer. Fait
+de mon côté ; `versions` revient à 20.
+
+### 44.5 Reste à faire
+
+**3.3** (pastilles de friction sur la bonne carte), **3.4** (libellés de
+maturité, et absence de repli sans use case), **3.8** (glisser-déposer), et
+**toute la section D** — dont **2.10**, la ligne de maturité de la page
+« Avant / après », qui n'a toujours jamais été exercée.
