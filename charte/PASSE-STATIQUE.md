@@ -3685,3 +3685,90 @@ existe et il a été emprunté dans l'heure. **Un « ok » vaut mieux qu'un comp
 - Les trois points de recette qui demandent un œil humain (§45.3) : **2.2**,
   **2.3** et **2.5 bis**, sur artefact produit — et il faudrait maintenant y
   ajouter que la pastille imprimée doit rester identique après cette série.
+
+---
+
+## 51. Les quatre retours d'usage — 19/08/2026
+
+Premier envoi de la deuxième série de retours (`RETOURS-USAGE.md` n° 4, 5, 7,
+8). Commit Lovable `43dceaa`. Tout est dans notre code, `src/flux/` intouché.
+
+### 51.1 Ce que l'agent a vu et que je n'avais pas nommé
+
+Replier les lignes vides de l'environnement IT paraissait anodin. Mais `outils`
+et `repetes` — les boîtes du schéma d'échanges et le marquage des outils
+partagés — se calculaient sur la liste **affichée**. Replier aurait donc
+**retiré des boîtes du schéma**, et le défaut aurait été très difficile à
+relier à un réglage d'affichage.
+
+L'agent l'a vu seul et a basculé les deux calculs sur `vue.domaines`, la vue
+complète, avec le commentaire qui l'explique. **Un réglage d'affichage qui
+alimente un calcul cesse d'être un réglage d'affichage** — c'est la forme
+générale du piège, et elle vaut d'être retenue.
+
+### 51.2 Le couloir « vide » expliqué
+
+Le retour n° 5 disait : « je ne peux pas supprimer un rôle vide car il est
+utilisé dans un autre UC ». La seconde moitié est impossible — `processus.roles`
+appartient au processus.
+
+La cause réelle, trouvée par l'agent puis confirmée en base : une étape
+rattachée en **`role2`** est dessinée depuis son couloir principal et s'étend
+jusqu'au second. **Le couloir secondaire paraît donc inoccupé alors qu'une
+étape s'y réfère.** Trois étapes de `decathlon-thiais` sont dans ce cas.
+
+Le message nomme désormais l'étape — numéro, extrait de texte, mention
+« (couloir secondaire) », et le nombre d'autres. Le garde n'a pas changé ; il a
+cessé d'être muet.
+
+### 51.3 Deux corrections demandées en retour
+
+**`window.prompt` pour nommer une activité.** Une consigne debout depuis le 17
+dit que tous les dialogues de création suivent la charte du site. Une boîte
+native — grise, non stylée, dans la langue du système — est précisément ce que
+cette consigne visait. Et elle est **intraduisible**, à trois jours d'une
+bascule FR/EN.
+
+**« Ranger » ne déplace que `l.outils[0]`** alors que le contrôle s'affiche dès
+qu'une ligne porte au moins un outil. Sur une ligne à plusieurs outils, les
+suivants restent en place **sans message**. Le défaut n'est pas de traiter un
+élément, c'est de n'en rien dire.
+
+### 51.4 Une preuve que je n'ai pas acceptée, pour une raison technique
+
+L'agent n'a eu **aucune session navigateur** ce tour
+(`LOVABLE_BROWSER_AUTH_STATUS=signed_out`) et l'a déclaré plutôt que de
+l'habiller. Quatre comportements sont donc livrés sans avoir jamais été vus :
+le repli, le contrôle « Ranger », le nouveau message de refus, et l'effet sur
+l'impression.
+
+Son raisonnement sur l'impression — « le mode lecture affichait déjà un `span`
+qui passe à la ligne, donc l'échelle ne bouge pas » — **est incomplet, et d'un
+détail qui décide** : il a ajouté `min-w-0` à un enfant `flex-1`. Sans cette
+classe, un élément flexible refuse de descendre sous la largeur de son contenu ;
+avec elle, il s'enroule. L'enroulement en lecture peut donc être **nouveau**,
+auquel cas la colonne d'annexes s'allonge et l'échelle de toutes les pages de
+processus baisse — silencieusement, comme le §32 l'avait déjà décrit.
+
+**Un raisonnement juste sur trois lignes et faux sur la quatrième donne une
+conclusion fausse**, et il se relit mieux qu'une mesure absente. Mesure
+demandée dès que la session sera disponible, sur `decathlon-thiais` (13 chiffres
+clés), avec les deux séries de chiffres et non une conclusion.
+
+### 51.5 La référence de base est périmée
+
+`6|39|532|17|12|23` ne vaut plus. L'état est `8|43|573|48|25|25`, et l'écart
+est **entièrement du travail réel** : `decathlon-thiais` créé le 19/08 à 12:52
+(4 processus, 41 étapes, 31 frictions, 13 chiffres) et `decathlon`, une coquille
+vide créée à 12:15.
+
+Vérifié client par client avant de conclure — l'agent affirmait n'avoir fait
+aucune écriture, et c'est exact.
+
+**Nouvelle référence : `8|43|573|48|25|25`.** Continuer à réclamer l'ancienne
+aurait fait passer chaque rapport à venir pour un écart, et un écart qu'on
+s'habitue à voir cesse d'alerter.
+
+Signal d'usage, au passage : 32 frictions sur 48 sont rattachées à une étape,
+contre 2 sur 17 avant-hier. Le rattachement, lui, a trouvé son public. Les
+chiffres rattachés restent à 0 — le geste n'existe que depuis hier soir.
