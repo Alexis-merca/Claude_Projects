@@ -28,10 +28,26 @@
    Constantes de rendu
    ------------------------------------------------------------------------- */
 
-/** 8 couleurs de tag de la charte : surface claire + texte foncé. */
+/** Couleurs de tag de la charte : surface claire + texte foncé.
+
+    20 paires, et non 8 : un diagnostic réel porte jusqu'à 20 rôles distincts
+    (`danone-bailleul`), et la répartition par empreinte donnait alors deux ou
+    trois rôles par teinte — arithmétique, pas accidentel.
+
+    LA PALETTE S'ALLONGE PAR LA FIN, JAMAIS PAR RÉORDONNANCEMENT. Les couleurs
+    choisies à la main sont enregistrées par INDEX dans `clients.si` : insérer
+    ou permuter une paire repeindrait ces choix en silence. Ajouter, oui ;
+    déplacer, jamais.
+
+    Copie stricte de `PASTELS` dans `src/lib/roles.ts` : les deux doivent rester
+    identiques au caractère près, sinon la pastille du diagramme et celle des
+    panneaux React divergent sur le même rôle. */
 export const PASTELS = [
   ['#D4DEF9', '#2D5BAE'], ['#D4F3E9', '#337572'], ['#DBEEFA', '#256F9A'], ['#DEF3CC', '#107558'],
-  ['#F8EAC1', '#CE6700'], ['#F5E4D9', '#A3512B'], ['#FFCFCF', '#AA2D46'], ['#F9DBF4', '#AA2B89']
+  ['#F8EAC1', '#CE6700'], ['#F5E4D9', '#A3512B'], ['#FFCFCF', '#AA2D46'], ['#F9DBF4', '#AA2B89'],
+  ['#DCD8FB', '#4B32C3'], ['#CFE9E9', '#166E6E'], ['#E8E1F7', '#6A3FB5'], ['#FBE0EC', '#A82264'],
+  ['#DDE4EE', '#3B4A63'], ['#F7E2C8', '#8A5A12'], ['#E6E3DA', '#5F5A4A'], ['#FADFD5', '#93401F'],
+  ['#EFDCEA', '#7A2A63'], ['#CDDCF3', '#26467F'], ['#F6D9DE', '#8E2740'], ['#E2DFF0', '#413B7A']
 ];
 
 /** Nature du lien entre deux étapes — couleur et style de la flèche. */
@@ -93,11 +109,29 @@ export function empreinteNom(nom) {
   return h >>> 0;
 }
 
-/** Badge de repli : teinte tirée du nom, initiale en lettre. */
-export function badgeDerive(nom) {
+/** Badge de repli : initiale en lettre, teinte tirée de la POSITION de l'outil
+    dans la liste du site (`options.outils`).
+
+    L'empreinte du nom ne suffisait pas : sur les onze outils réels d'un site,
+    elle produisait `EFIplan` et `Effitime` en même teinte ET même initiale —
+    deux pastilles indiscernables. La position garantit l'absence de collision
+    tant que le site compte moins d'outils que la palette, et reste stable
+    puisque la liste ne fait que s'allonger (un outil saisi est ajouté en fin).
+
+    L'empreinte reste le repli du repli, pour un outil absent de la liste —
+    le cas d'un support relevé sur une étape mais jamais inscrit au client. */
+export function badgeDerive(nom, outils) {
   const propre = String(nom || '').trim();
   const lettre = (propre.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
-  return { fond: PALETTE_OUTILS[empreinteNom(propre) % PALETTE_OUTILS.length], lettre };
+  const clef = normaliserOutil(propre);
+  const rang = (outils || []).findIndex((o) => normaliserOutil(o) === clef);
+  const i = rang >= 0 ? rang : empreinteNom(propre);
+  return { fond: PALETTE_OUTILS[i % PALETTE_OUTILS.length], lettre };
+}
+
+/** Comparaison de noms d'outils : accents et casse ignorés, comme partout. */
+export function normaliserOutil(nom) {
+  return String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 }
 
 /** Barre verticale pointillée : le même signe que la séparation de phase du diagramme. */
@@ -205,11 +239,11 @@ export function listeSupports(brut) {
   return String(brut || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
 
-export function badgeSupport(nom) {
+export function badgeSupport(nom, outils) {
   const clef = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   /* Les sept familles connues d'abord : elles se reconnaissent d'un coup d'œil,
      c'est tout leur intérêt. Le reste tombe sur une teinte dérivée du nom. */
-  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || badgeDerive(nom);
+  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || badgeDerive(nom, outils);
   const dedans = b.glyphe
     ? b.glyphe
     : `<text x="8" y="11.4" text-anchor="middle" fill="#fff"
@@ -223,12 +257,12 @@ export function badgeSupport(nom) {
 
 
 /** Supports de l'étape, en rangée à cheval sur la bordure haute de la carte. */
-export function bandeauSupports(liste) {
+export function bandeauSupports(liste, outils) {
   if (!liste.length) return '';
   const montrees = liste.slice(0, 4);
   const reste = liste.length - montrees.length;
   return `<span class="supports-bordure" title="${echapper(liste.join(' · '))}">
-    ${montrees.map((sup) => badgeSupport(sup)).join('')}
+    ${montrees.map((sup) => badgeSupport(sup, outils)).join('')}
     ${reste ? `<span class="supports-bordure__reste">+${reste}</span>` : ''}
   </span>`;
 }
@@ -336,13 +370,13 @@ export function gabaritColonnes(n, edition) {
    interpolations deviendraient une injection. */
 
 /** Badges retirables, à cheval sur la bordure haute de la carte. */
-function bandeauSupportsEdition(j, supports, t) {
+function bandeauSupportsEdition(j, supports, t, outils) {
   if (!supports.length) return '';
   return `<span class="supports-bordure supports-bordure--edition">
     ${supports.map((sup, k) => `
       <span class="support-modif" title="${echapper(sup)}">
-        ${badgeSupport(sup)}
-        <button class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
+        ${badgeSupport(sup, outils)}
+        <button type="button" class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
                 title="${t.supportRetirer(echapper(sup))}">×</button>
       </span>`).join('')}
   </span>`;
@@ -404,7 +438,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
 
   const zoom = `
     <div class="flux__zoom ne-pas-imprimer">
-      <button class="bouton bouton--mini" data-action="zoom-ajuster" title="${t.zoomAjusterTitre}">${t.zoomAjuster}</button>
+      <button type="button" class="bouton bouton--mini" data-action="zoom-ajuster" title="${t.zoomAjusterTitre}">${t.zoomAjuster}</button>
       <input type="range" min="40" max="100" step="5" value="${Math.round(zoomAffiche * 100)}"
              data-champ="zoom" aria-label="${t.zoomAria}">
       <span class="flux__zoom-valeur">${Math.round(zoomAffiche * 100)} %</span>
@@ -415,7 +449,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       <span class="libelle libelle--large">${t.titre}</span>
       <div class="rangee" style="gap:14px">
         ${n ? zoom : ''}
-        ${ed && cmd('tableau') ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
+        ${ed && cmd('tableau') ? `<button type="button" class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
           options.tableauVisible ? t.masquerSaisieRapide : t.saisieRapide}</button>` : ''}
       </div>
     </div>`;
@@ -429,7 +463,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
         <span class="sourdine">${ed
           ? t.videEdition
           : t.videLecture}</span>
-        ${ed && cmd('etapes') ? `<button class="bouton bouton--mini" data-action="ajouter-etape">${t.premiereEtape}</button>` : ''}
+        ${ed && cmd('etapes') ? `<button type="button" class="bouton bouton--mini" data-action="ajouter-etape">${t.premiereEtape}</button>` : ''}
       </div>
     </div>`;
   }
@@ -451,7 +485,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       ? `<div class="flux__phase-edition">
            <input class="flux__phase-champ" value="${echapper(g.label)}" data-champ="phase.${g.debut}.${g.span}"
                   placeholder="${t.phasePlaceholder}" title="${t.phaseRenommerTitre(g.span)}">
-           <button class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
+           <button type="button" class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
                    data-i="${g.debut}" data-span="${g.span}" data-role="supprimer"
                    title="${t.phaseSupprimerTitre(g.span)}">×</button>
          </div>`
@@ -477,9 +511,9 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       ? `<input class="flux__role-champ" value="${echapper(role)}" data-champ="role.${iRole}" title="${t.roleRenommerTitre}"
                 style="--chip-fond:${fond};--chip-encre:${encre}">
          <div class="flux__role-outils">
-           <button class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="${t.roleMonter}">↑</button>
-           <button class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="${t.roleDescendre}">↓</button>
-           <button class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="${t.roleSupprimer}">×</button>
+           <button type="button" class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="${t.roleMonter}">↑</button>
+           <button type="button" class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="${t.roleDescendre}">↓</button>
+           <button type="button" class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="${t.roleSupprimer}">×</button>
          </div>`
 
       : chipRole(role, palette);
@@ -508,7 +542,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
           cellules.push(`
             <div class="flux__cellule${coupe}${cellCheval}" style="${pos}">
               <div class="flux__carte${partage}" data-etape="${et.ordre}"${marqueCheval}>
-                ${bandeauSupports(supports)}
+                ${bandeauSupports(supports, options.outils)}
                 <span class="flux__carte-texte">${echapper(et.texte)}</span>
               </div>
             </div>`);
@@ -517,7 +551,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
             <div class="flux__cellule${coupe}${cellCheval}" style="${pos}"${cible}>
               <div class="flux__carte flux__carte--edition${partage}${options.etapeActive === et.ordre ? ' flux__carte--actif' : ''}"
                    data-etape="${et.ordre}" data-index="${j}"${marqueCheval}>
-                ${cmd('supports') ? bandeauSupportsEdition(j, supports, t) : bandeauSupports(supports)}
+                ${cmd('supports') ? bandeauSupportsEdition(j, supports, t, options.outils) : bandeauSupports(supports, options.outils)}
                 <div class="carte__tete">
                   ${cmd('deplacement') ? `<span class="carte__poignee" draggable="true" data-poignee="${j}"
                         title="${t.poigneeTitre}">⠿</span>` : ''}
@@ -526,12 +560,12 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
                           placeholder="${t.etapePlaceholder}">${echapper(et.texte || '')}</textarea>
                 ${cmd('supports') ? vueChoixSupport(j, supports, options.outils, t) : ''}
                 <div class="carte__outils">
-                  ${cmd('etapes') ? `<button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="${t.etapeGauche}">←</button>
-                  <button class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="${t.etapeDroite}">→</button>
-                  <button class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="${t.etapeInserer}">+</button>
-                  ` : ''}${cmd('phases') ? `<button class="bouton--puce" data-action="couper-phase" data-i="${j}"
+                  ${cmd('etapes') ? `<button type="button" class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="${t.etapeGauche}">←</button>
+                  <button type="button" class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="${t.etapeDroite}">→</button>
+                  <button type="button" class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="${t.etapeInserer}">+</button>
+                  ` : ''}${cmd('phases') ? `<button type="button" class="bouton--puce" data-action="couper-phase" data-i="${j}"
                           title="${t.phaseCouperTitre}">${ICONE_COUPURE}</button>` : ''}${cmd('etapes') ? `
-                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="${t.etapeSupprimer}">×</button>` : ''}
+                  <button type="button" class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="${t.etapeSupprimer}">×</button>` : ''}
                 </div>
               </div>
             </div>`);
@@ -553,7 +587,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
     if (ed && cmd('etapes')) {
       cellules.push(`
         <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + n}" data-cellule="${n}" data-role-nom="${echapper(r.nom)}">
-          <button class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${echapper(r.nom)}"
+          <button type="button" class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${echapper(r.nom)}"
                   title="${t.etapeAjouterTitre}">${t.etapeAjouter}</button>
         </div>`);
     }
@@ -577,7 +611,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
      échouerait — c'est exactement ce qu'elle est là pour attraper. */
   const pied = `<div class="flux__pied">
       ${legende}
-      ${ed && cmd('roles') ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">${t.roleAjouter}</button>` : ''}
+      ${ed && cmd('roles') ? `<button type="button" class="bouton bouton--mini pousse-droite" data-action="ajouter-role">${t.roleAjouter}</button>` : ''}
     </div>`;
 
   /* Le corps seul, sans enveloppe : l'hôte React possède la carte et fournit
@@ -592,7 +626,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
         <div style="grid-row:1;grid-column:1"></div>
         ${bandes}
         ${frise}
-        ${ed && cmd('phases') ? `<button class="flux__phase-ajout" data-action="ajouter-phase"
+        ${ed && cmd('phases') ? `<button type="button" class="flux__phase-ajout" data-action="ajouter-phase"
                         style="grid-row:1;grid-column:${2 + n}"
                         title="${t.phaseAjouterTitre}">${t.phaseAjouter}</button>` : ''}
         ${etiquettes}

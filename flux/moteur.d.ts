@@ -141,8 +141,8 @@ export function gabaritColonnes(n: number, edition?: boolean): string;
 export function couleursRole(role: string, paletteRoles?: string[]): [string, string];
 export function chipRole(role: string, paletteRoles?: string[], variante?: string): string;
 export function listeSupports(brut: string | null | undefined): string[];
-export function badgeSupport(nom: string): string;
-export function bandeauSupports(liste: string[]): string;
+export function badgeSupport(nom: string, outils?: string[]): string;
+export function bandeauSupports(liste: string[], outils?: string[]): string;
 export function jalonEnJours(libelle: string): number | null;
 export function ecartLisible(
   depuis: number | null,
@@ -159,8 +159,12 @@ export function mots(fournis?: MotsFlux | null): MotsFluxComplet;
 export function libelleLien(nature: string, mots?: MotsFlux): string;
 /** Empreinte FNV-1a 32 bits du nom normalisé. */
 export function empreinteNom(nom: string): number;
-/** Badge de repli d'un outil inconnu : teinte dérivée du nom, initiale. */
-export function badgeDerive(nom: string): { fond: string; lettre: string };
+/** Badge de repli d'un outil inconnu : initiale en lettre, teinte tirée de la
+    POSITION dans `outils` (la liste du site), et de l'empreinte du nom seulement
+    si l'outil n'y figure pas. */
+export function badgeDerive(nom: string, outils?: string[]): { fond: string; lettre: string };
+/** Comparaison de noms d'outils : accents et casse ignorés. */
+export function normaliserOutil(nom: string): string;
 export const PALETTE_OUTILS: string[];
 
 

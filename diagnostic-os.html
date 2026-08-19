@@ -1027,10 +1027,18 @@ const BASE_SOURCE = [
 const CLE_BASE = 'diagnosticos.base.v2';
 const CLE_CLIENT = 'diagnosticos.client.v2';
 
-/* 8 couleurs de tag de la charte : surface claire + texte foncé */
+/* Couleurs de tag de la charte : surface claire + texte foncé.
+   20 paires, et non 8 : un diagnostic réel porte jusqu'à 20 rôles distincts,
+   et la répartition par empreinte donnait alors deux ou trois rôles par teinte.
+   LA PALETTE S'ALLONGE PAR LA FIN, JAMAIS PAR RÉORDONNANCEMENT : les couleurs
+   choisies à la main sont enregistrées par INDEX. Copie stricte de `PASTELS`
+   dans flux/moteur.js et src/lib/roles.ts. */
 const PASTELS = [
   ['#D4DEF9', '#2D5BAE'], ['#D4F3E9', '#337572'], ['#DBEEFA', '#256F9A'], ['#DEF3CC', '#107558'],
-  ['#F8EAC1', '#CE6700'], ['#F5E4D9', '#A3512B'], ['#FFCFCF', '#AA2D46'], ['#F9DBF4', '#AA2B89']
+  ['#F8EAC1', '#CE6700'], ['#F5E4D9', '#A3512B'], ['#FFCFCF', '#AA2D46'], ['#F9DBF4', '#AA2B89'],
+  ['#DCD8FB', '#4B32C3'], ['#CFE9E9', '#166E6E'], ['#E8E1F7', '#6A3FB5'], ['#FBE0EC', '#A82264'],
+  ['#DDE4EE', '#3B4A63'], ['#F7E2C8', '#8A5A12'], ['#E6E3DA', '#5F5A4A'], ['#FADFD5', '#93401F'],
+  ['#EFDCEA', '#7A2A63'], ['#CDDCF3', '#26467F'], ['#F6D9DE', '#8E2740'], ['#E2DFF0', '#413B7A']
 ];
 
 const LOGO = `<svg viewBox="0 0 346 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mercateam">
@@ -1203,7 +1211,7 @@ function vueBarre() {
   return `
   <header class="barre">
     <div class="barre__bloc">
-      <button class="burger" data-action="ouvrir-menu" aria-label="Ouvrir le menu">
+      <button type="button" class="burger" data-action="ouvrir-menu" aria-label="Ouvrir le menu">
         <span></span><span></span><span></span>
       </button>
       <span class="barre__logo">${LOGO}</span>
@@ -1216,11 +1224,11 @@ function vueBarre() {
         <span>${e(c ? c.nom : '—')}</span>
         ${c && c.site ? `<span>·</span><span>${e(c.site)}</span>` : ''}
       </span>
-      <button class="bouton ${etat.edition ? 'bouton--sombre' : 'bouton--secondaire'}" data-action="basculer-edition">
+      <button type="button" class="bouton ${etat.edition ? 'bouton--sombre' : 'bouton--secondaire'}" data-action="basculer-edition">
         ${etat.edition ? "Terminer l'édition" : 'Modifier'}
       </button>
-      <button class="bouton bouton--secondaire" data-action="imprimer">Imprimer / PDF</button>
-      <button class="bouton bouton--primaire" data-action="exporter-json">Exporter en JSON</button>
+      <button type="button" class="bouton bouton--secondaire" data-action="imprimer">Imprimer / PDF</button>
+      <button type="button" class="bouton bouton--primaire" data-action="exporter-json">Exporter en JSON</button>
     </div>
   </header>`;
 }
@@ -1230,23 +1238,23 @@ function vueTiroir() {
   const lignes = etat.base.map((cl) => {
     const meta = [cl.site, cl.date].filter((x) => x && String(x).trim()).join(' · ');
     return `
-    <button class="fiche-client${cl.id === etat.clientId ? ' fiche-client--actif' : ''}" data-action="choisir-client" data-id="${e(cl.id)}">
+    <button type="button" class="fiche-client${cl.id === etat.clientId ? ' fiche-client--actif' : ''}" data-action="choisir-client" data-id="${e(cl.id)}">
       <span class="fiche-client__nom">${e(cl.nom)}</span>
       <span class="fiche-client__meta">${e(meta)}</span>
     </button>`;
   }).join('');
 
   return `
-  <button class="voile" data-action="fermer-menu" aria-label="Fermer le menu"></button>
+  <button type="button" class="voile" data-action="fermer-menu" aria-label="Fermer le menu"></button>
   <aside class="tiroir">
     <div class="tiroir__entete">
       <span class="libelle">Menu</span>
-      <button class="tiroir__fermer" data-action="fermer-menu" aria-label="Fermer">×</button>
+      <button type="button" class="tiroir__fermer" data-action="fermer-menu" aria-label="Fermer">×</button>
     </div>
     <div class="tiroir__corps">
       <span class="libelle">Client</span>
       ${lignes}
-      <button class="bouton bouton--mini" data-action="creer-client" style="padding:13px 20px;font-size:15px">+ Nouveau diagnostic</button>
+      <button type="button" class="bouton bouton--mini" data-action="creer-client" style="padding:13px 20px;font-size:15px">+ Nouveau diagnostic</button>
       <p class="sourdine" style="margin:8px 0 0;font-size:14px;line-height:1.5">
         Les modifications sont enregistrées dans ce navigateur. Exportez
         <span class="mono" style="font-size:13px;color:var(--encre)">clients-data.js</span>
@@ -1255,21 +1263,21 @@ function vueTiroir() {
     </div>
     <div class="tiroir__pied">
       <span class="libelle">Export</span>
-      <button class="bouton bouton--primaire" data-action="exporter-fichier">Exporter clients-data.js</button>
+      <button type="button" class="bouton bouton--primaire" data-action="exporter-fichier">Exporter clients-data.js</button>
       <span class="sourdine" style="font-size:14px;line-height:1.5">Tous les clients de la base, au format du fichier source.</span>
-      <button class="bouton bouton--secondaire" data-action="exporter-json">Exporter ce diagnostic en JSON</button>
-      <button class="bouton bouton--secondaire" data-action="exporter-base-json">Exporter toute la base en JSON</button>
+      <button type="button" class="bouton bouton--secondaire" data-action="exporter-json">Exporter ce diagnostic en JSON</button>
+      <button type="button" class="bouton bouton--secondaire" data-action="exporter-base-json">Exporter toute la base en JSON</button>
 
       <span class="libelle">Import</span>
-      <button class="bouton bouton--secondaire" data-action="importer-json" data-mode="remplacer">Injecter dans ce diagnostic</button>
-      <button class="bouton bouton--secondaire" data-action="importer-json" data-mode="nouveau">Importer comme nouveau diagnostic</button>
+      <button type="button" class="bouton bouton--secondaire" data-action="importer-json" data-mode="remplacer">Injecter dans ce diagnostic</button>
+      <button type="button" class="bouton bouton--secondaire" data-action="importer-json" data-mode="nouveau">Importer comme nouveau diagnostic</button>
       <span class="sourdine" style="font-size:14px;line-height:1.5">
         Reprend un JSON exporté ici : processus, étapes, frictions, chiffres,
         outils et environnement IT. « Injecter » remplace le contenu du
         diagnostic courant en gardant sa place dans la liste.
       </span>
 
-      <button class="bouton" data-action="reinitialiser" style="background:transparent;color:var(--rouge-fonce);font-size:14px;text-align:left">
+      <button type="button" class="bouton" data-action="reinitialiser" style="background:transparent;color:var(--rouge-fonce);font-size:14px;text-align:left">
         Réinitialiser depuis les données d'origine
       </button>
     </div>
@@ -1311,7 +1319,7 @@ function vueFicheClient() {
   const outils = (c.outils || []).map((o, i) => `
     <span class="etiquette-outil" style="padding:4px 6px 4px 12px;gap:6px;align-items:center">
       <input class="champ-nu" value="${e(o)}" data-champ="outil.${i}">
-      <button class="bouton--retirer" data-action="supprimer-outil" data-i="${i}" aria-label="Retirer">×</button>
+      <button type="button" class="bouton--retirer" data-action="supprimer-outil" data-i="${i}" aria-label="Retirer">×</button>
     </span>`).join('');
 
   return `
@@ -1320,7 +1328,7 @@ function vueFicheClient() {
       <span class="libelle libelle--large">Fiche client</span>
       <div class="rangee" style="gap:10px">
         <span class="mono sourdine" style="font-size:13px">${e(c.id)}</span>
-        <button class="bouton bouton--mini" data-action="regenerer-id">Régénérer l'identifiant</button>
+        <button type="button" class="bouton bouton--mini" data-action="regenerer-id">Régénérer l'identifiant</button>
       </div>
     </div>
     <div class="grille-3">
@@ -1345,12 +1353,12 @@ function vueFicheClient() {
       <span class="libelle">Outils et supports relevés</span>
       <div class="nuage" style="align-items:center">
         ${outils}
-        <button class="bouton bouton--mini" data-action="ajouter-outil">+ Outil</button>
+        <button type="button" class="bouton bouton--mini" data-action="ajouter-outil">+ Outil</button>
       </div>
     </div>
     <div class="rangee rangee--pied">
-      <button class="bouton bouton--secondaire" data-action="dupliquer-client">Dupliquer ce diagnostic</button>
-      <button class="bouton bouton--danger" data-action="supprimer-client">Supprimer ce diagnostic</button>
+      <button type="button" class="bouton bouton--secondaire" data-action="dupliquer-client">Dupliquer ce diagnostic</button>
+      <button type="button" class="bouton bouton--danger" data-action="supprimer-client">Supprimer ce diagnostic</button>
       <span class="sourdine pousse-droite" style="font-size:14px">
         Enregistrement automatique dans le navigateur · ${etat.base.length} diagnostic(s) en base
       </span>
@@ -1363,13 +1371,13 @@ function vueOnglets() {
   if (!c) return '';
   const p = proc();
   const onglets = c.processus.map((x) => `
-    <button class="onglet${p && x.id === p.id ? ' onglet--actif' : ''}" data-action="choisir-proc" data-id="${e(x.id)}">
+    <button type="button" class="onglet${p && x.id === p.id ? ' onglet--actif' : ''}" data-action="choisir-proc" data-id="${e(x.id)}">
       ${e(x.nom)}
     </button>`).join('');
   return `
   <div class="onglets">
     ${onglets}
-    ${etat.edition ? '<button class="bouton bouton--mini ne-pas-imprimer" data-action="ajouter-processus">+ Processus</button>' : ''}
+    ${etat.edition ? '<button type="button" class="bouton bouton--mini ne-pas-imprimer" data-action="ajouter-processus">+ Processus</button>' : ''}
   </div>`;
 }
 
@@ -1391,7 +1399,7 @@ function vueCarteProcessus() {
       </label>
     </div>
     <div class="rangee">
-      <button class="bouton bouton--danger" data-action="supprimer-processus">Supprimer ce processus</button>
+      <button type="button" class="bouton bouton--danger" data-action="supprimer-processus">Supprimer ce processus</button>
       <span class="sourdine pousse-droite" style="font-size:14px">
         ${p.etapes.length} étape(s) · ${p.roles.length} rôle(s) · ${p.frictions.length} friction(s)
       </span>
@@ -1449,18 +1457,29 @@ function empreinteNom(nom) {
   return h >>> 0;
 }
 
-/** Badge de repli : teinte tirée du nom, initiale en lettre. */
-function badgeDerive(nom) {
-  const propre = String(nom || '').trim();
-  const lettre = (propre.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
-  return { fond: PALETTE_OUTILS[empreinteNom(propre) % PALETTE_OUTILS.length], lettre };
+/** Comparaison de noms d'outils : accents et casse ignorés, comme partout. */
+function normaliserOutil(nom) {
+  return String(nom || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 }
 
-function badgeSupport(nom) {
+/** Badge de repli : initiale en lettre, teinte tirée de la POSITION de l'outil
+    dans la liste du site. L'empreinte du nom ne suffisait pas — sur onze outils
+    réels elle produisait « EFIplan » et « Effitime » en même teinte ET même
+    initiale. L'empreinte reste le repli du repli, pour un outil absent. */
+function badgeDerive(nom, outils) {
+  const propre = String(nom || '').trim();
+  const lettre = (propre.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+  const clef = normaliserOutil(propre);
+  const rang = (outils || []).findIndex((o) => normaliserOutil(o) === clef);
+  const i = rang >= 0 ? rang : empreinteNom(propre);
+  return { fond: PALETTE_OUTILS[i % PALETTE_OUTILS.length], lettre };
+}
+
+function badgeSupport(nom, outils) {
   const clef = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   /* Les sept familles connues d'abord : elles se reconnaissent d'un coup d'œil,
      c'est tout leur intérêt. Le reste tombe sur une teinte dérivée du nom. */
-  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || badgeDerive(nom);
+  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || badgeDerive(nom, outils);
   const dedans = b.glyphe
     ? b.glyphe
     : `<text x="8" y="11.4" text-anchor="middle" fill="#fff"
@@ -1478,12 +1497,12 @@ function listeSupports(brut) {
 }
 
 /** Supports de l'étape, en rangée à cheval sur la bordure haute de la carte. */
-function bandeauSupports(liste) {
+function bandeauSupports(liste, outils) {
   if (!liste.length) return '';
   const montrees = liste.slice(0, 4);
   const reste = liste.length - montrees.length;
   return `<span class="supports-bordure" title="${e(liste.join(' · '))}">
-    ${montrees.map((sup) => badgeSupport(sup)).join('')}
+    ${montrees.map((sup) => badgeSupport(sup, outils)).join('')}
     ${reste ? `<span class="supports-bordure__reste">+${reste}</span>` : ''}
   </span>`;
 }
@@ -1529,13 +1548,13 @@ const ICONE_COUPURE = `<svg viewBox="0 0 12 12" width="12" height="12" fill="non
   stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M6 1.5v9" stroke-dasharray="2 2"/></svg>`;
 
 /** Badges retirables, à cheval sur la bordure haute de la carte. */
-function bandeauSupportsEdition(j, supports) {
+function bandeauSupportsEdition(j, supports, outils) {
   if (!supports.length) return '';
   return `<span class="supports-bordure supports-bordure--edition">
     ${supports.map((sup, k) => `
       <span class="support-modif" title="${e(sup)}">
-        ${badgeSupport(sup)}
-        <button class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
+        ${badgeSupport(sup, outils)}
+        <button type="button" class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
                 title="Retirer ${e(sup)}">×</button>
       </span>`).join('')}
   </span>`;
@@ -1561,7 +1580,7 @@ function vueFlux(pArg) {
 
   const zoom = `
     <div class="flux__zoom ne-pas-imprimer">
-      <button class="bouton bouton--mini" data-action="zoom-ajuster" title="Régler le zoom pour tout afficher">Ajuster</button>
+      <button type="button" class="bouton bouton--mini" data-action="zoom-ajuster" title="Régler le zoom pour tout afficher">Ajuster</button>
       <input type="range" min="40" max="100" step="5" value="${Math.round(etat.zoom * 100)}"
              data-champ="zoom" aria-label="Zoom du diagramme">
       <span class="flux__zoom-valeur">${Math.round(etat.zoom * 100)} %</span>
@@ -1572,7 +1591,7 @@ function vueFlux(pArg) {
       <span class="libelle libelle--large">Diagramme de flux — l'existant</span>
       <div class="rangee" style="gap:14px">
         ${n ? zoom : ''}
-        ${ed ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
+        ${ed ? `<button type="button" class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
           etat.tableau ? 'Masquer la saisie rapide' : 'Saisie rapide'}</button>` : ''}
       </div>
     </div>`;
@@ -1586,7 +1605,7 @@ function vueFlux(pArg) {
         <span class="sourdine">${ed
           ? 'Ajoutez la première étape avec le bouton ci-dessous.'
           : 'Passez en mode édition et ajoutez la première étape du flux.'}</span>
-        ${ed ? '<button class="bouton bouton--mini" data-action="ajouter-etape">+ Première étape</button>' : ''}
+        ${ed ? '<button type="button" class="bouton bouton--mini" data-action="ajouter-etape">+ Première étape</button>' : ''}
       </div>
     </div>`;
   }
@@ -1625,7 +1644,7 @@ function vueFlux(pArg) {
       ? `<div class="flux__phase-edition">
            <input class="flux__phase-champ" value="${e(g.label)}" data-champ="phase.${g.debut}.${g.span}"
                   placeholder="nommer cette échelle" title="Renomme l'échelle de temps des ${g.span} étape(s) de ce groupe">
-           <button class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
+           <button type="button" class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
                    data-i="${g.debut}" data-span="${g.span}" data-role="supprimer"
                    title="Supprimer cette échelle de temps — ses ${g.span} étape(s) rejoignent l'échelle voisine">×</button>
          </div>`
@@ -1650,9 +1669,9 @@ function vueFlux(pArg) {
       ? `<input class="flux__role-champ" value="${e(role)}" data-champ="role.${iRole}" title="Renommer le rôle"
                 style="--chip-fond:${fond};--chip-encre:${encre}">
          <div class="flux__role-outils">
-           <button class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="Monter la ligne">↑</button>
-           <button class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="Descendre la ligne">↓</button>
-           <button class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="Supprimer le rôle">×</button>
+           <button type="button" class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="Monter la ligne">↑</button>
+           <button type="button" class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="Descendre la ligne">↓</button>
+           <button type="button" class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="Supprimer le rôle">×</button>
          </div>`
       : chipRole(role);
     return `
@@ -1680,7 +1699,7 @@ function vueFlux(pArg) {
           cellules.push(`
             <div class="flux__cellule${coupe}${cellCheval}" style="${pos}">
               <div class="flux__carte${partage}" data-etape="${et.ordre}"${marqueCheval}>
-                ${bandeauSupports(supports)}
+                ${bandeauSupports(supports, client().outils)}
                 <span class="flux__carte-texte">${e(et.texte)}</span>
               </div>
             </div>`);
@@ -1689,7 +1708,7 @@ function vueFlux(pArg) {
             <div class="flux__cellule${coupe}${cellCheval}" style="${pos}"${cible}>
               <div class="flux__carte flux__carte--edition${partage}${etat.etapeActive === et.ordre ? ' flux__carte--actif' : ''}"
                    data-etape="${et.ordre}" data-index="${j}"${marqueCheval}>
-                ${bandeauSupportsEdition(j, supports)}
+                ${bandeauSupportsEdition(j, supports, client().outils)}
                 <div class="carte__tete">
                   <span class="carte__poignee" draggable="true" data-poignee="${j}"
                         title="Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés">⠿</span>
@@ -1698,12 +1717,12 @@ function vueFlux(pArg) {
                           placeholder="Action relevée…">${e(et.texte || '')}</textarea>
                 ${vueChoixSupport(j, supports)}
                 <div class="carte__outils">
-                  <button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="Décaler à gauche">←</button>
-                  <button class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="Décaler à droite">→</button>
-                  <button class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="Insérer une étape après">+</button>
-                  <button class="bouton--puce" data-action="couper-phase" data-i="${j}"
+                  <button type="button" class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="Décaler à gauche">←</button>
+                  <button type="button" class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="Décaler à droite">→</button>
+                  <button type="button" class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="Insérer une étape après">+</button>
+                  <button type="button" class="bouton--puce" data-action="couper-phase" data-i="${j}"
                           title="Commencer une nouvelle échelle de temps à partir de cette étape">${ICONE_COUPURE}</button>
-                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="Supprimer l'étape">×</button>
+                  <button type="button" class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="Supprimer l'étape">×</button>
                 </div>
               </div>
             </div>`);
@@ -1725,7 +1744,7 @@ function vueFlux(pArg) {
     if (ed) {
       cellules.push(`
         <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + n}" data-cellule="${n}" data-role-nom="${e(r.nom)}">
-          <button class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${e(r.nom)}"
+          <button type="button" class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${e(r.nom)}"
                   title="Ajouter une étape sur cette ligne">+ Étape</button>
         </div>`);
     }
@@ -1754,7 +1773,7 @@ function vueFlux(pArg) {
         <div style="grid-row:1;grid-column:1"></div>
         ${bandes}
         ${frise}
-        ${ed ? `<button class="flux__phase-ajout" data-action="ajouter-phase"
+        ${ed ? `<button type="button" class="flux__phase-ajout" data-action="ajouter-phase"
                         style="grid-row:1;grid-column:${2 + n}"
                         title="Ajouter une échelle de temps en fin de frise">+ Échelle</button>` : ''}
         ${etiquettes}
@@ -1763,7 +1782,7 @@ function vueFlux(pArg) {
     </div>
     <div class="flux__pied">
       ${legende}
-      ${ed ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
+      ${ed ? `<button type="button" class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
     </div>
   </div>`;
 }
@@ -1779,9 +1798,9 @@ function vueTableEtapes() {
     <textarea class="zone" rows="2" data-champ="etape.${i}.texte">${e(et.texte || '')}</textarea>
     <input class="champ" value="${e(et.supports || '')}" data-champ="etape.${i}.supports" placeholder="Excel, papier…">
     <div class="table-etapes__actions">
-      <button class="bouton bouton--carre" data-action="gauche-etape" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Vers la gauche">←</button>
-      <button class="bouton bouton--carre" data-action="droite-etape" data-i="${i}" ${i === p.etapes.length - 1 ? 'disabled' : ''} aria-label="Vers la droite">→</button>
-      <button class="bouton bouton--carre" data-action="supprimer-etape" data-role="supprimer" data-i="${i}" aria-label="Supprimer">×</button>
+      <button type="button" class="bouton bouton--carre" data-action="gauche-etape" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Vers la gauche">←</button>
+      <button type="button" class="bouton bouton--carre" data-action="droite-etape" data-i="${i}" ${i === p.etapes.length - 1 ? 'disabled' : ''} aria-label="Vers la droite">→</button>
+      <button type="button" class="bouton bouton--carre" data-action="supprimer-etape" data-role="supprimer" data-i="${i}" aria-label="Supprimer">×</button>
     </div>`).join('');
 
   return `
@@ -1801,7 +1820,7 @@ function vueTableEtapes() {
       <span class="libelle">Ordre</span>
       ${lignes}
     </div>
-    <button class="bouton bouton--mini" data-action="ajouter-etape" style="align-self:flex-start">+ Étape</button>
+    <button type="button" class="bouton bouton--mini" data-action="ajouter-etape" style="align-self:flex-start">+ Étape</button>
   </section>`;
 }
 
@@ -1815,10 +1834,10 @@ function vueFrictions(pArg) {
     const lignes = p.frictions.map((f, i) => `
       ${selecteurRole(`friction.${i}.role`, f.role || 'Transverse', options)}
       <textarea class="zone zone--claire" rows="2" data-champ="friction.${i}.texte">${e(f.texte || '')}</textarea>
-      <button class="bouton bouton--clair" data-action="supprimer-friction" data-i="${i}" aria-label="Supprimer">×</button>`).join('');
+      <button type="button" class="bouton bouton--clair" data-action="supprimer-friction" data-i="${i}" aria-label="Supprimer">×</button>`).join('');
     corps = `
       <div class="grille-frictions">${lignes}</div>
-      <button class="bouton bouton--ajout-clair" data-action="ajouter-friction">+ Friction</button>`;
+      <button type="button" class="bouton bouton--ajout-clair" data-action="ajouter-friction">+ Friction</button>`;
   } else {
     const ordre = p.roles.concat(['Transverse']);
     const rang = (r) => { const i = ordre.indexOf(r); return i < 0 ? 99 : i; };
@@ -1849,10 +1868,10 @@ function vueChiffres(pArg) {
     const lignes = p.chiffres.map((ch, i) => `
       <input class="champ champ--valeur" value="${e(ch.valeur)}" data-champ="chiffre.${i}.valeur" placeholder="5 ans">
       <input class="champ" value="${e(ch.libelle)}" data-champ="chiffre.${i}.libelle" placeholder="ce que mesure ce chiffre">
-      <button class="bouton bouton--clair" data-action="supprimer-chiffre" data-i="${i}" aria-label="Supprimer">×</button>`).join('');
+      <button type="button" class="bouton bouton--clair" data-action="supprimer-chiffre" data-i="${i}" aria-label="Supprimer">×</button>`).join('');
     corps = `
       <div class="grille-chiffres">${lignes}</div>
-      <button class="bouton bouton--ajout-clair" data-action="ajouter-chiffre">+ Chiffre clé</button>`;
+      <button type="button" class="bouton bouton--ajout-clair" data-action="ajouter-chiffre">+ Chiffre clé</button>`;
   } else {
     corps = p.chiffres.map((ch) => `
       <div class="chiffre">
@@ -2124,7 +2143,7 @@ function vueEnvironnementIT() {
       ? `<span class="si__bloc-titre" style="background:${couleur}">
            <input class="si__bloc-champ" value="${e(dom)}" data-champ="dom.${iDom}" title="Renommer ce domaine"
                   style="width:${Math.max(8, Math.min(24, dom.length + 1))}ch">
-           <button class="bouton--retirer" data-action="supprimer-domaine" data-i="${iDom}"
+           <button type="button" class="bouton--retirer" data-action="supprimer-domaine" data-i="${iDom}"
                    title="Supprimer ce domaine — ses outils repassent en « ${DOMAINE_AUTRE} »">×</button>
          </span>`
       : `<span class="si__bloc-titre" style="background:${couleur}">${e(dom)}</span>`;
@@ -2144,14 +2163,14 @@ function vueEnvironnementIT() {
                  <input class="si__mission-champ" value="${e(m)}" data-champ="mission.${iDom}.${k}"
                         style="width:${Math.max(8, Math.min(28, String(m).length + 1))}ch"
                         placeholder="mission">
-                 <button class="bouton--retirer" data-action="supprimer-mission"
+                 <button type="button" class="bouton--retirer" data-action="supprimer-mission"
                          data-i="${iDom}" data-k="${k}" title="Retirer cette mission">×</button>
                </span>`
             : `<span class="si__mission">${e(m)}</span>`).join('')}
           ${!mis.length && !ed
             ? `<span class="si__bloc-vide">${dedans.length ? 'Aucune mission relevée' : 'Aucun outil — bloc à alimenter'}</span>`
             : ''}
-          ${ed ? `<button class="si__mission-ajout" data-action="ajouter-mission" data-i="${iDom}"
+          ${ed ? `<button type="button" class="si__mission-ajout" data-action="ajouter-mission" data-i="${iDom}"
                           title="Ajouter une mission à ce domaine">+ mission</button>` : ''}
         </div>
       </div>`;
@@ -2180,7 +2199,7 @@ function vueEnvironnementIT() {
          ${selecteurNature(`si.${i}.nature`, l.nature || '')}
          <input class="champ" value="${e(l.libelle || '')}" data-champ="si.${i}.libelle"
                 placeholder="ce qui passe (ex. dates de recyclage)">
-         <button class="bouton bouton--carre" data-action="supprimer-echange" data-role="supprimer" data-i="${i}"
+         <button type="button" class="bouton bouton--carre" data-action="supprimer-echange" data-role="supprimer" data-i="${i}"
                  title="Supprimer cet échange">×</button>
        </div>`
     : `<div class="si__ligne si__ligne--lecture">
@@ -2212,7 +2231,7 @@ function vueEnvironnementIT() {
           ${domaines.length} domaine(s) · ${outils.length} outil(s) · ${liens.length} échange(s)<br>
           ${ajuste ? 'Classement et échanges ajustés à la main' : 'Classement proposé, échanges déduits des processus'}
         </span>
-        ${ed ? '<button class="bouton bouton--mini" data-action="ajouter-domaine">+ Domaine</button>' : ''}
+        ${ed ? '<button type="button" class="bouton bouton--mini" data-action="ajouter-domaine">+ Domaine</button>' : ''}
       </div>
     </div>
 
@@ -2232,8 +2251,8 @@ function vueEnvironnementIT() {
       <div class="rangee" style="justify-content:space-between">
         <span class="libelle libelle--large">Détail des échanges</span>
         ${ed ? `<div class="rangee" style="gap:8px">
-          <button class="bouton bouton--mini" data-action="ajouter-echange">+ Échange</button>
-          <button class="bouton bouton--secondaire" style="font-size:13px;padding:9px 16px"
+          <button type="button" class="bouton bouton--mini" data-action="ajouter-echange">+ Échange</button>
+          <button type="button" class="bouton bouton--secondaire" style="font-size:13px;padding:9px 16px"
                   data-action="rederiver-echanges" title="Repart des enchaînements d'étapes et écrase les ajustements">
             Re-déduire des processus
           </button>

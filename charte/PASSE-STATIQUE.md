@@ -3772,3 +3772,116 @@ s'habitue à voir cesse d'alerter.
 Signal d'usage, au passage : 32 frictions sur 48 sont rattachées à une étape,
 contre 2 sur 17 avant-hier. Le rattachement, lui, a trouvé son public. Les
 chiffres rattachés restent à 0 — le geste n'existe que depuis hier soir.
+
+---
+
+## 52. Le gros envoi : cinq sujets — 19/08/2026
+
+Commit Lovable `aa4c1e9`. Quatre sujets livrés, le cinquième (passe navigateur)
+toujours bloqué par l'absence de session.
+
+### 52.1 Le défaut le mieux trouvé du projet
+
+« Je n'arrive pas à créer un nouvel outil. » Deux chemins possibles, et l'agent
+a mesuré au lieu de choisir : seul celui du diagramme inscrit l'outil dans
+`clients.outils`, et il passait par `window.prompt`.
+
+**La préversion s'affiche dans une iframe sandboxée, où `prompt()` est ignoré
+sans le moindre message.** L'appel rend `null`, le nom est vide, rien n'est
+écrit. Silencieux de bout en bout.
+
+J'avais signalé ce `window.prompt` **deux fois**, les deux fois sur des motifs
+de charte graphique et de traduisibilité. Il était **cassé**, et je ne l'avais
+pas vu. Un défaut d'apparence peut cacher un défaut de fonctionnement, et
+l'argument esthétique avait occupé la place de la question « est-ce que ça
+marche ? ».
+
+### 52.2 Une hypothèse à moi, réfutée par la mesure
+
+Pour « la croix renvoie en bas de page », j'avais donné la cause classique :
+un `<button>` sans `type="button"` se comporte en bouton d'envoi.
+
+Mesure de l'agent : **il n'y a aucun `<form>` dans `src/`**. Sans formulaire,
+un bouton sans type n'envoie rien. Hypothèse écartée.
+
+L'agent a posé `type="button"` quand même (16 boutons du moteur), ce qui est
+juste par principe, et ajouté une **garde du défilement vertical** — cause
+plausible, le balisage étant remplacé en entier et la page perdant sa hauteur
+le temps d'une image. Et il l'a dit : *« correction plausible, pas correction
+vérifiée »*. C'est la bonne conduite ; le point reste ouvert jusqu'à la session.
+
+### 52.3 Les couleurs, corrigées par le bon mécanisme
+
+`badgeDerive(nom, outils)` prend la teinte à la **position dans la liste des
+outils du site** — que le moteur recevait déjà. L'empreinte n'est plus que le
+repli du repli.
+
+Vérifié par moi, en exécutant le moteur sur les **onze outils réels** de
+`decathlon-thiais` : 0 collision, et `EFIplan` / `Effitime` enfin séparés.
+
+**Réserve que je signale** : `PALETTE_OUTILS` compte toujours **12 teintes**
+pour 9 outils à colorer sur ce site — il reste trois places avant enroulement.
+La garantie tient « tant que le site compte moins d'outils que la palette », ce
+que l'agent a écrit honnêtement. À porter à 20, comme `PASTELS`.
+
+### 52.4 Les rôles : le problème était arithmétique
+
+Mesuré avant d'écrire le brief : `danone-bailleul` porte **20 rôles distincts**,
+`sekurit-float-france` 17, pour **8 pastels**. `paletteStable` répartit par
+empreinte puis « repart d'un tour » — chaque teinte servait donc deux ou trois
+fois. Un sélecteur seul n'aurait rien réglé.
+
+`PASTELS` passe à 20 paires, choix manuel enregistré dans
+`clients.si.couleurs_roles` (nom → index).
+
+**Et le point d'architecture a tenu** : `paletteStable` ne passe pas au moteur
+une liste de rôles mais une *palette de places*. Honorer un choix manuel revient
+donc à poser le rôle à un index congru à la pastille voulue — **aucune ligne de
+la logique du moteur n'a changé**, et aucune carte de surcharge ne le traverse.
+Sans cette lecture préalable, l'agent aurait plombé trois copies du moteur pour
+rien.
+
+**Migration confirmée inutile**, vérifié plutôt que supposé : `client_json`
+exporte `'si'` entier et l'import le réinjecte entier. Le champ voyage seul.
+
+### 52.5 Deux écarts déclarés, et un que j'ajoute
+
+- **Repeinte assumée** : 20 pastilles changent `empreinte % PASTELS.length`,
+  donc les rôles de tous les diagnostics existants changent de teinte.
+- **La vue d'impression n'honore pas les choix manuels** — elle appelle
+  `paletteStable` sans `couleurs_roles`. Un rôle recoloré à la main sortira à sa
+  teinte automatique. Écart réel entre l'écran et le PDF, laissé de côté avec le
+  module d'export.
+- **Le mien** : dans `EnvironnementIT`, `Badge` appelle `badgeSupport(nom)`
+  **sans `outils`**. Latent seulement — `outilAvecLogo` n'y rend vrai que pour
+  les familles connues, donc `badgeDerive` n'y est jamais atteint — mais la
+  divergence est armée pour le jour où cette condition changera.
+
+### 52.6 J'ai failli accuser l'agent à tort
+
+Ma première lecture de `src/flux/moteur.js` a rendu **la version d'avant** :
+8 pastels, `badgeDerive` sans argument. J'ai cru un instant que le rapport était
+inventé sur ce point.
+
+En relisant **en forçant le commit** (`ref: aa4c1e9`), tout y était.
+
+**Règle pour moi : vérifier un commit sans le nommer ne vérifie rien.** Le
+mécanisme de lecture peut servir un état antérieur, et l'erreur produite est de
+la pire espèce — elle accuse quelqu'un d'avoir menti.
+
+### 52.7 Portage, et son résultat
+
+`flux/moteur.js`, `flux/moteur.d.ts` et `diagnostic-os.html` portés. Le mono-
+fichier a demandé un ajustement que le test seul a révélé :
+`bandeauSupportsEdition` recevait bien `outils` mais ne le transmettait pas à
+`badgeSupport` — l'écart se voyait sur `Kronos / Cronos`, `#1E3A8A` (empreinte)
+contre `#9F1239` (position).
+
+`moteur.test.mjs` et `mutations.test.mjs` repassent : **balisage identique au
+caractère près** entre les trois copies. C'est ce test, et lui seul, qui a
+attrapé l'oubli.
+
+**Reste à porter** : `flux/DiagrammeFlux.tsx`, qui n'a pas encore la propriété
+`demanderNomOutil` ni le nouveau `surChangement`. Aucun test ne le couvre —
+c'est un miroir de documentation, et je le signale plutôt que de le laisser
+dériver en silence.
