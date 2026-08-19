@@ -38,18 +38,44 @@
    ========================================================================= */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { acheverRendu, baliserFlux, LIENS, tracerFleches } from "./moteur.js";
-import type { EtapeFlux, ProcessusFlux } from "./moteur.js";
 import {
-  ajouterEchelle, ajouterSupport, changerTexte, couperEchelle, cyclerLien,
-  deposerEtape, renommerEchelle, retirerSupport, supprimerEchelle,
+  acheverRendu,
+  baliserFlux,
+  HAUTEUR_MAX_TEXTE,
+  libelleLien,
+  LIENS,
+  mots,
+  tracerFleches,
+} from "./moteur.js";
+import type { EtapeFlux, MotsFlux, ProcessusFlux } from "./moteur.js";
+
+
+import {
+  ajouterEchelle,
+  ajouterEtape,
+  ajouterSupport,
+  changerTexte,
+  couperEchelle,
+  cyclerLien,
+  deposerEtape,
+  insererEtape,
+  renommerEchelle,
+  retirerSupport,
+  supprimerEchelle,
+  supprimerEtape,
 } from "./mutations.js";
 import type { Mutation } from "./mutations.js";
 import "./moteur.css";
 
 /* Seules ces commandes sont traitées ici. Le moteur n'émet donc que celles-là :
    un bouton visible mais inerte est pire que son absence. */
-const COMMANDES = { texte: true, phases: true, deplacement: true, supports: true } as const;
+const COMMANDES = {
+  texte: true,
+  phases: true,
+  deplacement: true,
+  supports: true,
+  etapes: true,
+} as const;
 
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 1;
@@ -65,6 +91,13 @@ export interface DiagrammeFluxProps {
   etapeActive?: number | null;
   /** Titre et légende, fournis par le composant. `false` pour s'en passer. */
   entete?: boolean;
+  /** Zoom contrôlé par l'hôte. Absent, le composant garde son propre état. */
+  zoom?: number;
+  onZoom?: (z: number) => void;
+  /** Libellés d'interface, passés tels quels au moteur et utilisés pour
+      l'en-tête et la légende portés ici. Absent : français par défaut. */
+  mots?: MotsFlux;
+
   /** Appelé pour chaque interaction d'édition. Le composant ne parle pas à la
       base : il dit ce qu'il faut écrire, l'hôte décide comment. `ordre` doit
       passer par `reordonner_etapes()` — jamais par des écritures ligne à
@@ -80,10 +113,43 @@ export function DiagrammeFlux({
   edition = false,
   etapeActive = null,
   entete = true,
+  zoom: zoomPropose,
+  onZoom,
+  mots: motsFournis,
   onMutation,
 }: DiagrammeFluxProps) {
+  /* Un seul dictionnaire pour le moteur et pour ce qui est porté ici, sinon
+     l'en-tête et le diagramme pourraient parler deux langues. */
+  const t = useMemo(() => mots(motsFournis), [motsFournis]);
   const hote = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);
+
+  /* Contrôlé si l'hôte fournit `zoom` : c'est lui qui le garde d'un rendu à
+     l'autre. Sinon repli sur un état local. */
+  const [zoomLocal, setZoomLocal] = useState(1);
+  const zoom = zoomPropose ?? zoomLocal;
+  const setZoom = useCallback(
+    (z: number) => {
+      setZoomLocal(z);
+      onZoom?.(z);
+    },
+    [onZoom],
+  );
+
+  /* Le balisage complet — `.flux-defile` compris — est réinjecté à chaque
+     changement d'`etapes` : le conteneur de défilement est détruit et son
+     `scrollLeft` repart à zéro. On relève la valeur en continu et on la repose
+     avant la peinture. */
+  const defilement = useRef(0);
+  useEffect(() => {
+    const n = hote.current;
+    if (!n) return;
+    const noter = (ev: Event) => {
+      const c = ev.target as HTMLElement;
+      if (c?.classList?.contains("flux-defile")) defilement.current = c.scrollLeft;
+    };
+    n.addEventListener("scroll", noter, true);
+    return () => n.removeEventListener("scroll", noter, true);
+  }, []);
 
   /* Le balisage ne dépend pas du zoom : celui-ci est posé sur le nœud. */
   const html = useMemo(
@@ -100,9 +166,11 @@ export function DiagrammeFlux({
           entete: false,
           enveloppe: false,
           commandes: COMMANDES,
+          mots: t,
         },
       }),
-    [processus, etapes, paletteRoles, outils, edition, etapeActive],
+    [processus, etapes, paletteRoles, outils, edition, etapeActive, t],
+
   );
 
   const fluxNode = () => hote.current?.querySelector<HTMLElement>(".flux") ?? null;
@@ -113,7 +181,9 @@ export function DiagrammeFlux({
     const flux = fluxNode();
     if (!flux) return;
     flux.style.setProperty("zoom", String(zoom));
-    acheverRendu(flux, etapes, { edition });
+    acheverRendu(flux, etapes, { edition, mots: t });
+    const defile = hote.current?.querySelector<HTMLElement>(".flux-defile");
+    if (defile && defilement.current) defile.scrollLeft = defilement.current;
     // `zoom` volontairement hors dépendances : l'effet suivant s'en charge,
     // sans reconstruire le DOM.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,8 +195,8 @@ export function DiagrammeFlux({
     const flux = fluxNode();
     if (!flux) return;
     flux.style.setProperty("zoom", String(zoom));
-    tracerFleches(flux, etapes, { edition });
-  }, [zoom, etapes, edition]);
+    tracerFleches(flux, etapes, { edition, mots: t });
+  }, [zoom, etapes, edition, t]);
 
   /* Redimensionnement et arrivée des polices. */
   useEffect(() => {
@@ -139,7 +209,7 @@ export function DiagrammeFlux({
 
     const retracer = () => {
       const flux = n.querySelector<HTMLElement>(".flux");
-      if (flux && vivant) acheverRendu(flux, etapes, { edition });
+      if (flux && vivant) acheverRendu(flux, etapes, { edition, mots: t });
     };
 
     /* On ne réagit qu'à la largeur. `acheverRendu` ajuste des hauteurs, ce qui
@@ -164,7 +234,30 @@ export function DiagrammeFlux({
       cancelAnimationFrame(enAttente);
       obs.disconnect();
     };
-  }, [etapes, edition]);
+  }, [etapes, edition, t]);
+
+  /* La carte respire à la frappe. `input` sert UNIQUEMENT à la hauteur : rien
+     n'est écrit ici, l'écriture reste sur `change`, à la sortie du champ. Sans
+     lui, on tape à l'aveugle dans un `rows="1"` — la hauteur n'était ajustée
+     qu'au rendu suivant, c'est-à-dire jamais pendant qu'on écrit. */
+  useEffect(() => {
+    const n = hote.current;
+    if (!n || !edition) return;
+    const grandir = (ev: Event) => {
+      const z = ev.target as HTMLTextAreaElement;
+      if (!z.classList?.contains("carte__texte")) return;
+      z.style.height = "auto";
+      const voulue = z.scrollHeight;
+      z.style.height = Math.min(voulue, HAUTEUR_MAX_TEXTE) + "px";
+      z.style.overflowY = voulue > HAUTEUR_MAX_TEXTE ? "auto" : "hidden";
+      /* La hauteur d'une carte déplace les flèches : les retracer tout de
+         suite, sinon elles pointent à côté jusqu'à la sortie du champ. */
+      const flux = fluxNode();
+      if (flux) tracerFleches(flux, vues.current, { edition, mots: t });
+    };
+    n.addEventListener("input", grandir);
+    return () => n.removeEventListener("input", grandir);
+  }, [edition, t]);
 
   /* Les étapes changent à chaque frappe ; une ref évite de recréer tous les
      gestionnaires, et surtout d'en attacher un par rendu. */
@@ -175,59 +268,86 @@ export function DiagrammeFlux({
 
   const appliquer = useCallback((m: Mutation) => {
     if (!m) return;
-    if (m.refus || m.creation || m.ordre || m.ecritures.length) emettre.current?.(m);
+    if (m.refus || m.creation || m.suppression || m.ordre || m.ecritures.length)
+      emettre.current?.(m);
   }, []);
 
   /* Un seul gestionnaire délégué par type d'évènement, posé sur l'hôte : le
      sous-arbre est réécrit à chaque rendu, des écouteurs individuels seraient
      perdus. Ce sont des évènements du DOM, pas les synthétiques de React —
      voir le point 4 en tête de fichier. */
-  const surClic = useCallback((ev: MouseEvent) => {
-    const cible = (ev.target as HTMLElement).closest?.("[data-action]") as HTMLElement | null;
-    if (!cible) return;
-    const et = vues.current;
-    const i = cible.dataset.i != null ? Number(cible.dataset.i) : null;
-    switch (cible.dataset.action) {
-      case "basculer-lien":
-        if (i != null) appliquer(cyclerLien(et, i));
-        break;
-      case "couper-phase":
-        if (i != null) appliquer(couperEchelle(et, i));
-        break;
-      case "supprimer-phase":
-        if (i != null) appliquer(supprimerEchelle(et, i, Number(cible.dataset.span)));
-        break;
-      case "ajouter-phase":
-        appliquer(ajouterEchelle(et, processus.roles[0] || ""));
-        break;
-      case "supprimer-support":
-        if (i != null) appliquer(retirerSupport(et, i, Number(cible.dataset.s)));
-        break;
-    }
-  }, [appliquer, processus.roles]);
+  const surClic = useCallback(
+    (ev: MouseEvent) => {
+      const cible = (ev.target as HTMLElement).closest?.("[data-action]") as HTMLElement | null;
+      if (!cible) return;
+      const et = vues.current;
+      const i = cible.dataset.i != null ? Number(cible.dataset.i) : null;
+      switch (cible.dataset.action) {
+        case "basculer-lien":
+          if (i != null) appliquer(cyclerLien(et, i));
+          break;
+        case "couper-phase":
+          if (i != null) appliquer(couperEchelle(et, i));
+          break;
+        case "supprimer-phase":
+          if (i != null) appliquer(supprimerEchelle(et, i, Number(cible.dataset.span)));
+          break;
+        case "ajouter-phase":
+          appliquer(ajouterEchelle(et, processus.roles[0] || ""));
+          break;
+        case "inserer-etape":
+          if (i != null) appliquer(insererEtape(et, i));
+          break;
+        case "supprimer-etape":
+          if (i != null) appliquer(supprimerEtape(et, i));
+          break;
+        case "gauche-etape":
+          if (i != null && i > 0)
+            appliquer(deposerEtape(et, i, i - 1, et[i].role, et[i].role2 || ""));
+          break;
+        case "droite-etape":
+          if (i != null && i < et.length - 1)
+            appliquer(deposerEtape(et, i, i + 1, et[i].role, et[i].role2 || ""));
+          break;
+        case "ajouter-etape":
+          appliquer(ajouterEtape(et, processus.roles[0] || ""));
+          break;
+        case "ajouter-etape-role":
+          appliquer(ajouterEtape(et, cible.dataset.roleNom || processus.roles[0] || ""));
+          break;
+        case "supprimer-support":
+          if (i != null) appliquer(retirerSupport(et, i, Number(cible.dataset.s)));
+          break;
+      }
+    },
+    [appliquer, processus.roles],
+  );
 
   /* `change` et non `input` : on écrit à la sortie du champ, pas à chaque
      frappe. Une écriture par caractère saturerait le réseau et ferait avancer
      la version du processus en continu, rejetant les collègues sans raison. */
-  const surChangement = useCallback((ev: Event) => {
-    const champ = (ev.target as HTMLElement).dataset?.champ;
-    if (!champ) return;
-    const valeur = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
-    const [type, a, b] = champ.split(".");
-    if (type === "etape" && b === "texte") appliquer(changerTexte(vues.current, Number(a), valeur));
-    else if (type === "phase") appliquer(renommerEchelle(vues.current, Number(a), Number(b), valeur));
-    else if (type === "support-ajout") {
-      /* `__autre__` : l'outil est saisi à la main et rejoint la liste du site,
+  const surChangement = useCallback(
+    (ev: Event) => {
+      const champ = (ev.target as HTMLElement).dataset?.champ;
+      if (!champ) return;
+      const valeur = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
+      const [type, a, b] = champ.split(".");
+      if (type === "etape" && b === "texte")
+        appliquer(changerTexte(vues.current, Number(a), valeur));
+      else if (type === "phase")
+        appliquer(renommerEchelle(vues.current, Number(a), Number(b), valeur));
+      else if (type === "support-ajout") {
+        /* `__autre__` : l'outil est saisi à la main et rejoint la liste du site,
          sinon chacun le retaperait avec une orthographe différente. */
-      const saisi = valeur === "__autre__";
-      const nom = saisi
-        ? (window.prompt("Nom du support ou de l'outil :") || "").trim()
-        : valeur;
-      /* Le sélecteur revient à vide : il sert à ajouter, pas à porter un état. */
-      (ev.target as HTMLSelectElement).value = "";
-      if (nom) appliquer(ajouterSupport(vues.current, Number(a), nom, saisi));
-    }
-  }, [appliquer]);
+        const saisi = valeur === "__autre__";
+        const nom = saisi ? (window.prompt(t.supportSaisirNom) || "").trim() : valeur;
+        /* Le sélecteur revient à vide : il sert à ajouter, pas à porter un état. */
+        (ev.target as HTMLSelectElement).value = "";
+        if (nom) appliquer(ajouterSupport(vues.current, Number(a), nom, saisi));
+      }
+    },
+    [appliquer],
+  );
 
   /* Glisser-déposer. L'index source vit dans une ref : le sous-arbre est
      réécrit entre le `dragstart` et le `drop`, un état React serait perdu. */
@@ -253,10 +373,12 @@ export function DiagrammeFlux({
     const n = hote.current;
     if (!n) return;
     fluxNode()?.classList.remove("flux--glisse");
-    n.querySelectorAll(".flux__carte--glissee")
-      .forEach((el) => el.classList.remove("flux__carte--glissee"));
-    n.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible")
-      .forEach((el) => el.classList.remove("flux__cellule--cible", "flux__frontiere--cible"));
+    n.querySelectorAll(".flux__carte--glissee").forEach((el) =>
+      el.classList.remove("flux__carte--glissee"),
+    );
+    n.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible").forEach((el) =>
+      el.classList.remove("flux__cellule--cible", "flux__frontiere--cible"),
+    );
   }, []);
 
   const surSurvol = useCallback((ev: DragEvent) => {
@@ -267,26 +389,30 @@ export function DiagrammeFlux({
     if (!zone) return;
     ev.preventDefault();
     if (ev.dataTransfer) ev.dataTransfer.dropEffect = "move";
-    hote.current?.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible")
+    hote.current
+      ?.querySelectorAll(".flux__cellule--cible, .flux__frontiere--cible")
       .forEach((el) => {
         if (el !== zone) el.classList.remove("flux__cellule--cible", "flux__frontiere--cible");
       });
     zone.classList.add(frontiere ? "flux__frontiere--cible" : "flux__cellule--cible");
   }, []);
 
-  const surDepot = useCallback((ev: DragEvent) => {
-    const t = ev.target as HTMLElement;
-    const frontiere = t.closest?.("[data-frontiere]") as HTMLElement | null;
-    const zone = frontiere || (t.closest?.("[data-cellule]") as HTMLElement | null);
-    const source = glisse.current;
-    if (!zone || source === null) return;
-    ev.preventDefault();
-    const colonne = Number(frontiere ? frontiere.dataset.frontiere : zone.dataset.cellule);
-    const role = frontiere ? frontiere.dataset.roleHaut : zone.dataset.roleNom;
-    const role2 = frontiere ? frontiere.dataset.roleBas : "";
-    nettoyerGlisse();
-    appliquer(deposerEtape(vues.current, source, colonne, role || "", role2));
-  }, [appliquer, nettoyerGlisse]);
+  const surDepot = useCallback(
+    (ev: DragEvent) => {
+      const t = ev.target as HTMLElement;
+      const frontiere = t.closest?.("[data-frontiere]") as HTMLElement | null;
+      const zone = frontiere || (t.closest?.("[data-cellule]") as HTMLElement | null);
+      const source = glisse.current;
+      if (!zone || source === null) return;
+      ev.preventDefault();
+      const colonne = Number(frontiere ? frontiere.dataset.frontiere : zone.dataset.cellule);
+      const role = frontiere ? frontiere.dataset.roleHaut : zone.dataset.roleNom;
+      const role2 = frontiere ? frontiere.dataset.roleBas : "";
+      nettoyerGlisse();
+      appliquer(deposerEtape(vues.current, source, colonne, role || "", role2));
+    },
+    [appliquer, nettoyerGlisse],
+  );
 
   /* Pose des écouteurs. Hors édition on n'en pose aucun : le diagramme est
      alors une image, et un `dragstart` qui traîne suffirait à donner
@@ -317,25 +443,32 @@ export function DiagrammeFlux({
     const dispo = defile.clientWidth - 4;
     if (naturelle <= 0) return;
     setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.floor((dispo / naturelle) * 20) / 20)));
-  }, []);
+  }, [setZoom]);
 
   return (
     <div className="carte carte--flux">
       {entete ? (
         <div className="flux__entete">
-          <span className="libelle libelle--large">Diagramme de flux — l'existant</span>
+          <span className="libelle libelle--large">{t.titre}</span>
           <div className="rangee" style={{ gap: 14 }}>
             {etapes.length > 0 ? (
               <div className="flux__zoom ne-pas-imprimer">
-                <button type="button" className="bouton bouton--mini" onClick={ajuster}
-                        title="Régler le zoom pour tout afficher">
-                  Ajuster
+                <button
+                  type="button"
+                  className="bouton bouton--mini"
+                  onClick={ajuster}
+                  title={t.zoomAjusterTitre}
+                >
+                  {t.zoomAjuster}
                 </button>
                 <input
-                  type="range" min={ZOOM_MIN * 100} max={ZOOM_MAX * 100} step={5}
+                  type="range"
+                  min={ZOOM_MIN * 100}
+                  max={ZOOM_MAX * 100}
+                  step={5}
                   value={Math.round(zoom * 100)}
                   onChange={(ev) => setZoom(Number(ev.target.value) / 100)}
-                  aria-label="Zoom du diagramme"
+                  aria-label={t.zoomAria}
                 />
                 <span className="flux__zoom-valeur">{Math.round(zoom * 100)} %</span>
               </div>
@@ -361,10 +494,11 @@ export function DiagrammeFlux({
                     borderTopStyle: LIENS[k].tirets ? "dashed" : "solid",
                   }}
                 />
-                {LIENS[k].libelle}
+                {libelleLien(k, t)}
               </span>
             ))}
           </div>
+
         </div>
       ) : null}
     </div>

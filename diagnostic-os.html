@@ -1421,20 +1421,54 @@ const BADGES_SUPPORT = [
   { motifs: ['oral', 'reunion', 'brief', 'entretien', 'verbal', 'telephone', 'point'],
     fond: '#CA8A04', glyphe: '<path d="M12.6 8.5a2.3 2.3 0 0 1-2.3 2.3H6.9L4.2 12.4V5.6a2.3 2.3 0 0 1 2.3-2.3h3.8a2.3 2.3 0 0 1 2.3 2.3z" fill="#fff"/>' }
 ];
-/* Défaut : fenêtre de navigateur — la plupart des supports nommés sont des applis web. */
-const BADGE_DEFAUT = {
-  fond: '#5A6ACF',
-  glyphe: '<rect x="3" y="4" width="10" height="8" rx="1.2" fill="#fff"/><path d="M3 6.5h10" stroke="#5A6ACF" stroke-width="1.1"/><circle cx="4.7" cy="5.25" r=".55" fill="#5A6ACF"/>'
-};
+/* Palette de repli pour les outils inconnus.
+
+   Un outil maison ne sera jamais dans `BADGES_SUPPORT` : la liste de motifs ne
+   peut couvrir que les familles universelles. Le repli ne doit donc pas être
+   une couleur unique — sur un diagnostic réel, `MyGame`, `EFIplan` et `GPLine`
+   devenaient trois fois la même fenêtre indigo. La teinte est dérivée du NOM,
+   donc stable d'un écran à l'autre, d'un client à l'autre et dans le PDF.
+
+   Aucune de ces teintes ne s'approche des sept marques reconnues : pas de
+   vert, pas de sarcelle, pas d'ambre. Un outil client qui ressemblerait à
+   Excel serait pire que l'indigo uniforme. */
+const PALETTE_OUTILS = [
+  '#5A6ACF', '#4338CA', '#7E22CE', '#B5179E',
+  '#DB2777', '#9F1239', '#475569', '#5B3A29',
+  '#1E3A8A', '#6D28D9', '#7C2D12', '#334155'
+];
+
+/** Empreinte FNV-1a 32 bits du nom normalisé — pure, sans dépendance. */
+function empreinteNom(nom) {
+  const v = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  let h = 0x811c9dc5;
+  for (let i = 0; i < v.length; i++) {
+    h ^= v.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** Badge de repli : teinte tirée du nom, initiale en lettre. */
+function badgeDerive(nom) {
+  const propre = String(nom || '').trim();
+  const lettre = (propre.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+  return { fond: PALETTE_OUTILS[empreinteNom(propre) % PALETTE_OUTILS.length], lettre };
+}
 
 function badgeSupport(nom) {
   const clef = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || BADGE_DEFAUT;
+  /* Les sept familles connues d'abord : elles se reconnaissent d'un coup d'œil,
+     c'est tout leur intérêt. Le reste tombe sur une teinte dérivée du nom. */
+  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || badgeDerive(nom);
   const dedans = b.glyphe
     ? b.glyphe
     : `<text x="8" y="11.4" text-anchor="middle" fill="#fff"
              font-family="Overpass, sans-serif" font-size="9.5" font-weight="700">${e(b.lettre)}</text>`;
-  return `<svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+  /* Le nom en `<title>` : une pastille muette oblige à deviner. `role="img"` +
+     `aria-label` pour que le lecteur d'écran l'annonce aussi. */
+  const etiquette = e(nom);
+  return `<svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="${etiquette}"><title>${etiquette}</title>
     <rect width="16" height="16" rx="3.6" fill="${b.fond}"/>${dedans}</svg>`;
 }
 
@@ -2470,11 +2504,23 @@ function rendre() {
   tracerEchanges();
 }
 
-/** Les zones de texte des cartes s'ajustent à leur contenu (pas d'ascenseur). */
+/** Hauteur maximale d'une zone de saisie d'étape, en pixels.
+
+    Une carte qui grandit sans limite déforme la grille, et le tracé des flèches
+    mesure les cartes : au-delà, la zone défile au lieu de pousser. 160 px ≈ 7
+    lignes à 15/1.4 — assez pour voir ce qu'on écrit, trop peu pour bousculer la
+    géométrie du diagramme. */
+const HAUTEUR_MAX_TEXTE = 160;
+
+/** Les zones de texte des cartes s'ajustent à leur contenu, dans la limite.
+    Au-delà, la zone défile : sans plafond, une longue action relevée pousserait
+    toute la grille et fausserait le tracé. */
 function ajusterZones() {
   racine.querySelectorAll('.carte__texte').forEach((z) => {
     z.style.height = 'auto';
-    z.style.height = z.scrollHeight + 'px';
+    const voulue = z.scrollHeight;
+    z.style.height = Math.min(voulue, HAUTEUR_MAX_TEXTE) + 'px';
+    z.style.overflowY = voulue > HAUTEUR_MAX_TEXTE ? 'auto' : 'hidden';
   });
 }
 

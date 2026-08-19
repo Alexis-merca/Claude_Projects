@@ -61,15 +61,134 @@ export const BADGES_SUPPORT = [
     fond: '#CA8A04', glyphe: '<path d="M12.6 8.5a2.3 2.3 0 0 1-2.3 2.3H6.9L4.2 12.4V5.6a2.3 2.3 0 0 1 2.3-2.3h3.8a2.3 2.3 0 0 1 2.3 2.3z" fill="#fff"/>' }
 ];
 
-/** Défaut : fenêtre de navigateur — la plupart des supports nommés sont des applis web. */
-export const BADGE_DEFAUT = {
-  fond: '#5A6ACF',
-  glyphe: '<rect x="3" y="4" width="10" height="8" rx="1.2" fill="#fff"/><path d="M3 6.5h10" stroke="#5A6ACF" stroke-width="1.1"/><circle cx="4.7" cy="5.25" r=".55" fill="#5A6ACF"/>'
-};
+/** Palette de repli pour les outils inconnus.
+
+    Un outil maison ne sera jamais dans `BADGES_SUPPORT` : la liste de motifs ne
+    peut couvrir que les familles universelles. Le repli ne doit donc pas être
+    une couleur unique — sur un diagnostic réel, `MyGame`, `EFIplan` et `GPLine`
+    devenaient trois fois la même fenêtre indigo. La teinte est dérivée du NOM,
+    donc stable d'un écran à l'autre, d'un client à l'autre et dans le PDF.
+
+    Aucune de ces teintes ne s'approche des sept marques reconnues (vert Excel,
+    orange PowerPoint, sarcelle SharePoint, bleus Word et mail, rouge vidéo,
+    ambre oral) : un outil client qui ressemblerait à Excel serait pire que
+    l'indigo uniforme. Pas de vert, pas de sarcelle, pas d'ambre. */
+export const PALETTE_OUTILS = [
+  '#5A6ACF', '#4338CA', '#7E22CE', '#B5179E',
+  '#DB2777', '#9F1239', '#475569', '#5B3A29',
+  '#1E3A8A', '#6D28D9', '#7C2D12', '#334155'
+];
+
+
+/** Empreinte FNV-1a 32 bits du nom normalisé — pure, sans dépendance. Le moteur
+    reste autonome (aucun import de `src/lib/`), c'est ce qui permet à ses trois
+    copies de rester identiques au caractère près. */
+export function empreinteNom(nom) {
+  const v = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  let h = 0x811c9dc5;
+  for (let i = 0; i < v.length; i++) {
+    h ^= v.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** Badge de repli : teinte tirée du nom, initiale en lettre. */
+export function badgeDerive(nom) {
+  const propre = String(nom || '').trim();
+  const lettre = (propre.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+  return { fond: PALETTE_OUTILS[empreinteNom(propre) % PALETTE_OUTILS.length], lettre };
+}
 
 /** Barre verticale pointillée : le même signe que la séparation de phase du diagramme. */
 export const ICONE_COUPURE = `<svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor"
   stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M6 1.5v9" stroke-dasharray="2 2"/></svg>`;
+
+/* ---------------------------------------------------------------------------
+   Les mots du moteur
+   ---------------------------------------------------------------------------
+
+   Le moteur reçoit ses libellés, il ne les possède plus : tant qu'ils étaient
+   écrits en dur, aucune bascule de langue ne pouvait être complète, et le
+   diagramme est le centre de l'écran.
+
+   `MOTS_FR` est le dictionnaire par défaut : sans `options.mots`, la sortie est
+   rigoureusement celle d'avant, mot pour mot — c'est ce qui permet au
+   mono-fichier, qui n'en passe aucun, de continuer sans retouche.
+
+   LE DICTIONNAIRE EST DU CODE, JAMAIS UNE DONNÉE. Ses valeurs sont insérées
+   dans le balisage SANS échappement (voir plus bas) : un dictionnaire qui
+   viendrait de la base, d'un réglage utilisateur ou d'une URL ouvrirait une
+   injection HTML. Les traductions se déclarent en dur, à côté de celle-ci.
+
+   Ne sont PAS ici, parce que ce sont des valeurs et non de l'interface :
+   `'Transverse'` (valeur par défaut du rôle d'une friction, écrite en base),
+   `'manuel'` / `'auto'` (valeurs contraintes de `etapes.lien` — seul leur
+   `libelle` d'affichage est traduisible), et `'Nouvelle échelle'` de
+   `mutations.js`, qui est écrit dans `etapes.phase` et part donc dans le PDF
+   client : c'est du contenu, à trancher à part. */
+export const MOTS_FR = {
+  titre: "Diagramme de flux — l'existant",
+  zoomAjuster: 'Ajuster',
+  zoomAjusterTitre: 'Régler le zoom pour tout afficher',
+  zoomAria: 'Zoom du diagramme',
+  saisieRapide: 'Saisie rapide',
+  masquerSaisieRapide: 'Masquer la saisie rapide',
+  videTitre: 'Aucune étape pour ce processus',
+  videEdition: 'Ajoutez la première étape avec le bouton ci-dessous.',
+  videLecture: 'Passez en mode édition et ajoutez la première étape du flux.',
+  premiereEtape: '+ Première étape',
+  phasePlaceholder: 'nommer cette échelle',
+  /** Reçoit le nombre d'étapes du groupe. */
+  phaseRenommerTitre: (n) => `Renomme l'échelle de temps des ${n} étape(s) de ce groupe`,
+  phaseSupprimerTitre: (n) =>
+    `Supprimer cette échelle de temps — ses ${n} étape(s) rejoignent l'échelle voisine`,
+  phaseAjouter: '+ Échelle',
+  phaseAjouterTitre: 'Ajouter une échelle de temps en fin de frise',
+  phaseCouperTitre: 'Commencer une nouvelle échelle de temps à partir de cette étape',
+  roleRenommerTitre: 'Renommer le rôle',
+  roleMonter: 'Monter la ligne',
+  roleDescendre: 'Descendre la ligne',
+  roleSupprimer: 'Supprimer le rôle',
+  roleAjouter: '+ Rôle',
+  poigneeTitre:
+    'Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés',
+  etapePlaceholder: 'Action relevée…',
+  etapeGauche: 'Décaler à gauche',
+  etapeDroite: 'Décaler à droite',
+  etapeInserer: 'Insérer une étape après',
+  etapeSupprimer: "Supprimer l'étape",
+  etapeAjouter: '+ Étape',
+  etapeAjouterTitre: 'Ajouter une étape sur cette ligne',
+  frontiereTitre: 'Déposer ici : les deux rôles sont concernés',
+  supportAjouter: '＋ support…',
+  supportAutre: 'Autre outil…',
+  supportChoisirTitre: "Choisir le support ou l'outil utilisé pour cette étape",
+  supportRetirer: (nom) => `Retirer ${nom}`,
+  supportSaisirNom: "Nom du support ou de l'outil :",
+
+  legendeAide: '— cliquez une flèche pour changer',
+  flecheTitre: (libelle) => `Lien ${libelle} — cliquer pour changer`,
+  /** Libellés d'affichage des natures de lien. Les CLÉS sont les valeurs en
+      base (`etapes.lien`) et ne se traduisent pas. */
+  liens: { '': 'non qualifié', auto: 'automatique', manuel: 'manuel' },
+  ecartMois: 'mois',
+  ecartSemaines: 'sem',
+  ecartJours: 'j'
+};
+
+/** Dictionnaire effectif : le défaut français, complété par ce que l'hôte passe. */
+export function mots(fournis) {
+  if (!fournis) return MOTS_FR;
+  return { ...MOTS_FR, ...fournis, liens: { ...MOTS_FR.liens, ...(fournis.liens || {}) } };
+}
+
+/** Libellé d'affichage d'une nature de lien. */
+export function libelleLien(nature, m) {
+  const d = m || MOTS_FR;
+  return d.liens[nature] != null ? d.liens[nature] : d.liens[''];
+}
+
 
 /* ---------------------------------------------------------------------------
    Utilitaires
@@ -88,14 +207,20 @@ export function listeSupports(brut) {
 
 export function badgeSupport(nom) {
   const clef = String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || BADGE_DEFAUT;
+  /* Les sept familles connues d'abord : elles se reconnaissent d'un coup d'œil,
+     c'est tout leur intérêt. Le reste tombe sur une teinte dérivée du nom. */
+  const b = BADGES_SUPPORT.find((x) => x.motifs.some((m) => clef.includes(m))) || badgeDerive(nom);
   const dedans = b.glyphe
     ? b.glyphe
     : `<text x="8" y="11.4" text-anchor="middle" fill="#fff"
              font-family="Overpass, sans-serif" font-size="9.5" font-weight="700">${echapper(b.lettre)}</text>`;
-  return `<svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+  /* Le nom en `<title>` : une pastille muette oblige à deviner. `role="img"` +
+     `aria-label` pour que le lecteur d'écran l'annonce aussi. */
+  const etiquette = echapper(nom);
+  return `<svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="${etiquette}"><title>${etiquette}</title>
     <rect width="16" height="16" rx="3.6" fill="${b.fond}"/>${dedans}</svg>`;
 }
+
 
 /** Supports de l'étape, en rangée à cheval sur la bordure haute de la carte. */
 export function bandeauSupports(liste) {
@@ -118,16 +243,18 @@ export function jalonEnJours(libelle) {
 }
 
 /** Écart entre deux jalons, dans l'unité la plus lisible. */
-export function ecartLisible(depuis, vers) {
+export function ecartLisible(depuis, vers, m) {
+  const d = m || MOTS_FR;
   if (depuis == null || vers == null) return '';
   const j = vers - depuis;
   if (j === 0) return '';
   const signe = j > 0 ? '+' : '−';
   const a = Math.abs(j);
-  if (a % 30 === 0) return `${signe}${a / 30} mois`;
-  if (a % 7 === 0) return `${signe}${a / 7} sem`;
-  return `${signe}${a} j`;
+  if (a % 30 === 0) return `${signe}${a / 30} ${d.ecartMois}`;
+  if (a % 7 === 0) return `${signe}${a / 7} ${d.ecartSemaines}`;
+  return `${signe}${a} ${d.ecartJours}`;
 }
+
 
 /** Couloirs affichés : les rôles du processus, dédoublonnés, avec leur index réel. */
 export function rolesCouloirs(roles) {
@@ -197,28 +324,41 @@ export function gabaritColonnes(n, edition) {
    Balisage
    ------------------------------------------------------------------------- */
 
+/* Les libellés du dictionnaire sont insérés SANS `echapper` : ils remplacent
+   des littéraux qui n'étaient pas échappés non plus, et échapper « l'outil »
+   produirait `&#39;` — même rendu, mais sortie différente au caractère près,
+   ce que la comparaison stricte au mono-fichier est là pour attraper. Les
+   valeurs venant des données, elles, sont échappées AVANT d'entrer dans le
+   libellé.
+
+   Corollaire, écrit plus haut et répété ici parce qu'il se perd : LE
+   DICTIONNAIRE EST DU CODE. Le jour où il viendrait d'ailleurs, ces
+   interpolations deviendraient une injection. */
+
 /** Badges retirables, à cheval sur la bordure haute de la carte. */
-function bandeauSupportsEdition(j, supports) {
+function bandeauSupportsEdition(j, supports, t) {
   if (!supports.length) return '';
   return `<span class="supports-bordure supports-bordure--edition">
     ${supports.map((sup, k) => `
       <span class="support-modif" title="${echapper(sup)}">
         ${badgeSupport(sup)}
         <button class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
-                title="Retirer ${echapper(sup)}">×</button>
+                title="${t.supportRetirer(echapper(sup))}">×</button>
       </span>`).join('')}
   </span>`;
 }
 
 /** Liste déroulante d'ajout, alimentée par les outils déjà relevés sur le site. */
-function vueChoixSupport(j, supports, outils) {
+function vueChoixSupport(j, supports, outils, t) {
   const dispo = (outils || []).filter((o) => o && !supports.includes(o));
-  const options = ['<option value="">＋ support…</option>']
+  const options = [`<option value="">${t.supportAjouter}</option>`]
     .concat(dispo.map((o) => `<option value="${echapper(o)}">${echapper(o)}</option>`))
-    .concat(['<option value="__autre__">Autre outil…</option>']);
+    .concat([`<option value="__autre__">${t.supportAutre}</option>`]);
   return `<select class="carte__support-choix" data-champ="support-ajout.${j}"
-                  title="Choisir le support ou l'outil utilisé pour cette étape">${options.join('')}</select>`;
+                  title="${t.supportChoisirTitre}">${options.join('')}</select>`;
 }
+
+
 
 /**
  * Produit le balisage complet du diagramme.
@@ -235,11 +375,15 @@ function vueChoixSupport(j, supports, outils) {
  * @param {number}   [arg.options.etapeActive]   `ordre` de l'étape mise en avant
  * @param {boolean}  [arg.options.tableauVisible] état du bouton « Saisie rapide »
  * @param {boolean}  [arg.options.entete]        false pour laisser l'hôte fournir en-tête et pied
+ * @param {object}   [arg.options.mots]          libellés d'interface ; défaut `MOTS_FR`
  * @returns {string} HTML
  */
 export function baliserFlux({ processus: p, etapes, options = {} }) {
   const ed = Boolean(options.edition) && !options.impression;
   const avecEntete = options.entete !== false;
+  /* Le moteur ne possède plus ses mots : sans `options.mots`, il retombe sur
+     `MOTS_FR` et sa sortie est celle d'avant, mot pour mot. */
+  const t = mots(options.mots);
 
   /* Deux zooms, et non un seul : le curseur montre le réglage d'écran, le
      diagramme applique 1 à l'impression, où il est mis à l'échelle autrement.
@@ -260,19 +404,19 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
 
   const zoom = `
     <div class="flux__zoom ne-pas-imprimer">
-      <button class="bouton bouton--mini" data-action="zoom-ajuster" title="Régler le zoom pour tout afficher">Ajuster</button>
+      <button class="bouton bouton--mini" data-action="zoom-ajuster" title="${t.zoomAjusterTitre}">${t.zoomAjuster}</button>
       <input type="range" min="40" max="100" step="5" value="${Math.round(zoomAffiche * 100)}"
-             data-champ="zoom" aria-label="Zoom du diagramme">
+             data-champ="zoom" aria-label="${t.zoomAria}">
       <span class="flux__zoom-valeur">${Math.round(zoomAffiche * 100)} %</span>
     </div>`;
 
   const entete = `
     <div class="flux__entete">
-      <span class="libelle libelle--large">Diagramme de flux — l'existant</span>
+      <span class="libelle libelle--large">${t.titre}</span>
       <div class="rangee" style="gap:14px">
         ${n ? zoom : ''}
         ${ed && cmd('tableau') ? `<button class="bouton bouton--mini ne-pas-imprimer" data-action="basculer-tableau">${
-          options.tableauVisible ? 'Masquer la saisie rapide' : 'Saisie rapide'}</button>` : ''}
+          options.tableauVisible ? t.masquerSaisieRapide : t.saisieRapide}</button>` : ''}
       </div>
     </div>`;
 
@@ -281,14 +425,15 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
     <div class="carte carte--flux">
       ${avecEntete ? entete : ''}
       <div class="vide">
-        <span class="vide__titre">Aucune étape pour ce processus</span>
+        <span class="vide__titre">${t.videTitre}</span>
         <span class="sourdine">${ed
-          ? 'Ajoutez la première étape avec le bouton ci-dessous.'
-          : 'Passez en mode édition et ajoutez la première étape du flux.'}</span>
-        ${ed && cmd('etapes') ? '<button class="bouton bouton--mini" data-action="ajouter-etape">+ Première étape</button>' : ''}
+          ? t.videEdition
+          : t.videLecture}</span>
+        ${ed && cmd('etapes') ? `<button class="bouton bouton--mini" data-action="ajouter-etape">${t.premiereEtape}</button>` : ''}
       </div>
     </div>`;
   }
+
 
   const couloirs = rolesCouloirs(p.roles);
   const R = couloirs.length;
@@ -301,14 +446,14 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
   const jours = groupes.map((g) => jalonEnJours(g.label));
 
   const frise = groupes.map((g, i) => {
-    const ecart = i > 0 ? ecartLisible(jours[i - 1], jours[i]) : '';
+    const ecart = i > 0 ? ecartLisible(jours[i - 1], jours[i], t) : '';
     const corps = ed && cmd('phases')
       ? `<div class="flux__phase-edition">
            <input class="flux__phase-champ" value="${echapper(g.label)}" data-champ="phase.${g.debut}.${g.span}"
-                  placeholder="nommer cette échelle" title="Renomme l'échelle de temps des ${g.span} étape(s) de ce groupe">
+                  placeholder="${t.phasePlaceholder}" title="${t.phaseRenommerTitre(g.span)}">
            <button class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
                    data-i="${g.debut}" data-span="${g.span}" data-role="supprimer"
-                   title="Supprimer cette échelle de temps — ses ${g.span} étape(s) rejoignent l'échelle voisine">×</button>
+                   title="${t.phaseSupprimerTitre(g.span)}">×</button>
          </div>`
       : `<span class="flux__phase-libelle">${echapper(g.label)}</span>`;
     return `
@@ -319,6 +464,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       </div>`;
   }).join('');
 
+
   /* --- fonds de couloir, tirés sur toute la largeur --- */
   const bandes = couloirs.map((r, i) => `
     <div class="flux__bande${i % 2 ? ' flux__bande--paire' : ''}" style="grid-row:${2 + i};grid-column:1 / -1"></div>`).join('');
@@ -328,13 +474,14 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
     const [fond, encre] = couleursRole(role, palette);
     const fondBande = i % 2 ? 'var(--blanc-casse)' : 'var(--blanc)';
     const corps = ed && cmd('roles')
-      ? `<input class="flux__role-champ" value="${echapper(role)}" data-champ="role.${iRole}" title="Renommer le rôle"
+      ? `<input class="flux__role-champ" value="${echapper(role)}" data-champ="role.${iRole}" title="${t.roleRenommerTitre}"
                 style="--chip-fond:${fond};--chip-encre:${encre}">
          <div class="flux__role-outils">
-           <button class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="Monter la ligne">↑</button>
-           <button class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="Descendre la ligne">↓</button>
-           <button class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="Supprimer le rôle">×</button>
+           <button class="bouton--puce" data-action="monter-role" data-i="${iRole}" ${iRole === 0 ? 'disabled' : ''} title="${t.roleMonter}">↑</button>
+           <button class="bouton--puce" data-action="descendre-role" data-i="${iRole}" ${iRole === p.roles.length - 1 ? 'disabled' : ''} title="${t.roleDescendre}">↓</button>
+           <button class="bouton--puce" data-action="supprimer-role" data-role="supprimer" data-i="${iRole}" title="${t.roleSupprimer}">×</button>
          </div>`
+
       : chipRole(role, palette);
     return `
       <div class="flux__etiquette${ed ? ' flux__etiquette--edition' : ''}"
@@ -370,21 +517,21 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
             <div class="flux__cellule${coupe}${cellCheval}" style="${pos}"${cible}>
               <div class="flux__carte flux__carte--edition${partage}${options.etapeActive === et.ordre ? ' flux__carte--actif' : ''}"
                    data-etape="${et.ordre}" data-index="${j}"${marqueCheval}>
-                ${cmd('supports') ? bandeauSupportsEdition(j, supports) : bandeauSupports(supports)}
+                ${cmd('supports') ? bandeauSupportsEdition(j, supports, t) : bandeauSupports(supports)}
                 <div class="carte__tete">
                   ${cmd('deplacement') ? `<span class="carte__poignee" draggable="true" data-poignee="${j}"
-                        title="Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés">⠿</span>` : ''}
+                        title="${t.poigneeTitre}">⠿</span>` : ''}
                 </div>
                 <textarea class="carte__texte" rows="1" data-champ="etape.${j}.texte"
-                          placeholder="Action relevée…">${echapper(et.texte || '')}</textarea>
-                ${cmd('supports') ? vueChoixSupport(j, supports, options.outils) : ''}
+                          placeholder="${t.etapePlaceholder}">${echapper(et.texte || '')}</textarea>
+                ${cmd('supports') ? vueChoixSupport(j, supports, options.outils, t) : ''}
                 <div class="carte__outils">
-                  ${cmd('etapes') ? `<button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="Décaler à gauche">←</button>
-                  <button class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="Décaler à droite">→</button>
-                  <button class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="Insérer une étape après">+</button>
+                  ${cmd('etapes') ? `<button class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="${t.etapeGauche}">←</button>
+                  <button class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="${t.etapeDroite}">→</button>
+                  <button class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="${t.etapeInserer}">+</button>
                   ` : ''}${cmd('phases') ? `<button class="bouton--puce" data-action="couper-phase" data-i="${j}"
-                          title="Commencer une nouvelle échelle de temps à partir de cette étape">${ICONE_COUPURE}</button>` : ''}${cmd('etapes') ? `
-                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="Supprimer l'étape">×</button>` : ''}
+                          title="${t.phaseCouperTitre}">${ICONE_COUPURE}</button>` : ''}${cmd('etapes') ? `
+                  <button class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="${t.etapeSupprimer}">×</button>` : ''}
                 </div>
               </div>
             </div>`);
@@ -398,7 +545,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       if (ed && cmd('deplacement') && i < R - 1) {
         cellules.push(`<div class="flux__frontiere" style="grid-row:${2 + i};grid-column:${2 + j}"
           data-frontiere="${j}" data-role-haut="${echapper(r.nom)}" data-role-bas="${echapper(couloirs[i + 1].nom)}"
-          title="Déposer ici : les deux rôles sont concernés"></div>`);
+          title="${t.frontiereTitre}"></div>`);
       }
     }
 
@@ -407,9 +554,10 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       cellules.push(`
         <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + n}" data-cellule="${n}" data-role-nom="${echapper(r.nom)}">
           <button class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${echapper(r.nom)}"
-                  title="Ajouter une étape sur cette ligne">+ Étape</button>
+                  title="${t.etapeAjouterTitre}">${t.etapeAjouter}</button>
         </div>`);
     }
+
   });
 
   const legende = `
@@ -417,10 +565,11 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
       ${['auto', 'manuel', ''].map((k) => `
         <span class="flux__legende-item">
           <span class="flux__legende-trait" style="border-top-color:${LIENS[k].couleur};border-top-style:${LIENS[k].tirets ? 'dashed' : 'solid'}"></span>
-          ${LIENS[k].libelle}
+          ${libelleLien(k, t)}
         </span>`).join('')}
-      ${ed ? '<span class="sourdine" style="font-size:13px">— cliquez une flèche pour changer</span>' : ''}
+      ${ed ? `<span class="sourdine" style="font-size:13px">${t.legendeAide}</span>` : ''}
     </div>`;
+
 
   /* Sans saut de ligne d'ouverture, contrairement à `entete` : l'appel est déjà
      indenté dans le gabarit final. En ajouter un ici insérerait une ligne vide
@@ -428,7 +577,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
      échouerait — c'est exactement ce qu'elle est là pour attraper. */
   const pied = `<div class="flux__pied">
       ${legende}
-      ${ed && cmd('roles') ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">+ Rôle</button>` : ''}
+      ${ed && cmd('roles') ? `<button class="bouton bouton--mini pousse-droite" data-action="ajouter-role">${t.roleAjouter}</button>` : ''}
     </div>`;
 
   /* Le corps seul, sans enveloppe : l'hôte React possède la carte et fournit
@@ -445,7 +594,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
         ${frise}
         ${ed && cmd('phases') ? `<button class="flux__phase-ajout" data-action="ajouter-phase"
                         style="grid-row:1;grid-column:${2 + n}"
-                        title="Ajouter une échelle de temps en fin de frise">+ Échelle</button>` : ''}
+                        title="${t.phaseAjouterTitre}">${t.phaseAjouter}</button>` : ''}
         ${etiquettes}
         ${cellules.join('')}
       </div>
@@ -465,14 +614,27 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
    Après la mise en page — ces trois fonctions ont besoin du DOM
    ------------------------------------------------------------------------- */
 
-/** Hauteur des zones de saisie ajustée à leur contenu. */
+/** Hauteur maximale d'une zone de saisie d'étape, en pixels.
+
+    Une carte qui grandit sans limite déforme la grille, et le tracé des flèches
+    mesure les cartes : au-delà, la zone défile au lieu de pousser. 160 px ≈ 7
+    lignes à 15/1.4 — assez pour voir ce qu'on écrit, trop peu pour bousculer la
+    géométrie du diagramme. */
+export const HAUTEUR_MAX_TEXTE = 160;
+
+/** Met chaque zone de saisie à la hauteur de son contenu, dans la limite.
+    Appelée après rendu ET à chaque frappe par l'hôte : sinon on écrit à
+    l'aveugle dans un `rows="1"`. */
 export function ajusterZonesDeTexte(zone) {
   if (!zone) return;
   zone.querySelectorAll('.carte__texte').forEach((z) => {
     z.style.height = 'auto';
-    z.style.height = z.scrollHeight + 'px';
+    const voulue = z.scrollHeight;
+    z.style.height = Math.min(voulue, HAUTEUR_MAX_TEXTE) + 'px';
+    z.style.overflowY = voulue > HAUTEUR_MAX_TEXTE ? 'auto' : 'hidden';
   });
 }
+
 
 /** Centre les cartes « à cheval » sur la frontière entre leurs deux couloirs.
     Le décalage est mémorisé sur la carte pour que les flèches le suivent :
@@ -504,8 +666,10 @@ export function placerCartesACheval(zone) {
  * @param {object} [options]  { edition } pour les zones de clic
  */
 export function tracerFleches(zone, etapes, options = {}) {
+  const t = mots(options.mots);
   const svg = zone && zone.querySelector('.flux-svg');
   if (!zone || !svg) return;
+
 
   const cibles = zone.querySelector('.flux-svg--cibles');
   const liste = etapes || [];
@@ -542,13 +706,14 @@ export function tracerFleches(zone, etapes, options = {}) {
       ? `M${x1},${y1} L${x2},${y2}`
       : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
 
+
     /* Le lien est porté par l'étape qui reçoit la flèche. */
     const nature = (liste[i + 1] && liste[i + 1].lien) || '';
     const style = LIENS[nature] || LIENS[''];
 
     if (options.edition) {
       zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien" data-i="${i + 1}" d="${d}"
-        fill="none" stroke="transparent" stroke-width="16"><title>Lien ${style.libelle} — cliquer pour changer</title></path>`);
+        fill="none" stroke="transparent" stroke-width="16"><title>${t.flecheTitre(libelleLien(nature, t))}</title></path>`);
     }
     chemins.push(`<path d="${d}" fill="none" stroke="${style.couleur}" stroke-width="1.5"${
       style.tirets ? ` stroke-dasharray="${style.tirets}"` : ''} marker-end="url(#${style.marqueur})"/>`);
