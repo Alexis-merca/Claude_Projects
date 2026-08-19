@@ -111,3 +111,129 @@ bouton présent, survivant à la bascule d'onglet et à une mutation du diagramm
 0 mutation au repos ; puis clic, mode bilan, colonne Cible éditable, écriture
 relue en base, remise à vide. **C'est la première fois que ce chemin est
 parcouru en entier.**
+
+---
+
+## 2026-08-18 — deuxième série, sur usage réel
+
+Neuf retours d'un même passage sur l'application, avec captures. Sept écrans.
+L'utilisateur venait de créer un vrai diagnostic (`danone-bailleul`) et
+d'essayer la note interne livrée le jour même.
+
+### 3. Le nom du support n'apparaît nulle part — **CASSÉ**
+
+**Où** : cartes du diagramme, pastilles de support.
+
+**Vu** : une icône, sans nom, sans infobulle, sans légende.
+
+**Attendu** : savoir de quel outil il s'agit sans le deviner.
+
+**Où ça vit** : `badgeSupport()` dans `moteur.js`. La fonction produit un SVG
+sans `title` ni `aria-label`. **Zone moteur.**
+
+### 4. Les libellés des chiffres clés sont coupés — **CASSÉ** *(écran 1)*
+
+**Vu** : « collaborateurs sur », « rotation du personn… », « temps de
+construct… », « préparation des en… » — six libellés sur six tronqués.
+
+**Où ça vit** : `PanneauChiffres`, champ de largeur fixe. **Zone à nous.**
+Le plus petit correctif de toute la liste.
+
+### 5. Un rôle refuse de se supprimer sans dire où il sert — **CASSÉ** *(écran 2)*
+
+**Vu** : « Le rôle *Manager service et expérience client* est encore utilisé par
+une étape. Réaffectez-la avant de le supprimer. » Le couloir paraît vide à
+l'écran.
+
+**Lecture de l'utilisateur** : « il est utilisé dans un autre UC ». C'est
+**impossible** — `processus.roles` est propre à chaque processus, un rôle de
+même nom dans un autre use case est une autre donnée. L'étape fautive est donc
+dans CE processus, hors du champ visible, ou désignée par `role2`.
+
+**Ce que ça révèle, et qui vaut plus que le défaut** : le refus est juste mais
+**muet sur le lieu**. Un garde qui dit « quelque chose vous en empêche » sans
+dire quoi transforme une protection en impasse — l'utilisateur a conclu à un
+bug du produit. **Le message doit nommer l'étape** (numéro et texte).
+
+### 6. Pas de retour arrière — **MANQUE**
+
+Aucun annuler / refaire. Les instantanés de version existent (`versions`,
+`PanneauVersions`) mais se prennent une fois par jour : ils rattrapent une
+séance, pas un geste.
+
+### 7. L'environnement IT occupe tout l'écran — **CASSÉ** *(écran 3)*
+
+**Vu** : douze blocs, chacun avec ses lignes « aucun outil », sur plusieurs
+écrans de haut.
+
+**Ce qui existe déjà** : `sansLignesVides()` — écrite, utilisée à l'impression
+et en PPTX, **jamais à l'écran**. Le choix était délibéré (« une ligne vide dit
+ce qui n'a pas encore été relevé ») mais il n'a jamais été confronté à douze
+blocs réels.
+
+### 8. Le bloc « Non classé » affiche chaque nom deux fois — **CASSÉ** *(écran 4)*
+
+**Vu** : `MyGame` en libellé de ligne ET en pastille sur la même ligne, dix
+fois de suite. Et aucun moyen de ranger ces outils dans un vrai bloc.
+
+**Pourquoi c'est structurel** : `classer()` rend `{ bloc: "non-classe",
+etape: outil }` pour un outil inconnu — le nom de l'outil **est** le nom de
+l'activité. Le doublon n'est pas un bug d'affichage, c'est le modèle qui
+transparaît.
+
+### 9. Tous les outils clients ont la même icône — **CASSÉ** *(écran 5)*
+
+**Vu** : `MyGame`, `EFIplan`, `GPLine`, `PeopleSync`, `Info Sociale`,
+`Decathlon University` — tous la même fenêtre indigo.
+
+**Pourquoi** : `BADGES_SUPPORT` couvre sept familles par motifs (Excel,
+PowerPoint, SharePoint, Word/papier, mail, vidéo, oral) ; tout le reste tombe
+sur `BADGE_DEFAUT`. Or **un outil maison ne sera jamais dans une liste de
+motifs** : allonger la liste ne règle rien, c'est le repli qui doit changer.
+
+Piste : une couleur **dérivée du nom**, comme `paletteStable` le fait déjà pour
+les rôles — fonction pure, donc `EFIplan` garde sa teinte partout et d'un
+client à l'autre. **Zone moteur.**
+
+### 10. On écrit à l'aveugle dans les cartes — **CASSÉ** *(écran 6)*
+
+**Vu** : le `textarea` d'une carte montre deux mots à la fois.
+
+**Où ça vit** : `carte__texte`, `rows="1"`, dans `moteur.js`. **Zone moteur.**
+
+### 11. Il faut une bascule FR / EN — **MANQUE, et c'est le gros morceau** *(écran 7)*
+
+**Demandé** : l'interface en anglais, le contenu saisi inchangé.
+
+**Ce que la lecture du code apprend :**
+
+- **Les blocs IT ont déjà clef et libellé séparés** (`clef: "sirh"`,
+  `nom: "SIRH & GTA"`) — traduisibles. Réserve : dès qu'un site enregistre sa
+  structure, le libellé français est **figé dans `clients.si`**.
+- **Les activités, non.** `TABLE_A` range un outil vers `"Visites médicales"`,
+  et `vueEnvIT` apparie sur `normaliser(sujet)`. Traduire ces chaînes casserait
+  le classement. **La traduction doit donc être un habillage d'affichage,
+  jamais un renommage** — sinon on ouvre §3a de la feuille de route, la seule
+  entrée que ce document qualifie de vraiment chère.
+- **Le moteur parle français en dur** : « Ajuster », « Saisie rapide »,
+  « Autre outil… », « + Première étape », « Décaler à gauche », « Insérer une
+  étape après », « Déposer ici », « + Rôle »… **Zone moteur.**
+- Les **échelles de temps** (`À L'EMBAUCHE`, `1ER JOUR`…) sont du contenu
+  (`etapes.phase`) : elles ne se traduisent pas.
+- Les **dix échelles de maturité** (50 libellés) sont de l'outil : à traduire.
+
+**Verdict** : quatre des neuf retours — 3, 9, 10 et une part de 11 — tombent
+dans `src/flux/`, tenu pour intouchable et copié en **trois** exemplaires
+(`src/flux/` chez Lovable, `flux/` et `diagnostic-os.html` au dépôt). C'est la
+décision à prendre avant toute autre.
+
+### Retiré de la liste
+
+Le **glisser-déposer d'une étape vers un autre acteur** figurait dans la série.
+Vérification faite avant d'y toucher : il est **entièrement implémenté** —
+`deposerEtape()` dans `mutations.js` (avec adoption de la phase du voisin et
+gestion du dépôt sur une frontière à deux rôles), poignée `draggable` posée par
+`moteur.js:375`, infobulle « Glisser sur un autre couloir… ». L'utilisateur a
+confirmé ensuite : **« ça fonctionne bien »**.
+
+Une minute de lecture a évité de reconstruire une fonctionnalité existante.
