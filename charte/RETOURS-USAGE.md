@@ -237,3 +237,69 @@ gestion du dépôt sur une frontière à deux rôles), poignée `draggable` pos�
 confirmé ensuite : **« ça fonctionne bien »**.
 
 Une minute de lecture a évité de reconstruire une fonctionnalité existante.
+
+---
+
+## 2026-08-19 — troisième série, et une règle de portée
+
+Quatre retours nouveaux, en plus de ceux du 18 (n° 3 à 11).
+
+**Règle posée par l'utilisateur, valable pour la suite :** *tout ce qui concerne
+les exports PDF et PPTX est mis de côté — le module sera refait.* Les retours
+sur le PPTX flou, le PPTX non modifiable et l'export JPG sont donc **enregistrés
+mais non traités**, et aucun envoi ne doit désormais y toucher.
+
+Conséquence utile : la contrainte « ne fais pas bouger l'échelle d'impression »,
+qui pesait sur chaque retouche de mise en page depuis le 18, **se relâche**. Elle
+reste vraie tant que le module actuel sert, mais elle cesse d'être un motif de
+blocage.
+
+### 12. La couleur d'un rôle devrait pouvoir se choisir — **MANQUE**
+
+**Vu** : la teinte d'un rôle est calculée (`paletteStable`, fonction pure du
+nom, index dans la liste des rôles du client). Sur un diagnostic à beaucoup de
+rôles, deux rôles voisins reçoivent des teintes proches ou identiques.
+
+**Attendu** : pouvoir la fixer à la main.
+
+**Ce que ça coûte, et qu'il faut peser** : la teinte est aujourd'hui une
+**fonction pure du nom**, ce qui garantit qu'un rôle garde sa couleur d'un
+processus à l'autre, d'un écran au PDF, sans rien enregistrer. Une couleur
+choisie devient une donnée à stocker, à recopier depuis la trame, à exporter
+dans `client_json`, et à restaurer. Ce n'est pas un réglage d'affichage.
+
+### 13. Impossible de créer un nouvel outil — **CASSÉ**
+
+**Vu** : « Je n'arrive pas à créer un nouvel outil. »
+
+**Pistes, à mesurer avant de corriger** — il y a **deux** chemins distincts et
+le retour ne dit pas lequel a échoué :
+- le sélecteur de support d'une carte, option « Autre outil… », qui passe par
+  `window.prompt` dans `DiagrammeFlux.surChangement` ;
+- le « + outil » d'une ligne de l'environnement IT.
+
+Sur le premier, une anomalie est déjà visible à la lecture : `surChangement`
+utilise `t.supportSaisirNom` mais sa liste de dépendances est `[appliquer]` —
+`t` n'y est pas. La fermeture est donc figée au premier rendu. Sans effet
+aujourd'hui (le dictionnaire ne change pas), **fatal dès la bascule FR/EN**.
+
+### 14. Cliquer sur la croix renvoie en bas de page — **CASSÉ**
+
+**Vu** : un clic sur une croix de suppression fait sauter la page vers le bas.
+
+**Cause classique à vérifier** : un `<button>` sans `type="button"` à l'intérieur
+d'un formulaire, ou un focus déplacé vers un élément de bas de page après le
+démontage. Le moteur émet beaucoup de `<button class="bouton--puce">` sans
+`type` — à mesurer plutôt qu'à supposer.
+
+### 15. Le PPTX n'est pas exploitable — **ENREGISTRÉ, NON TRAITÉ**
+
+**Vu** : le PPTX doit être reversé dans Google Slides, où il s'ouvre flou et
+inutilisable ; le diagramme et les frictions y sont trop petits pour être lus.
+L'utilisateur contourne en photographiant l'écran.
+
+**Demandé** : un PPTX modifiable, ou un JPG, idéalement au choix.
+
+**Non traité par décision de l'utilisateur** : le module d'export sera refait.
+Consigné ici pour que la refonte parte des symptômes réels et non d'une idée
+neuve.
