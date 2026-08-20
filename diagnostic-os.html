@@ -1440,10 +1440,14 @@ const BADGES_SUPPORT = [
    Aucune de ces teintes ne s'approche des sept marques reconnues : pas de
    vert, pas de sarcelle, pas d'ambre. Un outil client qui ressemblerait à
    Excel serait pire que l'indigo uniforme. */
+/* La palette s'allonge par la fin, jamais par réordonnancement : la teinte
+   d'un outil vaut sa position dans la liste du site. */
 const PALETTE_OUTILS = [
   '#5A6ACF', '#4338CA', '#7E22CE', '#B5179E',
   '#DB2777', '#9F1239', '#475569', '#5B3A29',
-  '#1E3A8A', '#6D28D9', '#7C2D12', '#334155'
+  '#1E3A8A', '#6D28D9', '#7C2D12', '#334155',
+  '#8E24AA', '#2D5BAE', '#A82264', '#3B4A63',
+  '#5E35B1', '#93401F', '#26467F', '#7A2A63'
 ];
 
 /** Empreinte FNV-1a 32 bits du nom normalisé — pure, sans dépendance. */
@@ -1500,10 +1504,12 @@ function listeSupports(brut) {
 function bandeauSupports(liste, outils) {
   if (!liste.length) return '';
   const montrees = liste.slice(0, 4);
-  const reste = liste.length - montrees.length;
-  return `<span class="supports-bordure" title="${e(liste.join(' · '))}">
+  const caches = liste.slice(4);
+  /* Pas de `title` sur le conteneur : il couvrirait les pastilles et masquerait
+     le `<title>` de chaque `<svg>`. Une seule source d'infobulle : la pastille. */
+  return `<span class="supports-bordure">
     ${montrees.map((sup) => badgeSupport(sup, outils)).join('')}
-    ${reste ? `<span class="supports-bordure__reste">+${reste}</span>` : ''}
+    ${caches.length ? `<span class="supports-bordure__reste" title="${e(caches.join(' · '))}">+${caches.length}</span>` : ''}
   </span>`;
 }
 
@@ -1552,7 +1558,7 @@ function bandeauSupportsEdition(j, supports, outils) {
   if (!supports.length) return '';
   return `<span class="supports-bordure supports-bordure--edition">
     ${supports.map((sup, k) => `
-      <span class="support-modif" title="${e(sup)}">
+      <span class="support-modif">
         ${badgeSupport(sup, outils)}
         <button type="button" class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
                 title="Retirer ${e(sup)}">×</button>

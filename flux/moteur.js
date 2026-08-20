@@ -82,8 +82,13 @@ export const BADGES_SUPPORT = [
     Un outil maison ne sera jamais dans `BADGES_SUPPORT` : la liste de motifs ne
     peut couvrir que les familles universelles. Le repli ne doit donc pas être
     une couleur unique — sur un diagnostic réel, `MyGame`, `EFIplan` et `GPLine`
-    devenaient trois fois la même fenêtre indigo. La teinte est dérivée du NOM,
-    donc stable d'un écran à l'autre, d'un client à l'autre et dans le PDF.
+    devenaient trois fois la même fenêtre indigo. La teinte vaut donc la
+    POSITION de l'outil dans la liste du site (`options.outils`) ; l'empreinte
+    du nom ne sert plus que de repli, pour un outil absent de cette liste.
+
+    LA PALETTE S'ALLONGE PAR LA FIN, JAMAIS PAR RÉORDONNANCEMENT : permuter une
+    entrée repeindrait tous les diagnostics existants. Les douze premières sont
+    celles d'origine, dans l'ordre.
 
     Aucune de ces teintes ne s'approche des sept marques reconnues (vert Excel,
     orange PowerPoint, sarcelle SharePoint, bleus Word et mail, rouge vidéo,
@@ -92,7 +97,9 @@ export const BADGES_SUPPORT = [
 export const PALETTE_OUTILS = [
   '#5A6ACF', '#4338CA', '#7E22CE', '#B5179E',
   '#DB2777', '#9F1239', '#475569', '#5B3A29',
-  '#1E3A8A', '#6D28D9', '#7C2D12', '#334155'
+  '#1E3A8A', '#6D28D9', '#7C2D12', '#334155',
+  '#8E24AA', '#2D5BAE', '#A82264', '#3B4A63',
+  '#5E35B1', '#93401F', '#26467F', '#7A2A63'
 ];
 
 
@@ -256,14 +263,21 @@ export function badgeSupport(nom, outils) {
 }
 
 
-/** Supports de l'étape, en rangée à cheval sur la bordure haute de la carte. */
+/** Supports de l'étape, en rangée à cheval sur la bordure haute de la carte.
+
+    PAS DE `title` SUR LE CONTENEUR : une infobulle d'ancêtre couvre toute la
+    rangée, y compris les pastilles, et le navigateur retient alors la sienne au
+    lieu du `<title>` de chaque `<svg>` — on lisait « Excel · SharePoint » (ou
+    rien) au lieu du nom survolé. Une seule source d'infobulle : la pastille.
+    Le compteur « +N », lui, n'est pas une pastille : il garde la liste des noms
+    cachés, seule information qu'il puisse porter. */
 export function bandeauSupports(liste, outils) {
   if (!liste.length) return '';
   const montrees = liste.slice(0, 4);
-  const reste = liste.length - montrees.length;
-  return `<span class="supports-bordure" title="${echapper(liste.join(' · '))}">
+  const caches = liste.slice(4);
+  return `<span class="supports-bordure">
     ${montrees.map((sup) => badgeSupport(sup, outils)).join('')}
-    ${reste ? `<span class="supports-bordure__reste">+${reste}</span>` : ''}
+    ${caches.length ? `<span class="supports-bordure__reste" title="${echapper(caches.join(' · '))}">+${caches.length}</span>` : ''}
   </span>`;
 }
 
@@ -374,7 +388,7 @@ function bandeauSupportsEdition(j, supports, t, outils) {
   if (!supports.length) return '';
   return `<span class="supports-bordure supports-bordure--edition">
     ${supports.map((sup, k) => `
-      <span class="support-modif" title="${echapper(sup)}">
+      <span class="support-modif">
         ${badgeSupport(sup, outils)}
         <button type="button" class="bouton--retirer" data-action="supprimer-support" data-i="${j}" data-s="${k}"
                 title="${t.supportRetirer(echapper(sup))}">×</button>
