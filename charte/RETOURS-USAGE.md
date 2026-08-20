@@ -303,3 +303,32 @@ L'utilisateur contourne en photographiant l'écran.
 **Non traité par décision de l'utilisateur** : le module d'export sera refait.
 Consigné ici pour que la refonte parte des symptômes réels et non d'une idée
 neuve.
+
+### 16. L'en-tête d'un bloc IT recouvre sa première ligne — **ENVOYÉ**
+
+**Vu** (copie d'écran, écran en anglais) : « HRIS & TIME MANAGEMENT » masque
+« Absences » ; « DOCUMENT MANAGEMENT & SHARING » masque « Document
+distribution ». Le bandeau d'outils du même en-tête déborde par le haut, sur
+trois lignes.
+
+**Cause, lue dans `EnvironnementIT.tsx`** : l'en-tête de `Bloc` est en
+`absolute -top-3.5`, au-dessus d'une réserve **fixe** (`pt-7`). Cette réserve
+vaut pour un titre d'UNE ligne. Au-delà, l'en-tête grandit vers le bas, sort de
+la réserve et se pose sur le contenu — sans erreur ni avertissement.
+
+**Ce n'est pas un défaut de traduction.** Le français passait parce que ses
+libellés sont courts (« SIRH & GTA »). L'anglais ne fait que révéler un défaut
+qui existait déjà : un bloc renommé à la main un peu long donnerait la même
+chose en français.
+
+**Règle posée** : *aucune boîte de cet écran ne réserve une hauteur ou une
+largeur calculée sur la longueur d'un texte. La place vient du contenu, jamais
+l'inverse.* L'en-tête revient dans le flux, le chevauchement de la pastille sur
+la bordure devient constant, et la place occupée grandit avec le nombre de
+lignes.
+
+**Ce que la même copie d'écran confirme au passage**, et qui n'avait jamais été
+vu : les blocs et les activités de l'environnement IT s'affichent bien traduits
+(« TRAINING », « Tracking + assessment », « Steering », « Document
+distribution »), et le repli des lignes vides fonctionne — « 31 undocumented
+rows hidden — show ».
