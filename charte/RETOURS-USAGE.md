@@ -367,3 +367,41 @@ premier terme de la disjonction.
 
 L'estompage des outils partagés ne se perd pas : il est porté par les pastilles
 des lignes elles-mêmes (`marque(o)`), vérifié en lisant.
+
+### 18. Les chiffres clés illisibles en édition — **LIVRÉ**
+
+**Vu** (copie d'écran) : la case de la valeur occupe les deux tiers de la ligne
+pour afficher « 1 h », et le libellé — la moitié utile du chiffre — se retrouve
+dans une boîte de deux lignes avec ascenseur, coupé en plein mot.
+
+**Deux causes distinctes**, et c'est ce qui comptait :
+
+1. **La colonne de la valeur n'était pas trop large par réglage.** C'est
+   l'`<input>` qui imposait sa largeur intrinsèque par défaut — une vingtaine
+   de caractères, en monospace 22 px — et `shrink-0` interdisait de la réduire.
+   Bornée **en édition seulement** : hors édition la colonne se dimensionne déjà
+   sur son contenu et la vue d'impression cale sa hauteur de ligne dessus.
+2. **`ChampEnPlace` en mode multiligne rendait un `<textarea rows={2}>` fixe.**
+   Au-delà de deux lignes, ça défilait. Même défaut que l'en-tête des blocs IT,
+   à un autre endroit : une case dont la hauteur est décidée à l'avance.
+
+**La largeur se compte en caractères, pas en pixels.** Premier jet à `w-[92px]`,
+soit — l'`<input>` portant `px-2` et Roboto Mono ayant une avance de 0,6 em à
+22 px — `(92 − 16) / 13,2 = 5,7 caractères`. « 3 mois » en fait 6 : la valeur de
+la copie d'écran débordait déjà. Repris en `calc(9ch + 1rem)` : la police est à
+chasse fixe, `ch` décrit exactement ce qu'on cherche et suit la taille de police
+si elle change.
+
+**Le plafond de hauteur est importé, pas redéfini** : `HAUTEUR_MAX_TEXTE` vient
+de `src/flux/moteur.js`, celui-là même qui borne les cartes du diagramme. Deux
+plafonds auraient divergé.
+
+Six champs en bénéficient — texte d'étape, cible, note interne, texte de
+friction, en saisie rapide comme dans le popup.
+
+**Reste connu, non corrigé** : l'observateur de taille est attaché par un effet
+dont les dépendances ne contiennent pas le nœud lui-même. Si `estTraduit` bascule
+en cours d'édition — en anglais, quand le lot de traductions arrive —, le champ
+est remonté et l'observateur continue de surveiller l'ancien nœud, détaché. Le
+champ retombe alors sur l'ajustement à la frappe. Correction : une **ref de
+rappel** au lieu de `useRef`, pour que l'observateur suive le nœud monté.
