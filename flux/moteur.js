@@ -218,6 +218,61 @@ export const MOTS_FR = {
   ecartJours: 'j'
 };
 
+/** Dictionnaire anglais. Mêmes clés que `MOTS_FR`, aucune valeur en moins :
+    l'hôte le passe tel quel dans `options.mots`.
+
+    Ne sont pas ici, pour les mêmes raisons qu'en français : `'Transverse'`,
+    valeur écrite en base ; les CLÉS de `liens` (`''` / `'auto'` / `'manuel'`),
+    valeurs contraintes de `etapes.lien` dont seul le libellé se traduit ; et
+    `'Nouvelle échelle'` de `mutations.js`, écrit dans `etapes.phase`, donc du
+    contenu. */
+export const MOTS_EN = {
+  titre: 'Process flow — current state',
+  zoomAjuster: 'Fit',
+  zoomAjusterTitre: 'Set the zoom to show everything',
+  zoomAria: 'Diagram zoom',
+  saisieRapide: 'Quick entry',
+  masquerSaisieRapide: 'Hide quick entry',
+  videTitre: 'No steps in this process',
+  videEdition: 'Add the first step with the button below.',
+  videLecture: 'Switch to edit mode and add the first step of the flow.',
+  premiereEtape: '+ First step',
+  phasePlaceholder: 'name this time band',
+  phaseRenommerTitre: (n) => `Rename the time band of the ${n} step(s) in this group`,
+  phaseSupprimerTitre: (n) =>
+    `Delete this time band — its ${n} step(s) move to the neighbouring band`,
+  phaseAjouter: '+ Time band',
+  phaseAjouterTitre: 'Add a time band at the end of the timeline',
+  phaseCouperTitre: 'Start a new time band at this step',
+  roleRenommerTitre: 'Rename the role',
+  roleMonter: 'Move the lane up',
+  roleDescendre: 'Move the lane down',
+  roleSupprimer: 'Delete the role',
+  roleAjouter: '+ Role',
+  poigneeTitre:
+    'Drag onto another lane, or onto the boundary between two lanes to show that both are involved',
+  etapePlaceholder: 'Observed action…',
+  etapeGauche: 'Shift left',
+  etapeDroite: 'Shift right',
+  etapeInserer: 'Insert a step after',
+  etapeSupprimer: 'Delete the step',
+  etapeAjouter: '+ Step',
+  etapeAjouterTitre: 'Add a step on this lane',
+  frontiereTitre: 'Drop here: both roles are involved',
+  supportAjouter: '＋ tool…',
+  supportAutre: 'Other tool…',
+  supportChoisirTitre: 'Choose the medium or tool used for this step',
+  supportRetirer: (nom) => `Remove ${nom}`,
+  supportSaisirNom: 'Name of the medium or tool:',
+
+  legendeAide: '— click an arrow to change it',
+  flecheTitre: (libelle) => `${libelle} link — click to change`,
+  liens: { '': 'unqualified', auto: 'automated', manuel: 'manual' },
+  ecartMois: 'mo',
+  ecartSemaines: 'wk',
+  ecartJours: 'd'
+};
+
 /** Dictionnaire effectif : le défaut français, complété par ce que l'hôte passe. */
 export function mots(fournis) {
   if (!fournis) return MOTS_FR;

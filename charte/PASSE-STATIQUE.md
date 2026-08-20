@@ -3885,3 +3885,112 @@ attrapé l'oubli.
 `demanderNomOutil` ni le nouveau `surChangement`. Aucun test ne le couvre —
 c'est un miroir de documentation, et je le signale plutôt que de le laisser
 dériver en silence.
+
+## 53. La bascule FR / EN, en deux envois — 20/08/2026
+
+Deux envois, deux commits : `476c713` pour l'interface, `88d59f2` pour le
+contenu saisi. Le second répond au revirement de l'utilisateur — « tout le texte
+visible sur la plateforme doit être traduit », y compris le relevé.
+
+### 53.1 L'architecture, telle qu'elle est réellement
+
+- **L'interface** est du code : `src/lib/langue.ts` type le dictionnaire à
+  partir du français, si bien que l'anglais doit le remplir en entier ; les mots
+  vivent dans `src/lib/mots/*`. Pas de bibliothèque d'i18n.
+- **Le moteur** reçoit ses mots : `MOTS_EN` s'ajoute à côté de `MOTS_FR`, la
+  route passe `mots={motsFlux(langue)}`. Aucune fonction du moteur ne change.
+- **Le contenu** est traduit par un appel modèle, **un seul par diagnostic**,
+  à température nulle, puis mis en cache dans `clients.si.traductions`, indexé
+  **sur le texte source** et non sur l'identifiant de ligne.
+- **Le classement des outils n'a pas bougé** : `src/lib/environnement-it.ts`
+  n'est touché par aucun des deux commits. `TABLE_A` et la trame restent en
+  français canonique, `libelleIT` n'habille qu'au rendu.
+
+### 53.2 Ce que la base dit
+
+Relevé après les deux envois : `8 | 43 | 573 | 48 | 25`, inchangé. Les deux
+`versions` supplémentaires (25 → 27) sont deux instantanés `quotidien` sur
+`sekurit-float-france`, du 19 à 16h48 et du 20 à 8h01 : quelqu'un a ouvert le
+diagnostic en édition. **Le relevé n'a pas été réécrit.**
+
+En revanche `clients.si` porte désormais une troisième clef, `traductions`, et
+`sekurit-float-france` en compte **146 entrées, toutes automatiques**. Donc :
+la bascule vers l'anglais **écrit** — un cache, pas du contenu, mais une
+écriture tout de même, déclenchée par un geste d'affichage. C'est un fait à
+tenir, pas un détail : une lecture seule peut faire avancer `clients.version`.
+
+### 53.3 Le défaut : en anglais, tous les couloirs prennent la même teinte
+
+`SectionProcessus` passe au diagramme des rôles **traduits** et une palette
+restée **française**. Et `couleursRole` ne signale pas l'absence :
+
+```js
+const i = Math.max(0, (paletteRoles || []).indexOf(role));
+```
+
+Un rôle introuvable prend la **place 0**. Pas d'erreur, pas de repli visible :
+la teinte est simplement fausse. Mesuré sur les rôles réels du site :
+
+```
+FR : #D4DEF9 #D4F3E9 #DBEEFA #DEF3CC   → 4 teintes
+EN : #D4DEF9 #D4DEF9 #D4DEF9 #D4DEF9   → 1 teinte
+```
+
+Le garde-fou censé l'éviter ne fait rien :
+
+```ts
+const place = processus.roles.indexOf(nom);   // vaut toujours `i`
+reordonnee[place] = palette[i] ?? palette[0]; // donc : reordonnee[i] = palette[i]
+```
+
+**Leçon.** Un repli silencieux transforme une erreur de clef en erreur
+d'affichage. Partout où une fonction fait `Math.max(0, indexOf(...))`, changer
+la nature des clefs qu'on lui passe est un changement de contrat — et il ne se
+verra ni au type, ni au test, ni à la compilation. Seule la mesure le montre.
+
+### 53.4 Le bilan restait en français
+
+`traduireVue = mode === "lecture"` laissait le diagramme français en mode bilan
+— l'écran qu'on projette au client en fin d'audit, c'est-à-dire exactement là où
+l'anglais sert. La justification donnée (« en édition le moteur reçoit le
+français ») ne couvrait pas ce mode : en bilan `edition` vaut `false`. Mesure
+de ce que le moteur émet dans cet état :
+
+```
+textarea : 0 · contenteditable : 0 · data-action : zoom-ajuster (seul)
+```
+
+Aucune surface d'écriture. La ligne de partage n'est pas *lecture / le reste*,
+elle est **édition / non-édition**.
+
+### 53.5 Ce qui est bien tenu, et mérite d'être dit
+
+- `ChampEnPlace` compare le brouillon à **la valeur affichée à la prise de
+  focus**, mémorisée dans un `ref`. Entrer et sortir d'un champ traduit n'écrit
+  donc rien. C'était l'exigence non négociable du brief : elle est structurelle,
+  pas conditionnelle.
+- Les `<option value>` des sélecteurs de rôle, le brouillon de renommage, les
+  noms de blocs et d'activités en édition restent **la clef française**. Aucun
+  chemin d'écriture ne voit une chaîne traduite.
+- Les composants qui appellent `useTr` hors du fournisseur — la vue
+  d'impression — retombent sur l'identité : le contexte a une valeur par défaut.
+
+### 53.6 Deux conséquences assumées, à confirmer par l'utilisateur
+
+- **Écrire en anglais remplace la source française.** Le champ écrit ce qui est
+  tapé et oublie la traduction de l'ancien texte. Le relevé de terrain perd
+  alors son français, définitivement. C'est écrit en commentaire comme une
+  décision ; ça reste une décision de l'utilisateur, pas de l'agent.
+- **Le bandeau de conflit peut apparaître en lecture seule**, parce que
+  l'écriture du cache passe par le même `patchClient` gardé par
+  `clients.version`.
+
+### 53.7 Portage
+
+Rien à faire dans `diagnostic-os.html` : le mono-fichier est l'**original de
+référence** du test, il garde ses libellés français en dur, et `MOTS_EN` est un
+export inutilisé par le balisage par défaut. Portés dans le dépôt :
+`flux/moteur.js` (le dictionnaire) et `flux/moteur.d.ts` (une ligne).
+
+`moteur.test.mjs` et `mutations.test.mjs` repassent — **balisage identique au
+caractère près**.

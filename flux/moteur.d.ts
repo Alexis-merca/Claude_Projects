@@ -153,6 +153,8 @@ export function echapper(v: unknown): string;
 
 /** Dictionnaire français par défaut. */
 export const MOTS_FR: MotsFluxComplet;
+/** Dictionnaire anglais, mêmes clés, aucune valeur en moins. */
+export const MOTS_EN: MotsFluxComplet;
 /** Défauts complétés par ce que l'hôte fournit. */
 export function mots(fournis?: MotsFlux | null): MotsFluxComplet;
 /** Libellé d'affichage d'une nature de lien (`''`, `'auto'`, `'manuel'`). */
