@@ -405,3 +405,34 @@ en cours d'édition — en anglais, quand le lot de traductions arrive —, le c
 est remonté et l'observateur continue de surveiller l'ancien nœud, détaché. Le
 champ retombe alors sur l'ajustement à la frappe. Correction : une **ref de
 rappel** au lieu de `useRef`, pour que l'observateur suive le nœud monté.
+
+**Résidu fermé** (`c1d78bd`). L'observateur passe par une **ref de rappel** :
+c'est le nœud qui déclenche l'attache et le détachement, quel que soit le motif
+du remontage. Une dépendance de plus n'aurait fait que déplacer l'angle mort au
+prochain motif. Au passage, le repli `var(--debord-pastille, 14px)` a disparu —
+si la variable venait à manquer, la pastille cesse de chevaucher la bordure, ce
+qui **se voit**, au lieu de réintroduire une constante silencieusement fausse.
+
+### 19. Ce qui reste en français, et pourquoi — **TRANCHÉ**
+
+**Les messages de refus de `roles-processus.ts` sont branchés** : ils étaient
+annoncés traduisibles par paramètre, et personne ne passait le paramètre. Un
+consultant travaillant en anglais recevait donc en français le message le plus
+utile de l'écran — celui qui nomme l'étape bloquant la suppression d'un rôle.
+
+**Les métadonnées `head()` restent en français, et c'est une décision.**
+`head()` est une option de route évaluée hors React et, pour les routes rendues
+côté serveur, avant tout navigateur ; la langue vit dans `localStorage`, lue
+dans un `useEffect` après un premier rendu toujours français. Il faudrait donc
+un **cookie** pour la porter jusque-là. Nuance relevée à la relecture :
+`auth.tsx` porte `ssr: false`, donc *sa* balise pourrait techniquement lire le
+stockage — mais une traduction partielle, quelques routes sur cinq, vaut moins
+qu'un français uniforme et assumé.
+
+**Le rappel du modèle pour les chaînes non rendues n'est pas borné, exprès.**
+Mesure : sur les 279 entrées de `si.traductions` des deux clients qui en
+portent, aucune n'est dépourvue de rendu — le cas ne se produit pas. Et s'il se
+produisait, réessayer au chargement suivant est le bon comportement : un échec
+réseau est passager, un marqueur d'échec serait durable et figerait un incident
+d'une seconde en français définitif. Le raisonnement est écrit à côté de
+`dejaTente`, pour que personne ne le « corrige ».
