@@ -332,3 +332,38 @@ vu : les blocs et les activités de l'environnement IT s'affichent bien traduits
 (« TRAINING », « Tracking + assessment », « Steering », « Document
 distribution »), et le repli des lignes vides fonctionne — « 31 undocumented
 rows hidden — show ».
+
+**Livré** (`2c37e0e`, puis `4fc90d2`). L'en-tête est passé dans le flux, avec un
+chevauchement constant ; les noms d'outils longs sont **tronqués avec infobulle**
+plutôt que repliés — choix de l'agent, et sa raison est la bonne : la pastille
+garde une hauteur de ligne, donc elle ne déforme ni la ligne ni le bandeau, et à
+l'impression la hauteur reste chiffrable.
+
+Le correctif a produit sa propre conséquence : la mosaïque écartait ses blocs de
+12 px, mais chaque bloc déborde désormais de 14 px par le haut, ce qui donnait un
+écart vertical réel de **−2 px** — la pastille d'une rangée mordait sur le bloc
+du dessus. Résolu en posant le débordement **une seule fois**
+(`--debord-pastille`, sur le conteneur de la mosaïque), dont dérivent la marge
+négative de l'en-tête et l'écart de rangée (`débordement + 16 px`). La règle est
+écrite à l'endroit de la définition : *l'écart de rangée reste strictement
+supérieur au débordement*.
+
+### 17. Le bandeau d'un bloc IT répétait ses propres lignes — **LIVRÉ**
+
+**Vu** : sur un bloc à une seule ligne, le bandeau d'outils de l'en-tête répète
+exactement les pastilles de la ligne juste en dessous, et depuis qu'il se replie
+il prend deux lignes entières pour ne rien apprendre.
+
+**Fait** : le bandeau est masqué **hors édition** quand tous ses outils figurent
+déjà sur les lignes du bloc — comparaison d'ENSEMBLES sur le nom normalisé, et
+non « le bloc n'a qu'une ligne ». `domaine.outils` et les outils des lignes ne
+sont pas la même liste : un bloc à une ligne dont le bandeau porterait un outil
+de plus l'aurait perdu en silence.
+
+**La garde qui comptait** : en mode modifier, c'est le bandeau qui porte la croix
+de suppression du bloc — il est rendu même sans outil, précisément pour ça. Le
+masquer en édition aurait rendu un bloc indestructible. `edition` est donc le
+premier terme de la disjonction.
+
+L'estompage des outils partagés ne se perd pas : il est porté par les pastilles
+des lignes elles-mêmes (`marque(o)`), vérifié en lisant.
