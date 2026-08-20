@@ -174,3 +174,80 @@ quand un site tourne sur une version périmée de la trame.
 **La création des processus cible à la sélection des use cases** a été écartée
 en même temps. La trame `cible` reste une source de comparaison, pas un
 générateur.
+
+---
+
+## Les trois grands chantiers — annoncés le 20/08/2026
+
+Déclarés par l'utilisateur comme ses trois grosses améliorations à venir. Rien
+n'est engagé : ce qui suit note ce qui est su, et surtout ce qui reste à
+trancher avant d'écrire une ligne.
+
+### G1. Un espace d'administration — **NOUVEAU, à concevoir**
+
+Gérer le paramétrage, les clients et les sites depuis l'application, au lieu de
+passer par la base ou par un import JSON.
+
+**Ce qu'on sait déjà, et qui contraint la conception :**
+
+- **Client et site ne sont pas deux objets.** `clients` porte `nom`, `site`,
+  `date_visite` et `code` dans la même ligne : deux sites d'un même groupe sont
+  deux lignes sans lien entre elles. Un espace d'administration qui présente
+  « un client, plusieurs sites » demande donc soit une colonne de rattachement,
+  soit une table de plus — c'est **la première décision**, et elle touche
+  `client_json`, l'import et les instantanés.
+- **Le « paramétrage » n'existe nulle part comme objet.** Ce qui s'en approche
+  vit dans trois endroits sans parenté : la trame des use cases
+  (`clients.trame`, `template-use-case`), les tables de classement des outils
+  (`TABLE_A`, `GENERIQUES`, `TABLE_B`, dans le code), et `clients.si` —
+  structure de l'environnement IT, couleurs de rôle, traductions. Décider ce
+  qu'« administrer le paramétrage » recouvre est un travail de cadrage, pas de
+  code.
+- **Les tables de classement sont du code, et c'est délibéré.** Les rendre
+  éditables à chaud reviendrait à faire dépendre le classement de tous les
+  diagnostics d'une donnée qu'un utilisateur peut casser. Si ce chantier doit
+  les toucher, la question à trancher d'abord est : *qui rattrape un classement
+  devenu faux, et comment le voit-on ?*
+- **Il n'y a aucun rôle applicatif.** L'accès est binaire : tout compte du
+  domaine voit et modifie tout (`est_mercateam()`). Un « espace admin » suppose
+  soit une distinction consultant / administrateur — donc une notion nouvelle
+  en base et dans les politiques d'accès —, soit d'assumer que tout le monde y
+  entre.
+
+### G2. Boutons retour / avant — **DEMANDÉ DEUX FOIS, JAMAIS ENGAGÉ**
+
+Écarté du gros envoi du 19/08, puis reporté en faveur de la bascule FR/EN.
+
+Le point dur est connu : **les écritures partent à la sortie de champ, une par
+une, gardées par la version du processus.** Un « retour » n'est donc pas un
+`undo` d'interface mais l'inverse d'une écriture déjà en base, potentiellement
+concurrente de celle d'un collègue. Deux chemins existent, et ils ne coûtent pas
+la même chose : une pile d'inverses côté client (rapide, faux dès qu'on est
+deux), ou un journal d'écritures en base (juste, et c'est un vrai chantier).
+`versions` existe déjà et sait restaurer — c'est le grain qui manque, pas le
+mécanisme.
+
+### G3. Refonte du module d'export — **MIS DE CÔTÉ, PÉRIMÈTRE CONNU**
+
+À reprendre en bloc. Ce qui est constaté aujourd'hui, et qui doit servir de
+point de départ plutôt qu'une idée neuve :
+
+- le PPTX s'ouvre **flou et inexploitable** dans Google Slides, diagramme et
+  frictions illisibles ; l'utilisateur contourne en photographiant l'écran
+  (`RETOURS-USAGE.md` 15) ;
+- la vue d'impression **n'honore pas** les couleurs de rôle choisies à la main ;
+- l'impression est **entièrement en français**, et elle lit la base : depuis la
+  bascule à double sens, un champ dont la source est l'anglais sortira en
+  anglais dans un PDF français ;
+- le seuil de **12 lignes par page** de la trajectoire imprimée est un calcul,
+  jamais une mesure ;
+- le texte d'étape n'y est pas tronqué : au-delà de deux lignes par cellule, la
+  page se réduit et le corps passe sous 12 px.
+
+### Ce que ces trois chantiers ne recouvrent pas
+
+Le reste de la liste tenue au 20/08 : les frictions transverses, l'arbitrage de
+survie des outils au niveau du use case, la catégorie « déclaratif » (le
+meilleur rapport effort/valeur de la liste, et le seul qui change ce qu'on
+montre au client), la dette clef/libellé de la couche schéma, et les deux
+recettes navigateur — dont celle de la bascule FR/EN, jamais commencée.
