@@ -65,6 +65,28 @@ import {
   supprimerEtape,
 } from "./mutations.js";
 import type { Mutation } from "./mutations.js";
+
+/** ORIGINE DES CHAÎNES DE TEXTE D'UNE MUTATION (`texte`, `phase`).
+
+    UNE CHAÎNE NE PORTE PAS SON INTENTION, et la deviner est faux : quand un
+    geste FABRIQUE un libellé (`couperEchelle` écrit « Nouvelle échelle », un
+    nom choisi précisément parce qu'aucune étape ne le porte), une frontière de
+    traduction qui raisonne par reconnaissance le prend pour une frappe et
+    avale le geste — écran en anglais, le clic reste sans effet.
+
+    Le seul endroit qui connaît l'intention est ici : on sait quelle action du
+    moteur vient de tirer. On la dit donc explicitement.
+
+    - `"saisie"` : l'utilisateur a tapé la chaîne (`changerTexte`,
+      `renommerEchelle`) — c'est peut-être une traduction.
+    - `"valeur"` : la chaîne est recopiée ou fabriquée par le moteur — elle
+      part en base, ramenée à sa source si elle est reconnue.
+
+    LE REPLI EST `"valeur"`, ET C'EST VOULU : un geste ajouté demain sans
+    mention écrira en base plutôt que de disparaître en silence. */
+export type OrigineTexte = "saisie" | "valeur";
+
+export type MutationHote = Mutation & { origineTexte: OrigineTexte };
 import "./moteur.css";
 
 /* Seules ces commandes sont traitées ici. Le moteur n'émet donc que celles-là :
@@ -98,11 +120,21 @@ export interface DiagrammeFluxProps {
       l'en-tête et la légende portés ici. Absent : français par défaut. */
   mots?: MotsFlux;
 
+  /** Saisie du nom d'un nouvel outil (« Autre outil… »). L'hôte la fournit avec
+      la boîte de dialogue du site ; sans elle, repli sur `window.prompt`.
+
+      CE N'EST PAS UN LUXE DE CHARTE. La préversion s'affiche dans une iframe :
+      un navigateur y ignore `prompt()` sans rien dire, donc le seul chemin qui
+      inscrit un outil dans `clients.outils` retournait toujours « rien saisi ».
+      Une boîte native est de surcroît intraduisible, alors que tous les autres
+      mots du composant sont désormais fournis. */
+  demanderNomOutil?: () => Promise<string | null>;
+
   /** Appelé pour chaque interaction d'édition. Le composant ne parle pas à la
       base : il dit ce qu'il faut écrire, l'hôte décide comment. `ordre` doit
       passer par `reordonner_etapes()` — jamais par des écritures ligne à
       ligne, ni par un upsert partiel qui viderait les colonnes absentes. */
-  onMutation?: (m: Mutation) => void;
+  onMutation?: (m: MutationHote) => void;
 }
 
 export function DiagrammeFlux({
@@ -116,6 +148,7 @@ export function DiagrammeFlux({
   zoom: zoomPropose,
   onZoom,
   mots: motsFournis,
+  demanderNomOutil,
   onMutation,
 }: DiagrammeFluxProps) {
   /* Un seul dictionnaire pour le moteur et pour ce qui est porté ici, sinon
@@ -266,10 +299,12 @@ export function DiagrammeFlux({
   const emettre = useRef(onMutation);
   emettre.current = onMutation;
 
-  const appliquer = useCallback((m: Mutation) => {
+  /* `origineTexte` par défaut à `"valeur"` : seuls les deux gestes de saisie
+     l'annoncent, tout le reste écrit en base. */
+  const appliquer = useCallback((m: Mutation, origineTexte: OrigineTexte = "valeur") => {
     if (!m) return;
     if (m.refus || m.creation || m.suppression || m.ordre || m.ecritures.length)
-      emettre.current?.(m);
+      emettre.current?.({ ...m, origineTexte });
   }, []);
 
   /* Un seul gestionnaire délégué par type d'évènement, posé sur l'hôte : le
@@ -332,21 +367,40 @@ export function DiagrammeFlux({
       if (!champ) return;
       const valeur = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
       const [type, a, b] = champ.split(".");
+      /* LES DEUX SEULS GESTES QUI PORTENT UNE SAISIE. Le libellé vient du
+         clavier, dans la langue de l'écran : c'est peut-être une traduction. */
       if (type === "etape" && b === "texte")
-        appliquer(changerTexte(vues.current, Number(a), valeur));
+        appliquer(changerTexte(vues.current, Number(a), valeur), "saisie");
       else if (type === "phase")
-        appliquer(renommerEchelle(vues.current, Number(a), Number(b), valeur));
+        appliquer(renommerEchelle(vues.current, Number(a), Number(b), valeur), "saisie");
       else if (type === "support-ajout") {
-        /* `__autre__` : l'outil est saisi à la main et rejoint la liste du site,
-         sinon chacun le retaperait avec une orthographe différente. */
+        /* `__autre__` : l'outil est saisi à la main et rejoint la liste du site
+           (`inscrireAuClient`), sinon chacun le retaperait avec une orthographe
+           différente et il ne serait proposé nulle part ailleurs. */
         const saisi = valeur === "__autre__";
-        const nom = saisi ? (window.prompt(t.supportSaisirNom) || "").trim() : valeur;
-        /* Le sélecteur revient à vide : il sert à ajouter, pas à porter un état. */
+        const index = Number(a);
+        /* Le sélecteur revient à vide TOUT DE SUITE : il sert à ajouter, pas à
+           porter un état, et la saisie qui suit est asynchrone. */
         (ev.target as HTMLSelectElement).value = "";
-        if (nom) appliquer(ajouterSupport(vues.current, Number(a), nom, saisi));
+        if (!saisi) {
+          if (valeur) appliquer(ajouterSupport(vues.current, index, valeur, false));
+          return;
+        }
+        const demande = demanderNomOutil
+          ? demanderNomOutil()
+          : Promise.resolve(window.prompt(t.supportSaisirNom));
+        void demande.then((rep) => {
+          const nom = (rep || "").trim();
+          /* `vues.current` et non une copie capturée : le diagramme a pu être
+             réécrit pendant que la boîte était ouverte. */
+          if (nom) appliquer(ajouterSupport(vues.current, index, nom, true));
+        });
       }
     },
-    [appliquer],
+    /* `t` et `demanderNomOutil` DOIVENT figurer ici : sans eux la fermeture
+       reste celle du premier rendu, et un changement de dictionnaire ou de
+       boîte de saisie n'aurait aucun effet — en silence. */
+    [appliquer, t, demanderNomOutil],
   );
 
   /* Glisser-déposer. L'index source vit dans une ref : le sous-arbre est

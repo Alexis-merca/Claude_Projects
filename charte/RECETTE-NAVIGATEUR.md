@@ -260,3 +260,41 @@ portable en salle, ce qui reste à confirmer.
 Cette liste est une première passe ordonnée par risque, pas un inventaire
 exhaustif — un inventaire exhaustif ne se fait pas, et c'est pour cela qu'il
 n'a jamais été fait.
+
+---
+
+## Pourquoi l'agent Lovable ne peut pas faire cette passe — 20/08/2026
+
+Chaque rapport d'envoi se termine par `LOVABLE_BROWSER_AUTH_STATUS = signed_out`.
+Ce n'est pas un incident passager : **c'est structurel**, et il faut cesser de
+l'espérer d'un envoi à l'autre.
+
+L'application n'a qu'une seule porte d'entrée, `CarteConnexion.tsx` : un bouton
+**« Continuer avec Google »**, plus une liste d'adresses autorisées — un compte
+hors liste reçoit « adresse refusée ». Il n'y a ni mot de passe, ni lien magique.
+Or :
+
+- **OAuth Google ne s'automatise pas** depuis un navigateur sans tête : Google
+  détecte l'automatisation, exige souvent un second facteur, et le parcours
+  quitte le domaine de l'application. Il n'y a aucune chaîne à taper.
+- **Se connecter soi-même ne sert à rien** : l'agent tourne son propre
+  navigateur, dans son bac à sable, avec son propre pot à cookies. La session
+  ouverte sur le poste de l'utilisateur ne l'atteint pas.
+
+Trois issues, avec leur coût :
+
+1. **L'utilisateur fait la passe.** C'est l'objet de ce document. Coût : son
+   temps. Aucun risque.
+2. **Lui transmettre une session vivante** (le jeton Supabase du navigateur, à
+   réinjecter dans le stockage local de l'agent). Techniquement possible, mais
+   c'est remettre un identifiant valide donnant accès à des données clients, et
+   il expire en une heure.
+3. **Ouvrir une connexion par mot de passe pour un compte de service**, limité
+   à la liste d'autorisation. C'est la seule voie durable vers une recette
+   automatisée — et elle ajoute une surface d'authentification à un outil qui
+   porte des relevés clients. À ne faire que si la recette automatisée devient
+   un vrai besoin, pas pour dépanner une passe.
+
+**En attendant, la règle de lecture des rapports d'envoi ne change pas** :
+tout ce qui est annoncé sans copie d'écran est établi *par lecture*. Cette
+passe reste due.
