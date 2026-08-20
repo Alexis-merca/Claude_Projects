@@ -3994,3 +3994,64 @@ export inutilisé par le balisage par défaut. Portés dans le dépôt :
 
 `moteur.test.mjs` et `mutations.test.mjs` repassent — **balisage identique au
 caractère près**.
+
+## 54. Les trois corrections, et la bascule devient à double sens — 20/08/2026
+
+### 54.1 Ce que l'envoi correctif a rendu (`9afea74`)
+
+Vérifié au diff, pas au récit :
+
+- `paletteVue` traduit les noms **en place** — `palette.map(nom => tr(nom))` — et le
+  commentaire ne prétend plus réindexer quoi que ce soit. L'agent a mesuré de
+  son côté et trouvé le même effondrement, par un chemin différent : côté
+  `src/lib/roles.ts` le repli est le gris `Transverse`, côté moteur c'est la
+  place 0. **Deux replis silencieux, un seul symptôme.**
+- `traduireVue = mode !== "modifier"` : le bilan est traduit, avec la mesure
+  (zéro textarea, zéro `contenteditable`) écrite dans le commentaire plutôt que
+  le nom du mode.
+- Le cache passe par `updateClientRow` en direct, `catch(() => undefined)` :
+  une bascule de langue ne peut plus lever le bandeau de conflit.
+- `'Transverse'` est exclu à la collecte **et** à l'affichage.
+
+### 54.2 La décision de l'utilisateur : bascule à double sens
+
+Posée après le constat que taper en anglais détruisait la source française.
+Sa demande : « si j'écris en EN, quand je passe au FR ça doit être traduit ».
+
+**Ce que j'ai refusé, et pourquoi.** Retraduire par-dessus un original dégrade
+un relevé de terrain, en silence et sans retour :
+
+```
+« Vérifie qui sait tenir quel poste avant d'affecter »
+  → Checks who can work which station before assigning
+  → « Vérifie qui peut travailler sur quel poste avant l'affectation »
+```
+
+**Ce qui est retenu — même résultat visible, rien de perdu.** La symétrie
+s'obtient par une distinction, pas par une seconde traduction :
+
+1. le champ affichait une **traduction** → la frappe **corrige la traduction**
+   (magasin, `humain`) ; la base ne bouge pas ;
+2. le champ affichait sa **source** → la frappe **modifie le contenu** (base),
+   et la traduction d'en face devient caduque ;
+3. un champ écrit dans une langue et vide dans l'autre a **cette langue pour
+   source** ; l'autre devient la vue calculée. C'est le seul cas qui demande
+   une traduction EN → FR, et il est légitime : il n'y a pas de français à
+   protéger.
+
+La source d'un texte est donc **la langue dans laquelle il a été tapé**,
+mémorisée à l'écriture — jamais devinée par détection automatique.
+
+Le magasin passe à `{ fr?, en?, origine, langueSource }`, défaut `"fr"` :
+les 573 étapes déjà en base ont été relevées en français et ne portent aucun
+marqueur. Aucune migration — `traductionsDe` lit défensivement et `si` voyage
+entier.
+
+**Ce qui ne suit PAS ces règles, volontairement** : les noms de rôles et
+d'outils restent des clefs (renommage toujours depuis le français, propagation
+en français), `chiffres.valeur` reste brut, et le mode « modifier » affiche
+toujours la source.
+
+**Écart déclaré** : la vue d'impression lit la base. Un champ dont la source est
+l'anglais sortira en anglais dans le PDF français. À traiter avec la refonte du
+module d'export, mise de côté.
