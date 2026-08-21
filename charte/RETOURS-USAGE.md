@@ -436,3 +436,36 @@ produisait, réessayer au chargement suivant est le bon comportement : un échec
 réseau est passager, un marqueur d'échec serait durable et figerait un incident
 d'une seconde en français définitif. Le raisonnement est écrit à côté de
 `dejaTente`, pour que personne ne le « corrige ».
+
+### 20. Une légende par diagramme — **LIVRÉ**
+
+**Demandé** : un petit bouton « Afficher la légende » qui rassemble les trois
+langages du diagramme — les supports, les flèches entre étapes, le contour des
+cartes. Les deux derniers existaient, dispersés ; **les supports n'avaient
+aucune légende** : une pastille « K » sur une carte ne se décodait pas.
+
+**Où ça vit** : dans l'hôte, sous le diagramme. Le moteur doit rester portable —
+il ne connaît ni les états de bilan, ni le dictionnaire, ni la liste des outils
+du site, et la légende a besoin des trois. `DiagrammeFlux` reçoit donc une
+propriété `legende`, **`true` par défaut** : le comportement historique, pour
+qu'un autre hôte continue de fonctionner sans rien changer.
+
+**À l'impression, la légende est dépliée, toujours.** Le repli est un confort
+d'écran, pas un état du document : replié derrière un bouton, il aurait privé le
+client de la légende des flèches qui figure aujourd'hui sur la page. La vue
+d'impression ne passe pas par `SectionProcessus` — c'est son propre assemblage —
+donc la légende dépliée y a été ajoutée explicitement.
+
+**Le défaut trouvé à la relecture, et sa leçon.** `badgeDerive` tire deux choses
+du nom qu'on lui passe : **la teinte, de la POSITION dans la liste d'outils ; la
+lettre, du NOM**. La légende appelait avec les valeurs source pendant que la
+carte recevait la vue traduite. La liste traduite étant un `map` de la liste
+source, les positions ne bougeaient pas — **la teinte survivait à l'écart, la
+lettre non** : « Logiciel (SIRH / GTA) » donnait `L` en légende et `S` sur la
+carte une fois rendu « Software (HRIS / T&A) ». Deux glyphes pour le même outil,
+sur la même page, dans la seule vue censée les réconcilier.
+
+*Une légende qui ne reçoit pas exactement ce que la carte reçoit ne peut
+garantir que la moitié de ce qu'elle promet.* Elle reçoit désormais `vue.etapes`
+et `vue.outils` — les mêmes objets que le diagramme — et ne traduit plus rien
+elle-même : seul l'hôte sait ce qu'il a donné au moteur.

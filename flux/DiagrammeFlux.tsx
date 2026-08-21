@@ -113,6 +113,11 @@ export interface DiagrammeFluxProps {
   etapeActive?: number | null;
   /** Titre et légende, fournis par le composant. `false` pour s'en passer. */
   entete?: boolean;
+  /** Légende des liens, dans le pied. `false` quand l'hôte rend la sienne —
+      sans quoi elle paraîtrait deux fois. DÉFAUT `true` : le comportement
+      historique, pour qu'un autre hôte continue de fonctionner sans rien
+      changer. */
+  legende?: boolean;
   /** Zoom contrôlé par l'hôte. Absent, le composant garde son propre état. */
   zoom?: number;
   onZoom?: (z: number) => void;
@@ -145,6 +150,7 @@ export function DiagrammeFlux({
   edition = false,
   etapeActive = null,
   entete = true,
+  legende = true,
   zoom: zoomPropose,
   onZoom,
   mots: motsFournis,
@@ -536,7 +542,7 @@ export function DiagrammeFlux({
           que la réconciliation l'efface. */}
       <div ref={hote} dangerouslySetInnerHTML={{ __html: html }} />
 
-      {etapes.length > 0 ? (
+      {etapes.length > 0 && legende ? (
         <div className="flux__pied">
           <div className="flux__legende">
             {["auto", "manuel", ""].map((k) => (
