@@ -28,17 +28,36 @@ cette répartition, et il faut le lui demander site par site** — sept lignes,
 c'est faisable à la main, et aucune règle automatique ne devinerait que Sekurit
 est une marque de Saint-Gobain.
 
-**Chemin recommandé : une colonne texte `groupe` sur `clients`**, pas une table.
-Le groupe ne porte aujourd'hui aucune donnée propre — ni notes, ni réglages, ni
-trame. Une colonne suffit, et le jour où il lui faut des attributs, la
-transformer en table est mécanique. Une table tout de suite ajouterait une
-politique d'accès, une clef étrangère et une question de plus à l'import (que
-faire quand le groupe du fichier n'existe pas ?) pour aucun gain.
+**TRANCHÉ LE 21/08, ET LA MESURE A DÉMENTI CE QUI ÉTAIT ÉCRIT ICI.** La version
+précédente de ce document recommandait une colonne texte `groupe`. Le relevé des
+neuf lignes de `clients` a montré que **sept sur neuf emploient déjà `nom` comme
+client et `site` comme site** : Safran / Fougères, Safran / Montluçon,
+Décathlon / Retail, Danone / Bailleul. Les deux Safran ont été créés par un
+utilisateur, dans la bonne forme, sans qu'aucun code ne l'y oblige.
 
-**Le piège à ne pas rater** : toute colonne nouvelle doit entrer **dans le même
-envoi** dans `client_json` et `importer_client_json`. Sinon un export perd le
-groupe en silence — c'est exactement le défaut trouvé le 21/08 sur
-`lireFichier`, qui repartait de `{}` et perdait `si.traductions`.
+**Une seule ligne était en dehors** — Sekurit, où `nom` portait la marque. Elle
+est corrigée : `nom` = `Saint gobain`, `site` = `Sekurit float france`, décision
+de l'utilisateur.
+
+**Donc : aucune colonne nouvelle.** `clients.nom` est le client, `clients.site`
+est le site, et la convention est écrite à côté du type `Client` — elle n'était
+nulle part, et c'est précisément pour ça qu'une ligne avait divergé.
+
+**Le piège évité par là même** : toute colonne nouvelle devrait entrer **dans le
+même envoi** dans `client_json` et `importer_client_json`. Sinon un export perd
+le client en silence — c'est exactement le défaut trouvé le 21/08 sur
+`lireFichier`, qui repartait de `{}` et perdait `si.traductions`. On ne paie pas
+ce risque pour une information déjà présente.
+
+**Ce que coûte le choix, et il faut le savoir** : le client est une chaîne
+répétée sur chaque ligne. Le renommer, c'est mettre à jour toutes ses lignes,
+**en une seule transaction** — un renommage interrompu à mi-course laisserait
+deux clients là où il y en avait un, et c'est le regroupement de l'écran qui
+casse.
+
+**Et le `code` ne se recalcule jamais.** Il vaut `sekurit-float-france`, il est
+dans l'URL et dans `versions.code_client` — 47 instantanés y pointent. C'est une
+identité, pas un libellé.
 
 ### 2. Trame des use cases, éditable en FR / EN, et les niveaux de maturité
 
@@ -124,22 +143,42 @@ version optimiste que le reste, et n'ajoute qu'une politique d'accès.
 
 ---
 
-## Ce qui doit être décidé avant d'écrire
+## Ce qui a été décidé, et ce qui reste ouvert
 
-1. **La répartition groupe / marque / site des sept lignes existantes.** Aucune
-   règle ne la devine. À demander ligne par ligne.
-2. **La cible du crayon de correction** : bibliothèque partagée ou site.
-3. **Les libellés de maturité passent-ils vraiment en donnée**, ou l'onglet se
-   contente-t-il de les afficher pour relecture ?
+**Tranché le 21/08 :**
 
-## Ordre d'avancement proposé
+1. **La répartition client / site** : `nom` et `site`, aucune colonne nouvelle.
+   Sekurit corrigé en `Saint gobain` / `Sekurit float france`.
+2. **La cible du crayon de correction** : la **bibliothèque partagée**, et le
+   partagé **gagne** sur l'entrée par site. C'est l'inverse de ce que la prudence
+   suggérait, et c'est voulu : si le site gagnait, corriger dans la bibliothèque
+   ne changerait rien pour les sites qui portent déjà l'entrée — donc ne
+   corrigerait rien.
+3. **Le glossaire est distinct du cache** : des mots métier, pas des phrases.
+   « je ne veux pas retrouver des groupes de mots et phrases dans la
+   bibliothèque ».
+4. **La ligne `decathlon` vide est gardée.**
 
-Du moins bloqué au plus bloqué, pour ne pas attendre une décision pour
-commencer :
+**Encore ouvert :**
 
-1. **La table `reglages` et la bibliothèque de traductions** (onglet 4) — aucune
-   décision de modèle, valeur immédiate, et elle amorce l'écran.
-2. **La bibliothèque d'outils** (onglet 3), qui réutilise la même table.
-3. **Les clients et sites** (onglet 1), une fois la répartition tranchée.
-4. **La trame et la maturité** (onglet 2) — le raccourci d'abord, le passage des
-   libellés en donnée seulement s'il est confirmé.
+- **Les libellés de maturité passent-ils en donnée**, ou l'onglet se contente-t-il
+  de les afficher pour relecture ? C'est la seule question de l'onglet 2.
+- **La liste des clients** (`/clients`) reste plate — neuf lignes dont
+  « Décathlon » deux fois et « Safran » deux fois. La regrouper serait cohérent
+  avec le nouveau sélecteur de création ; ce n'est pas demandé.
+- **Six termes de vocabulaire** attendent un arbitrage : *gamme*, *îlot*,
+  *équipe*, *geste*, *UP*, et le sens « équipe » de *poste*
+  (voir `charte/GLOSSAIRE.md`).
+
+## Où on en est
+
+1. **La table `reglages` et la bibliothèque de traductions** (onglet 4) —
+   **fait** le 21/08, plus le glossaire métier et ses 135 termes.
+2. **La bibliothèque d'outils** (onglet 3) — **envoyée** le 21/08. Motivation
+   mesurée : `TABLE_A` classe **7 outils sur 7** chez Sekurit et en laisse
+   **8 sur 11** en « Non classé » chez Décathlon. Les tables ont été écrites pour
+   le premier client, donc le premier client est parfait et le suivant ne l'est
+   pas.
+3. **Les clients et sites** (onglet 1) — **envoyé** le 21/08.
+4. **La trame et la maturité** (onglet 2) — reste à faire. Le raccourci d'abord,
+   le passage des libellés en donnée seulement s'il est confirmé.

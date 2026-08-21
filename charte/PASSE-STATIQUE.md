@@ -4194,3 +4194,100 @@ concurrence ont bien été retirées par le geste de suppression lui-même.
 trajet du crayon vers la bibliothèque. Et une incohérence signalée par l'agent,
 à traiter avec le module d'export : la vue d'impression n'a **jamais** lu le
 magasin de traductions — elle reste en français quelle que soit la langue.
+
+## 57. Le glossaire se remplit, et deux défauts que seul le comptage révèle — 21/08/2026
+
+### 57.1 Le vocabulaire ne s'invente pas, il se mesure
+
+135 termes en base, dont 134 versés en une fois. Aucun n'a été choisi au goût :
+la règle de provenance est écrite dans `charte/GLOSSAIRE.md`, et elle classe les
+sources par force — le code livré d'abord, le cache constant ensuite, le terme
+d'industrie déclaré comme proposition en dernier.
+
+Ce que la comparaison des 363 rendus du cache au code livré a montré : **six
+termes où les deux se contredisaient sur le même écran** — *charge*
+(**workload** contre *load*), *effectif* (**headcount** / *staffing*), *aléa*
+(**disruption** / *contingency*), *recyclage* (**refresher** / *retraining*),
+*mode opératoire* (**work instruction** / *operating procedure*),
+*compagnonnage* (**buddying** / *shadowing*) — et « poste » en **quatre** rendus
+(*station* 15 fois, *workstation* 2, *shift* 1, *on-the-job* 1) alors que
+« Référentiel postes » s'affiche « Workstation framework » juste au-dessus.
+
+**La vérification a porté sur la base, pas sur le rapport** : celui de l'agent
+est arrivé tronqué par l'API. Diff des clefs contre le tableau envoyé : 134
+posés, **zéro inventé, zéro manquant, zéro anglais divergent**, « usine » non
+écrasé.
+
+### 57.2 Une limite éditoriale devenue falaise fonctionnelle
+
+`traduction.functions.ts` validait `glossaire: z.array(Terme).max(200)`. Le
+glossaire entier part dans chaque lot. Au 201ᵉ terme, `Entree.parse` lève,
+`traduireLot` échoue, le `.catch()` du hook avale l'erreur — et **tout le
+diagnostic reste en français, sans message**. Un consultant qui ajoute un terme
+de trop cassait la bascule pour tout le monde.
+
+Le commentaire qui posait la borne avait raison sur le fond (« au-delà, ce n'est
+plus un glossaire tenu à la main ») et tort sur la conséquence. **La propriété à
+tenir : un glossaire trop long dégrade la terminologie, il ne perd jamais la
+traduction.** La consigne se tronque désormais, et l'écran affiche le compte avec
+sa limite.
+
+**Leçon générale, et elle dépasse ce cas** : une borne posée pour une raison
+éditoriale, placée dans un validateur, devient une panne. Le versement faisait
+passer le glossaire de 1 à 132 termes — la marge paraissait large jusqu'à ce
+qu'on la calcule.
+
+### 57.3 Le cache était américain, le code britannique
+
+Invisible terme par terme, flagrant en comptant : **22 des 363 rendus portaient
+une forme en `-ize`** (*authorization*, *standardization*, *capitalization*,
+*organized*, *formalized*, *annualized*), plus *organizational* et *program*.
+Les 5 formes en `-ise` étaient toutes des mots identiques dans les deux
+variantes (*exercise*, *expertise*, *revised*). Le code livré, lui, est
+uniformément britannique.
+
+Résultat visible : le bloc IT affichait « Authorisations » pendant qu'une étape
+dessous disait « no station assignment without authorization ». Ce n'était pas
+une affaire de glossaire mais **une règle manquante dans la consigne**. Corrigée,
+puis les rendus automatiques purgés — 364 entrées tombées à 2, la seule
+correction humaine conservée, les 410 entrées par site intactes.
+
+### 57.4 `motif_terme` n'infléchissait que le dernier mot
+
+`\mterme[a-z]{0,2}\M` attrape le pluriel d'un mot simple, mais sur un terme
+composé la tolérance ne portait que sur le dernier mot : le motif de « mode
+opératoire » ne reconnaissait pas « modes opératoires ». Or une bonne moitié du
+glossaire est composée, et c'est au pluriel que ces termes s'écrivent — la
+promesse « corriger une seule fois » tombait pour eux.
+
+Corrigé, vérifié en base : `\mmode[a-z]{0,2}[^a-z0-9]+operatoire[a-z]{0,2}\M`,
+« modes opératoires » reconnu, et « business » toujours pas attrapé par
+« usine ».
+
+### 57.5 Deux champs, deux lecteurs
+
+`consignePour` envoyait la note au modèle. À deux termes, sans effet ; à 135, la
+consigne se remplirait de commentaires d'historique. Les deux métiers ont été
+séparés : `note` dit **pourquoi** le terme a été arbitré (écran seulement),
+`precision` dit **comment** l'employer (envoyée au modèle, 9 termes sur 135).
+
+Puis l'utilisateur a vu l'écran et tranché : **les deux colonnes sortent de la
+liste**, à 135 lignes deux colonnes de texte long font un mur. Elles restent
+modifiables sous le crayon — retirer `precision` de la saisie aurait figé neuf
+arbitrages en silence, dont « poste » vaut *shift* quand il désigne une équipe.
+
+### 57.6 Un compteur qui bouge n'est pas une régression
+
+Le relevé est passé de `7 | 42 | 556` à `9 | 36 | 457` pendant l'envoi. La table
+`versions` a répondu sans ambiguïté : **bastien@merca.team** a supprimé sept
+processus un par un à 14:21 et 14:22, sur `danone-bailleul` puis
+`safran-fougeres`, et créé deux sites Safran à 14:17. Chaque suppression a laissé
+son instantané `avant_suppression_processus` — de 20 ko à 7 ko à mesure. Confirmé
+voulu par l'utilisateur.
+
+**Ce qui a permis de le dire en une minute** : l'auteur et le motif sont
+enregistrés avec l'instantané. Sans eux, le seul énoncé possible aurait été
+« 110 étapes ont disparu pendant que nous écrivions ».
+
+Et une conséquence de méthode : **nous ne sommes plus seuls dans la base.** Un
+relevé « inchangé » n'est plus une propriété qu'on peut attendre d'un envoi.
