@@ -4123,8 +4123,8 @@ portés à la main. `moteur.test.mjs` et `mutations.test.mjs` repassent —
 la sortie de `badgeSupport("Excel", ["Excel"])` est byte-à-byte celle annoncée
 par l'agent, comparée par égalité de chaînes plutôt que de visu.
 
-**À regarder au prochain passage navigateur** : l'infobulle est en
-`position: absolute` au-dessus de la pastille, et les pastilles vivent à cheval
-sur la bordure haute des cartes, dans un conteneur qui défile
-(`.flux-defile`). Un ancêtre à `overflow` masqué la rognerait — ça ne se voit
-pas en lisant.
+**Réserve levée le 21/08, à l'écran.** L'infobulle est en `position: absolute`
+au-dessus de la pastille, et les pastilles vivent à cheval sur la bordure haute
+des cartes, dans un conteneur qui défile (`.flux-defile`) : un ancêtre à
+`overflow` masqué l'aurait rognée, et ça ne se voit pas en lisant. Vérifié par
+l'utilisateur : elle s'affiche correctement. Rien à faire.
