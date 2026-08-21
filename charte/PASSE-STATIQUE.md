@@ -4128,3 +4128,69 @@ au-dessus de la pastille, et les pastilles vivent à cheval sur la bordure haute
 des cartes, dans un conteneur qui défile (`.flux-defile`) : un ancêtre à
 `overflow` masqué l'aurait rognée, et ça ne se voit pas en lisant. Vérifié par
 l'utilisateur : elle s'affiche correctement. Rien à faire.
+
+## 56. Mon hypothèse réfutée par la mesure, et la bibliothèque partagée — 21/08/2026
+
+### 56.1 Le décalage des flèches : j'avais à moitié raison, et la moitié fausse était la mienne
+
+**Ce que j'avais soutenu** : « Ajuster » oscille d'un cran parce que la barre de
+défilement du conteneur apparaît et disparaît, faisant bouger `clientWidth`.
+
+**Réfuté par la mesure.** `.flux-defile` ne porte que `overflow-x: auto` : sa
+barre est **horizontale**, elle consomme de la **hauteur**. L'agent a reproduit
+le style exact et mesuré le débordement dans les deux sens — `clientWidth` reste
+à 1000 px, c'est `clientHeight` qui passe de 230 à 170. Seule une barre
+**verticale** réduit la largeur, et il n'y en a pas.
+
+**Le mécanisme réel est déterministe, pas aléatoire.** `.flux` est une grille
+**fluide** (`min-width: min-content`, largeur auto) : dès que le diagramme tient,
+elle s'étire à la largeur du conteneur. `getBoundingClientRect().width / courant`
+rendait donc **la largeur du conteneur, pas la sienne** — le rapport valait « à
+peu près le zoom courant », et le cran de 5 % le faisait tomber d'un cran selon
+le côté de l'arrondi. Le `- 4` forfaitaire décidait de ce côté, alors que la
+marge droite réelle vaut 24 px.
+
+**Et ce piège était DÉJÀ documenté dans ce dépôt** : la vue d'impression le
+rencontre et l'explique en toutes lettres — « mesurée telle quelle, elle rend la
+largeur du conteneur, pas la sienne ». Deux endroits ont mesuré la même grille ;
+un seul savait comment.
+
+*Une connaissance écrite dans un fichier ne protège pas le fichier voisin.*
+C'est le troisième défaut de la session dont l'explication existait déjà quelque
+part — après le repli silencieux de `couleursRole` et la hauteur fixe des cases.
+
+**Ce que j'avais juste, en revanche** : l'effet de zoom n'appelait que
+`tracerFleches`, alors qu'un changement de zoom change l'enroulement du texte,
+donc la hauteur des cartes, donc les décalages que le tracé lit. Et la
+justification du raccourci — « pas de reconstruction, donc focus et caret
+survivent » — était **démontrablement fausse** : sur les trois fonctions, seule
+`tracerFleches` écrit du balisage, c'est-à-dire celle que le raccourci appelait
+déjà. Il ne protégeait rien.
+
+**Leçon de méthode** : demander la mesure avant la correction a payé deux fois.
+Elle a tué mon hypothèse et fait apparaître la vraie, qui est meilleure — parce
+qu'un défaut déterministe se corrige, là où j'aurais posé un garde-fou contre
+une oscillation qui n'existait pas.
+
+### 56.2 La bibliothèque de traductions partagée
+
+Fondation de l'écran d'administration : table `reglages(clef, valeur, version)`,
+et une fonction SQL `fusionner_traductions(p_lot, p_origine)` qui intègre un lot
+**clef par clef, sous verrou de ligne**, et renvoie la valeur fraîche.
+
+**Pourquoi la fusion devait être côté serveur.** Les traductions étaient par
+site : deux consultants en anglais sur deux sites ne pouvaient pas se gêner. Un
+magasin partagé reposé en bloc inverse exactement cette propriété — le second
+écrase le premier, en silence, et ça marche parfaitement en démonstration.
+`fusionnerAuto` a donc été **retirée du client** : la règle de précédence vit en
+base et nulle part ailleurs.
+
+**Mesuré après coup**, sur la base réelle : 365 entrées dans la bibliothèque, 1
+humaine ; **410 entrées par site conservées**, aucune supprimée ; relevé
+inchangé (`7 | 42 | 556 | 48 | 25 | 31`). Les clefs de la démonstration de
+concurrence ont bien été retirées par le geste de suppression lui-même.
+
+**Reste à confirmer à l'écran** : l'affichage de la table, la recherche, et le
+trajet du crayon vers la bibliothèque. Et une incohérence signalée par l'agent,
+à traiter avec le module d'export : la vue d'impression n'a **jamais** lu le
+magasin de traductions — elle reste en français quelle que soit la langue.

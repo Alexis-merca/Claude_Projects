@@ -228,13 +228,30 @@ export function DiagrammeFlux({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html]);
 
-  /* Le zoom seul : on repose la propriété et on retrace. Pas de reconstruction,
-     donc focus et caret survivent. */
+  /* Le zoom seul : on repose la propriété et on ACHÈVE LE RENDU, les trois
+     fonctions, pas seulement le tracé.
+
+     POURQUOI LES TROIS. Un changement de zoom change la largeur disponible en
+     pixels CSS à l'intérieur des cartes, donc l'enroulement du texte, donc la
+     hauteur des cartes. `placerCartesACheval` mémorise son décalage en
+     `data-decalage` à partir de `carte.offsetHeight`, et c'est CE nombre que le
+     tracé lit — `offsetTop` ignore les `transform`, il ne le verrait pas
+     autrement. Retracer sans replacer trace donc à partir d'un état périmé :
+     les flèches partent d'un point où la carte n'est plus. C'était le défaut
+     « cliquer Ajuster décale les flèches ».
+
+     ET RIEN DE PLUS N'EST RECONSTRUIT, contrairement à ce que disait le
+     commentaire d'avant (« pas de reconstruction, donc focus et caret
+     survivent ») : sur les trois fonctions, seule `tracerFleches` écrit du
+     balisage (`svg.innerHTML` et les zones de clic) — c'est-à-dire celle que le
+     raccourci appelait déjà. `ajusterZonesDeTexte` ne pose qu'une hauteur en
+     style, `placerCartesACheval` qu'un `transform`. Focus et caret survivent
+     exactement comme avant. */
   useLayoutEffect(() => {
     const flux = fluxNode();
     if (!flux) return;
     flux.style.setProperty("zoom", String(zoom));
-    tracerFleches(flux, etapes, { edition, mots: t });
+    acheverRendu(flux, etapes, { edition, mots: t });
   }, [zoom, etapes, edition, t]);
 
   /* Redimensionnement et arrivée des polices. */
@@ -493,15 +510,46 @@ export function DiagrammeFlux({
   }, [edition, surClic, surChangement, surDebutGlisse, nettoyerGlisse, surSurvol, surDepot]);
 
   /** Règle le zoom pour que tout le diagramme tienne dans la largeur offerte.
-      Le pas de 5 % évite un curseur à valeur illisible. */
+      Le pas de 5 % évite un curseur à valeur illisible.
+
+      LES DEUX MESURES SONT PRISES SANS DÉPENDRE D'UNE BARRE DE DÉFILEMENT, et
+      c'est le fond du « parfois » :
+
+      1. LA LARGEUR NATURELLE. `.flux` est une grille FLUIDE (`min-width:
+         min-content`, largeur auto) : dès que le diagramme tient, elle
+         s'étire à la largeur du conteneur. La mesurer telle quelle rendait
+         donc la largeur du CONTENEUR, pas la sienne — le rapport valait
+         alors « à peu près le zoom courant », et suffisait à tomber d'un cran
+         selon le côté de l'arrondi. On la mesure en `max-content` et hors
+         échelle, le temps d'une lecture, puis on repose les styles : rien
+         n'est peint entre les deux, tout se joue dans la même tâche. Même
+         raisonnement que la vue d'impression, qui mesurait déjà ainsi.
+
+      2. LA LARGEUR DISPONIBLE. `clientWidth` moins les vraies marges
+         intérieures, au lieu d'un retrait forfaitaire de 4 px qui ne
+         correspondait à aucune longueur du style (la marge droite en vaut 24).
+         À noter, contre l'hypothèse la plus naturelle : la barre du conteneur
+         est HORIZONTALE (`overflow-x: auto`), elle mange de la HAUTEUR, jamais
+         de la largeur — `clientWidth` ne bouge donc pas quand elle
+         apparaît. */
   const ajuster = useCallback(() => {
     const flux = fluxNode();
     const defile = flux?.parentElement;
     if (!flux || !defile) return;
-    const courant = Number(flux.style.zoom) || 1;
-    const naturelle = flux.getBoundingClientRect().width / courant;
-    const dispo = defile.clientWidth - 4;
+
+    const zoomAvant = flux.style.zoom;
+    const largeurAvant = flux.style.width;
+    flux.style.zoom = "1";
+    flux.style.width = "max-content";
+    const naturelle = flux.scrollWidth;
+    flux.style.zoom = zoomAvant;
+    flux.style.width = largeurAvant;
     if (naturelle <= 0) return;
+
+    const st = getComputedStyle(defile);
+    const dispo =
+      defile.clientWidth - (parseFloat(st.paddingLeft) || 0) - (parseFloat(st.paddingRight) || 0);
+
     setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.floor((dispo / naturelle) * 20) / 20)));
   }, [setZoom]);
 
