@@ -15,12 +15,17 @@ volontairement en base, et deux d'entre eux ne valent que sur un diagnostic
 **jamais ouvert en anglais** — dès la première bascule le cache se remplit et
 la fenêtre de test se referme.
 
-Candidats jetables : `xxx-xx`, `test-06-08`.
+Seul candidat jetable : `test-06-08`. `xxx-xx` a été supprimé le 21/08 —
+volontairement, avec instantané.
 **On n'y touche pas** : `sekurit-float-france`, `decathlon-thiais`,
 `template-use-case`, `cible-mercateam`, `danone-bailleul`.
 
-Empreintes prises avant la passe — toute empreinte qui bouge sur un site non
-touché est un défaut :
+**Conséquence sur l'ordre : commencer par A2.** Il ne vaut que sur un diagnostic
+jamais ouvert en anglais, et `test-06-08` est le dernier dans ce cas (0 entrée
+de traduction). Dès la première bascule, sa fenêtre se referme.
+
+Empreintes du 21/08, juste avant la passe — toute empreinte qui bouge sur un
+site non touché est un défaut :
 
 | site | étapes | empreinte |
 |---|---|---|
@@ -31,7 +36,6 @@ touché est un défaut :
 | sekurit-float-france | 66 | `a424f3b3` |
 | template-use-case | 141 | `0277335f` |
 | test-06-08 | 78 | `26d10ef1` |
-| xxx-xx | 17 | `8c33982e` |
 
 (`md5` du texte, de la phase, des deux rôles et des supports de chaque étape.)
 
