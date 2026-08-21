@@ -469,3 +469,50 @@ sur la même page, dans la seule vue censée les réconcilier.
 garantir que la moitié de ce qu'elle promet.* Elle reçoit désormais `vue.etapes`
 et `vue.outils` — les mêmes objets que le diagramme — et ne traduit plus rien
 elle-même : seul l'hôte sait ce qu'il a donné au moteur.
+
+### 21. « Ajuster » décale les flèches — **DIAGNOSTIQUÉ, ENVOI BLOQUÉ**
+
+**Vu** : cliquer « Ajuster » alors que le zoom paraît déjà correct décale les
+flèches. « Parfois ».
+
+Diagnostiqué **sans Lovable**, sur le miroir du dépôt — qui est une copie
+fidèle, et c'est précisément à ça qu'il sert.
+
+**Deux mécanismes se combinent.**
+
+*Pourquoi le zoom change alors qu'il a l'air bon.* `ajuster()` arrondit
+`dispo / naturelle` au cran de 5 %, où `dispo` vient de `clientWidth` du
+conteneur de défilement. Quand le diagramme déborde, ce conteneur porte une
+barre horizontale ; quand il rentre, elle disparaît et `clientWidth` bouge d'une
+quinzaine de pixels. Selon le côté du cran, deux clics donnent deux valeurs — et
+un diagramme qui « tient déjà » perd un cran, ce qui déclenche un retracé.
+
+*Pourquoi le retracé est faux.* `acheverRendu` fait trois choses dans un ordre
+qui compte : hauteur des zones de texte, **placement des cartes à cheval** selon
+cette hauteur, puis tracé — qui **lit** le décalage posé par le placement,
+mémorisé en `data-decalage` parce que `offsetTop` ignore les `transform`. Or
+l'effet de zoom n'appelle **que** `tracerFleches`.
+
+Un changement de zoom change la largeur disponible en pixels CSS dans les
+cartes, donc l'enroulement du texte, donc leur hauteur — **donc le décalage
+mémorisé devient faux**, et les flèches partent d'un point où la carte n'est
+plus.
+
+**Et la justification du raccourci ne tient pas.** Le commentaire dit « pas de
+reconstruction, donc focus et caret survivent ». Or sur les trois fonctions,
+**seule `tracerFleches` écrit du balisage** (`svg.innerHTML` et les zones de
+clic) — celle que le raccourci appelait déjà. Les deux autres ne posent qu'une
+hauteur et un `transform` en style. Appeler les trois ne reconstruit rien de
+plus : le raccourci ne protégeait rien.
+
+*Un raccourci qui saute une étape doit nommer ce que l'étape faisait. Celui-ci
+nommait ce qu'elle ne faisait pas.*
+
+**Correction à faire** : l'effet de zoom appelle `acheverRendu`. Et l'oscillation
+se traite à la source — mesurer la largeur sans dépendre de la barre de
+défilement — plutôt qu'en rendant le clic inerte quand la valeur ne change pas,
+qui masquerait le défaut sans le supprimer.
+
+**Statut** : brief écrit, **non envoyé**. Trois appels à Lovable refusés en
+« autorisation requise », y compris après validation de l'utilisateur. Le brief
+est prêt à être collé tel quel.
