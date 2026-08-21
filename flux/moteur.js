@@ -310,11 +310,14 @@ export function badgeSupport(nom, outils) {
     ? b.glyphe
     : `<text x="8" y="11.4" text-anchor="middle" fill="#fff"
              font-family="Overpass, sans-serif" font-size="9.5" font-weight="700">${echapper(b.lettre)}</text>`;
-  /* Le nom en `<title>` : une pastille muette oblige à deviner. `role="img"` +
-     `aria-label` pour que le lecteur d'écran l'annonce aussi. */
+  /* PAS DE `<title>` : il produisait l'infobulle NATIVE, lente (≈1 s) et noire.
+     Le nom passe en `data-outil` sur une ENVELOPPE — un `<svg>` ne peut pas
+     porter de `::after`, d'où le `<span>` — et `.pastille-outil::after` dans
+     `moteur.css` dessine l'infobulle de charte. `role="img"` + `aria-label`
+     restent la seule annonce au lecteur d'écran, inchangée. */
   const etiquette = echapper(nom);
-  return `<svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="${etiquette}"><title>${etiquette}</title>
-    <rect width="16" height="16" rx="3.6" fill="${b.fond}"/>${dedans}</svg>`;
+  return `<span class="pastille-outil" data-outil="${etiquette}"><svg class="badge-support" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="${etiquette}">
+    <rect width="16" height="16" rx="3.6" fill="${b.fond}"/>${dedans}</svg></span>`;
 }
 
 

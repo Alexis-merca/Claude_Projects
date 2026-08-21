@@ -4055,3 +4055,76 @@ toujours la source.
 **Écart déclaré** : la vue d'impression lit la base. Un champ dont la source est
 l'anglais sortira en anglais dans le PDF français. À traiter avec la refonte du
 module d'export, mise de côté.
+
+## 55. La passe navigateur a eu lieu — 21/08/2026
+
+**Vingt contrôles, aucun défaut.** L'utilisateur a fait la recette de la bascule
+FR / EN de bout en bout : les comportements délivrent ce qui était annoncé, et
+aucun défaut visuel n'est relevé.
+
+C'est l'événement le plus important de ce document depuis son ouverture. Depuis
+l'origine, tout y était **établi par lecture du code et par mesure en base** ;
+`FEUILLE-DE-ROUTE.md` §2a portait la phrase « personne n'a vu cette application
+fonctionner ». Elle n'est plus vraie. Les vingt comportements de la bascule —
+dont l'écrasement du relevé, la palette des couloirs, le mode bilan traduit et
+« couper une échelle » en anglais, tous corrigés à l'aveugle la veille — sont
+maintenant vus.
+
+**Ce que ça ne rend pas inutile** : la lecture reste ce qui a trouvé les
+défauts. Sur les quatre corrigés le 20/08, aucun n'aurait été trouvé par la
+recette seule — trois d'entre eux ne se voient qu'en connaissant le chemin de
+code, et le quatrième (la palette) ne se voit à l'écran que si l'on sait à quoi
+ressemblait la teinte d'avant.
+
+**Mouvements en base pendant la passe**, tous confirmés voulus par
+l'utilisateur : `xxx-xx` supprimé (avec instantané), et `decathlon-thiais`
+exporté puis réimporté en `decathlon-thiais-2` — contenu identique au caractère
+près, 133 traductions intactes —, l'original supprimé ensuite. Les sept sites
+restants rendent des empreintes inchangées.
+
+### 55.1 Trois améliorations, et un défaut que la lecture a expliqué
+
+**L'infobulle du nom d'outil** était l'infobulle native : une seconde d'attente,
+un fond noir. Remplacée par une infobulle de charte en CSS, portée par le
+moteur pour valoir partout où la pastille apparaît. `badgeSupport` perd son
+`<title>` — c'est lui qui produisait la bulle native — et gagne une enveloppe
+`<span class="pastille-outil" data-outil="…">` : un `<svg>` ne peut pas porter
+de `::after`. `role="img"` + `aria-label` restent la seule annonce au lecteur
+d'écran.
+
+**Un nom d'échelle revenu à sa valeur d'avant n'était pas retraduit.** Mon
+hypothèse, écrite avant vérification, s'est confirmée à la lecture :
+`dejaTente` mémorisait *toute* chaîne tentée. Or la règle 2 de la frappe retire
+l'entrée du magasin quand le texte change ; revenir au texte d'avant le rend
+donc manquant, mais il restait filtré jusqu'au rechargement.
+
+*Une mémoire d'échec qui retient aussi les succès devient une mémoire de refus.*
+Seules les chaînes que le modèle n'a pas rendues sont désormais mémorisées.
+
+**Et un second chemin, que je n'avais pas vu** : le lot est borné à 600 chaînes,
+mais le marquage portait sur la liste entière — au-delà de 600, le surplus
+n'était jamais demandé de la session. Ne sont marquées que les chaînes
+réellement envoyées. La question « en vois-tu un second ? » valait la peine
+d'être posée.
+
+**La langue du contenu se déclare à l'import.** Faute de marqueur, un relevé
+rédigé en anglais passait pour du français et restait affiché en anglais même en
+écran français — l'application le croyait à sa source. Le marquage entre dans
+`client.si` de la charge utile, **avant** l'appel RPC : quel que soit le nombre
+d'étapes, aucune écriture supplémentaire. Au passage, un défaut voisin trouvé
+par l'agent : `lireFichier` repartait de `{}` et **perdait en silence** les
+`si.traductions` du fichier.
+
+### 55.2 Portage
+
+`flux/moteur.js`, `flux/moteur.css`, `diagnostic-os.html` (balisage **et** CSS)
+portés à la main. `moteur.test.mjs` et `mutations.test.mjs` repassent —
+**balisage identique au caractère près** entre le module et le mono-fichier — et
+la sortie de `badgeSupport("Excel", ["Excel"])` est byte-à-byte celle annoncée
+par l'agent, comparée par égalité de chaînes plutôt que de visu.
+
+**À regarder au prochain passage navigateur** : l'infobulle est en
+`position: absolute` au-dessus de la pastille, et les pastilles vivent à cheval
+sur la bordure haute des cartes, dans un conteneur qui défile
+(`.flux-defile`). Un ancêtre à `overflow` masqué la rognerait — ça ne se voit
+pas en lisant.

@@ -193,6 +193,27 @@
 .flux__carte--actif { box-shadow: inset 0 0 0 2px var(--violet); }
 .flux__carte-texte { font: 400 15px/1.4 var(--ui); color: var(--encre); text-wrap: pretty; }
 .badge-support { display: block; flex: none; }
+/* Infobulle de charte, en remplacement de l'infobulle native du navigateur :
+   apparition en 120 ms, violet de charte plutôt que le noir du système. Elle
+   est en position absolue, donc elle ne déplace jamais la mise en page. */
+.pastille-outil { position: relative; display: inline-flex; flex: none; }
+.pastille-outil::after {
+  content: attr(data-outil);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px; border-radius: var(--r-chip);
+  background: var(--violet); color: var(--blanc);
+  font: 500 12px/1.2 var(--ui); white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .18);
+  opacity: 0; visibility: hidden; pointer-events: none; z-index: 40;
+  transition: opacity 120ms ease, visibility 120ms;
+}
+.pastille-outil:hover::after, .pastille-outil:focus-visible::after {
+  opacity: 1; visibility: visible;
+}
+/* Enveloppe imbriquée : seule l'extérieure parle. L'environnement IT enveloppe
+   la pastille pour porter le nom TRADUIT, que `badgeSupport` ne connaît pas. */
+.pastille-outil .pastille-outil::after { content: none; }
 .supports-bordure {
   position: absolute; top: 0; left: 12px; z-index: 4;
   transform: translateY(-50%);
