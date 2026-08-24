@@ -4291,3 +4291,97 @@ enregistrés avec l'instantané. Sans eux, le seul énoncé possible aurait ét�
 
 Et une conséquence de méthode : **nous ne sommes plus seuls dans la base.** Un
 relevé « inchangé » n'est plus une propriété qu'on peut attendre d'un envoi.
+
+## 58. L'écran d'administration au complet — 21 au 24/08/2026
+
+Les quatre onglets sont livrés. Chacun repose sur `reglages(clef, valeur, version)`
+et sur la même propriété, énoncée une fois et tenue quatre fois : **la donnée
+partagée COMPLÈTE le code, elle ne le remplace pas.** Entrée absente, malformée,
+libellé vide → on retombe sur le comportement livré. Une bibliothèque vide, une
+surcharge vide, donnent donc **exactement** l'écran d'avant — ce qui rend la
+non-régression démontrable plutôt que promise.
+
+### 58.1 La bibliothèque d'outils — la mesure qui la justifie
+
+`classer()` range **7 outils sur 7** chez Sekurit et en laisse **8 sur 11** en
+« Non classé » chez Décathlon : *Decathlon University, Effitime, EFIplan,
+MyGame, GPLine, PeopleSync, Info Sociale, Site des formateurs*. `TABLE_A` a été
+écrite pour le premier client, donc le premier client est parfait et le suivant
+ne l'est pas.
+
+**Une erreur de ma part, à consigner** : j'ai affirmé qu'un consultant avait
+rangé ces huit outils à la main. Faux — Décathlon ne porte **aucune** correction.
+Le site qui en porte est **Danone** : quatre outils (AWMS, Pixid, Kahoot, Master
+Data), rangés par bastien@merca.team. La mesure des 8 sur 11 était juste et
+calculée ; le récit brodé autour ne l'était pas. **Une mesure vraie n'autorise
+pas l'histoire qu'on met autour.**
+
+Deux choix de conception à retenir :
+
+- **la reconnaissance est celle de `TABLE_A`** — `correspond()`, la même
+  fonction, jamais une copie. Deux règles dériveraient, et la dérive ne se
+  verrait qu'à l'écran d'un client ;
+- **l'ordre de résolution diffère de `TABLE_A`, et c'est délibéré.** `TABLE_A`
+  est un tableau : sa première correspondance gagne, l'ordre d'écriture arbitre.
+  Un objet `jsonb` n'a pas d'ordre utile — donc **le motif le plus long gagne**,
+  l'alphabétique en départage. Ranger la bibliothèque ne change rien au
+  classement, et c'est écrit à côté de la règle.
+
+### 58.2 Clients et sites — la mesure a démenti le cadrage
+
+`charte/ADMIN.md` recommandait une colonne `groupe`. Le relevé des neuf lignes a
+montré que **sept sur neuf employaient déjà `nom` comme client et `site` comme
+site**, les deux Safran ayant été créés par un utilisateur dans la bonne forme
+sans qu'aucun code ne l'y oblige. Une seule ligne divergeait — Sekurit — et elle
+divergeait **parce que la convention n'était écrite nulle part**. Elle l'est
+maintenant, à côté du type `Client`.
+
+Aucune colonne ajoutée, donc aucun risque de perdre une colonne à l'export.
+
+Le coût du choix est assumé : le client est une chaîne répétée. `renommer_client`
+le fait donc **en une transaction**, exclut les trames, prend un instantané par
+ligne et garde la **garde optimiste sur chacune** — une seule ligne modifiée
+entre-temps fait tomber tout le renommage. La preuve est dans les données : les
+quatre instantanés Safran portent deux horodatages identiques deux à deux.
+
+Et **le `code` ne se recalcule jamais** : il est dans l'URL et dans
+`versions.code_client`.
+
+### 58.3 Les libellés de maturité, et le piège qu'ils déclenchaient
+
+`nomProcessusAffiche` décidait si un processus suit la langue **en comparant son
+nom aux intitulés du catalogue**, et `processus.nom` est écrit en base à la
+création. Rendre les intitulés éditables aurait donc, à la première correction,
+fait cesser d'être reconnus **tous les processus créés avant** : ancien libellé
+français, figé, plus de bascule FR/EN. Sans erreur, sans ligne vide.
+
+La comparaison porte désormais sur **quatre** valeurs — livré et courant, dans
+les deux langues. L'agent a trouvé le cas symétrique que j'avais manqué : sans
+le **courant**, ce sont les processus créés **après** la correction qui
+cesseraient de suivre.
+
+Ce qui rend l'opération sûre reste que `processus.maturite` est un **entier** :
+les 14 notes déjà posées survivent à n'importe quelle réécriture.
+
+Le filet est le bouton « revenir au libellé livré », qui **retire** l'entrée au
+lieu d'y recopier le texte du code — sinon la surcharge figerait une valeur qui
+ne suivrait plus les corrections livrées.
+
+### 58.4 La session `signed_out` a fini par être corrigée, et par la plateforme
+
+Le commit de l'onglet maturité porte trois fichiers hors périmètre :
+`previewAuthStorage.ts` (nouveau), `client.ts` et son `storage:`. C'est du code
+**généré par Lovable**, pas de l'initiative de l'agent : il courtise la session
+d'authentification vers l'éditeur par `postMessage`, pour que les surfaces de
+prévisualisation partagent une connexion. C'est la réponse à la question posée à
+chaque envoi depuis un mois.
+
+**Vérifié par exécution, pas par lecture** : sur `mercaudit.lovable.app`, aucun
+identifiant de projet ne se lit dans l'hôte, donc `localStorage` est renvoyé —
+**l'application publiée est inchangée**. Le courtage ne s'active que dans une
+iframe, sur un hôte portant l'identifiant du projet en position non contrôlable
+par l'utilisateur : un hôte `evil-preview--<uuid>` n'obtient rien.
+
+**Leçon** : un commit hors périmètre n'est pas forcément une dérive de l'agent.
+Mais il se vérifie avant d'être accepté, et la vérification qui compte est celle
+qui exécute la règle sur les hôtes réels.
