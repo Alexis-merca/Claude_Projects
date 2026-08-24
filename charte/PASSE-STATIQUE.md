@@ -4451,3 +4451,105 @@ enregistrement réécrit ces valeurs à l'identique.
 Ce qui est perdu est autre chose, et c'est assumé : **plus personne ne peut
 ajouter ni corriger une précision depuis l'écran.** Les neuf existantes
 continuent d'agir, une dixième demanderait une écriture en base.
+
+## 60. Retour / avant : la garde porte sur la valeur — 24/08/2026
+
+Chantier demandé deux fois et jamais engagé. La feuille de route le posait comme
+un choix binaire — **pile côté client** (rapide, fausse dès qu'on est deux) ou
+**journal en base** (juste, et c'est un vrai chantier). La mesure a montré qu'il
+y avait une troisième voie, et que la forme des écritures la rendait facile.
+
+### 60.1 Pourquoi la garde par version ne pouvait pas servir
+
+Deux faits mesurés dans le schéma, et c'est leur conjonction qui décide :
+
+- `etapes`, `frictions` et `chiffres` **n'ont pas de colonne `version`**. Leur
+  garde est `processus.version` ;
+- le déclencheur `toucher_processus_parent` **fait avancer cette version à
+  chaque écriture sur un enfant**, quel qu'il soit.
+
+Donc : on corrige l'étape A (version N+1), on corrige l'étape B (N+2), on
+demande le retour de la première avec N+1 — **refusé**. Refusé non pas parce
+qu'un collègue est passé, mais **parce qu'on a continué à travailler**. Une pile
+gardée par la version cesse de fonctionner au deuxième geste.
+
+Et le contournement évident — relire la version courante juste avant
+d'appliquer — supprime la garde : le retour écraserait en silence la correction
+d'un collègue sur le même champ. C'est écrit en tête de `src/lib/retour.ts`,
+avec l'interdiction de le « corriger » ainsi.
+
+### 60.2 La troisième voie, et ce qui la rend facile
+
+**La garde porte sur la valeur.** Chaque opération transporte ses valeurs
+attendues ; `retour_flux` n'applique que si la ligne les porte encore
+(`v_actuel @> v_att`, containment jsonb) — comparaison-et-échange, champ par
+champ.
+
+Ce qui la rend facile était déjà là : **les écritures passent par des fonctions
+par correctif.** `maj_etape` teste `p_patch ? 'texte'` champ par champ, donc
+l'écriture sait exactement ce qu'elle change — et **l'inverse d'un correctif est
+un correctif**. Il n'y a rien eu à inventer sur le grain : un geste = une
+écriture, celle de la sortie de champ.
+
+**Les trois épreuves, menées en base sur le site jetable, sans navigateur :**
+
+1. champ intact → le retour **s'applique** ;
+2. un collègue écrit sur **ce** champ par `maj_etape` → le retour **refuse**
+   (`null`), et la valeur du collègue survit ;
+3. `processus.version` a avancé **deux fois** entre-temps sur d'autres lignes →
+   le retour **réussit**. C'est le cas exact où la garde par version aurait
+   échoué : la démonstration que le choix n'était pas une préférence.
+
+Aucun résidu : les deux étapes ont été remises à leur libellé d'origine.
+
+> **Une leçon de méthode sur ma propre épreuve.** J'avais d'abord mis l'écriture
+> du collègue, le retour et la relecture du texte **dans un seul `select`**. Le
+> résultat semblait contradictoire — refus correct, mais texte inchangé. Ce
+> n'était pas la fonction : **l'ordre d'évaluation des éléments d'une liste de
+> sélection n'est pas garanti**, et la relecture avait eu lieu avant l'écriture.
+> Une épreuve dont l'ordre n'est pas garanti ne prouve rien. Une requête par
+> étape.
+
+### 60.3 Le piège du `on delete set null`, et celui de l'ordre
+
+**Recoller.** `frictions.etape_id` et `chiffres.etape_id` portent
+`on delete set null` : supprimer une étape ne les emporte pas, elle les
+**détache**. Recréer l'étape ne les recolle donc pas — le retour réussirait à
+moitié, en silence. Le geste retient les identifiants détachés et son inverse
+les recolle, **mais seulement ceux encore `etape_id is null`** : un collègue qui
+en a rattaché une ailleurs depuis garde son geste.
+
+**L'ordre.** Un geste composé du diagramme applique écritures → création →
+suppression → ordre ; l'inverse applique la liste retournée, donc `ordre⁻¹`
+**en premier** — alors que l'étape supprimée n'existe pas encore à cet instant.
+D'où l'exception : quand le geste crée ou supprime une étape, l'opération
+`ordre` est posée **sans séquence attendue**, et sa garde devient l'**ensemble**
+des étapes présentes, évalué au moment de son exécution, après que la
+re-création a eu lieu dans la même transaction. Un simple glisser-déposer, lui,
+garde sa séquence — un collègue qui a réordonné fait refuser le retour.
+
+### 60.4 Ce que la pile ne couvre pas, et pourquoi c'est dit à l'écran
+
+Les corrections de traduction (magasin partagé, précédence arbitrée en base :
+deux autorités sur la même donnée), l'environnement IT et le schéma des échanges
+(ils reposent `clients.si` en entier — l'inverse serait un document, pas un
+champ), les écrans d'administration, les champs du client, et `m.outilClient`
+qui écrit sur `clients.outils`.
+
+**C'est dit dans l'infobulle des boutons**, pas laissé à deviner : un retour qui
+ne défait qu'une partie de ce que l'utilisateur croit avoir fait est pire qu'un
+retour absent.
+
+### 60.5 Deux détails d'interface qui décident de l'usage
+
+**Le raccourci ne vole pas celui du navigateur.** `Ctrl/Cmd+Z` dans un champ,
+c'est le retour du texte en cours de frappe — et comme les écritures partent à
+la **sortie** de champ, le geste n'existe même pas encore en base à cet instant.
+Le raccourci global ne se déclenche donc que hors champ éditable
+(`closest('input, textarea, select, [contenteditable="true"]')`).
+
+**La pile ne se persiste pas.** Elle survivrait au rechargement qu'elle
+proposerait de défaire un geste d'avant-hier : la garde par valeur refuserait,
+mais **le bouton aurait menti en s'affichant actif**. Un bouton qui promet ce
+qu'il ne peut pas tenir est pire qu'un bouton grisé. Et un retour refusé sort de
+la pile — il refuserait toujours.
