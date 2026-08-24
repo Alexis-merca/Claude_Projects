@@ -4385,3 +4385,69 @@ par l'utilisateur : un hôte `evil-preview--<uuid>` n'obtient rien.
 **Leçon** : un commit hors périmètre n'est pas forcément une dérive de l'agent.
 Mais il se vérifie avant d'être accepté, et la vérification qui compte est celle
 qui exécute la règle sur les hôtes réels.
+
+## 59. L'accueil déménage, et ce que porte une redirection — 24/08/2026
+
+Décision de l'utilisateur : l'écran d'administration **devient la vue
+d'accueil**, à la place de la liste des clients, avec les onglets dans l'ordre
+du travail — clients et sites, trames, outils, traductions — le premier par
+défaut.
+
+### 59.1 LE PIÈGE : la redirection d'accueil porte le retour de connexion
+
+`src/routes/index.tsx` ne se contentait pas de rediriger vers `/clients` : il
+**réacheminait `search` et `hash`**. Le commentaire du fichier ne le disait pas,
+mais c'est par le **fragment** que Google renvoie les jetons après
+authentification.
+
+Déplacer l'accueil sans transporter ce fragment aurait cassé la connexion — et
+**pas les sessions déjà ouvertes**. Le défaut ne serait apparu qu'à la première
+connexion d'un consultant, c'est-à-dire loin de l'envoi qui l'a causé.
+
+D'où deux règles écrites dans le code : `/` vise `/admin` en gardant le
+réacheminement, et **`/clients` ne disparaît pas** — il redirige, en
+réacheminant lui aussi. Une route supprimée aurait donné une page d'erreur aux
+signets et au bouton de retour du diagnostic ; une redirection ne coûte rien.
+
+`/clients/$code` ne bouge pas : c'est le diagnostic, et son adresse est une
+identité.
+
+### 59.2 Un déménagement se vérifie geste par geste
+
+`ClientsAdmin` savait chercher, regrouper, déplier, renommer. Il ne savait pas
+**créer**, **dupliquer**, **supprimer**, **marquer comme trame**, ni
+**déconnecter** — cinq gestes qui vivaient dans l'écran qu'on remplaçait.
+
+**Un geste perdu dans un déménagement ne se voit pas** : rien ne casse, l'écran
+est simplement moins capable, et personne ne s'en aperçoit avant d'en avoir
+besoin. Ils ont donc été énumérés dans le brief et rendus un par un — les
+quatre premiers sur la ligne du site, la déconnexion dans l'en-tête.
+
+Celui qu'il fallait surveiller : le **décompte avant suppression**
+(`compterContenuClient` — processus, étapes, frictions, chiffres). Deux jours de
+visite terrain partent avec une ligne de site ; un décompte « résumé » aurait
+été une perte silencieuse.
+
+### 59.3 Le montage conditionnel cesse d'être un détail
+
+Les onglets se montent un par un (`onglet === "…" ? <X/> : null`). C'était une
+propriété gratuite ; c'en est une nécessaire maintenant que cet écran est
+l'accueil, parce que l'onglet « Outils » parcourt les étapes de **tous** les
+sites pour dresser la liste des non classés. Monter les quatre d'un coup ferait
+payer ce balayage à chaque ouverture de l'application. La raison est écrite en
+tête du fichier, avec l'interdiction de « simplifier ».
+
+### 59.4 Deux champs retirés par l'utilisateur, sans perte
+
+Entre deux envois, l'utilisateur a demandé lui-même le retrait des champs
+« Pourquoi ce choix » et « Comment l'employer » de la **ligne d'édition** du
+glossaire — après les avoir déjà retirés de la liste.
+
+Vérifié en base : **135 termes, 89 notes, 9 précisions, intacts**, et la
+précision de « poste » (*shift* quand il désigne une équipe) part toujours au
+modèle. Le brouillon d'édition est initialisé depuis le terme existant, donc un
+enregistrement réécrit ces valeurs à l'identique.
+
+Ce qui est perdu est autre chose, et c'est assumé : **plus personne ne peut
+ajouter ni corriger une précision depuis l'écran.** Les neuf existantes
+continuent d'agir, une dixième demanderait une écriture en base.
