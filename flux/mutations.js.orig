@@ -17,7 +17,7 @@
    évidentes — celle du dépôt qui fait adopter la phase du voisin, notamment.
    ========================================================================= */
 
-import { colonneParEtape, flechesEffectives, listeSupports, ORDRE_LIENS } from './moteur.js';
+import { listeSupports, ORDRE_LIENS } from './moteur.js';
 
 const RIEN = { ecritures: [], ordre: null };
 
@@ -245,82 +245,4 @@ export function ajouterEchelle(etapes, roleParDefaut) {
       colonne_partagee: false,
     },
   };
-}
-
-/* ---------------------------------------------------------------------------
-   Flèches à la main
-   ---------------------------------------------------------------------------
-
-   Le tracé reste CALCULÉ ; on n'enregistre que les écarts. Ces fonctions ne
-   rendent donc jamais d'écriture sur `etapes` : elles rendent une opération sur
-   la table `fleches`, que l'appelant exécute par sa RPC gardée par la version.
-
-   Elles restent pures, comme leurs voisines : c'est ce qui permet d'éprouver
-   les refus sans base ni navigateur. */
-
-/** Deux étapes de la MÊME colonne sont simultanées : une flèche entre elles
-    n'aurait pas de sens, et le tracé ne saurait pas où la faire passer. */
-export function memeColonne(etapes, a, b) {
-  const c = colonneParEtape(etapes);
-  return c.get(a) === c.get(b);
-}
-
-/**
- * Tirer une flèche de `source` vers `cible`.
- *
- * Refus explicites plutôt que gestes sans effet : un tirage qui ne produit rien
- * se lit comme une panne du geste, pas comme une règle du modèle.
- */
-export function tirerFleche(etapes, source, cible, ecarts) {
-  const a = etapes[source];
-  const b = etapes[cible];
-  if (!a || !b) return RIEN;
-  if (source === cible) {
-    return { ...RIEN, refus: "Une étape ne peut pas pointer vers elle-même." };
-  }
-  if (memeColonne(etapes, source, cible)) {
-    return {
-      ...RIEN,
-      refus: "Ces deux étapes occupent la même colonne : elles sont simultanées, une flèche de l'une à l'autre n'aurait pas de sens.",
-    };
-  }
-  const deja = flechesEffectives(etapes, ecarts).find((f) => f.de === source && f.vers === cible);
-  if (deja) {
-    return { ...RIEN, refus: "Cette flèche existe déjà." };
-  }
-  /* Une flèche RÉTABLIE : si la paire était masquée, on retire le masque au
-     lieu d'ajouter une ligne. Sans ça, la table porterait deux écarts
-     contradictoires pour la même paire, et le masque gagnerait — le geste
-     resterait sans effet visible. */
-  const masque = (ecarts || []).find(
-    (f) => f.masquee && f.de_id === a.id && f.vers_id === b.id,
-  );
-  if (masque) return { ...RIEN, flecheSupprimer: masque.id };
-  return { ...RIEN, flecheCreer: { de_id: a.id, vers_id: b.id, nature: '', masquee: false } };
-}
-
-/**
- * Retirer une flèche du tracé.
- *
- * Dessinée : on efface la ligne. Calculée : on POSE un masque — il n'y a rien à
- * effacer, la flèche n'existe que parce que le calcul la déduit.
- */
-export function retirerFleche(etapes, fleche) {
-  if (!fleche) return RIEN;
-  if (fleche.manuelle && fleche.id) return { ...RIEN, flecheSupprimer: fleche.id };
-  const a = etapes[fleche.de];
-  const b = etapes[fleche.vers];
-  if (!a || !b) return RIEN;
-  return { ...RIEN, flecheCreer: { de_id: a.id, vers_id: b.id, nature: '', masquee: true } };
-}
-
-/** Clic sur une flèche DESSINÉE : elle porte sa propre nature, en base. Le clic
-    sur une flèche calculée passe, lui, par `cyclerLien` — c'est l'étape reçue
-    qui la porte. Ne fusionne pas les deux : un clic sur une flèche dessinée
-    repeindrait alors les voisines implicites de la même arrivée. */
-export function cyclerLienFleche(fleche) {
-  if (!fleche || !fleche.id) return RIEN;
-  const rang = ORDRE_LIENS.indexOf(fleche.nature || '');
-  const suivant = ORDRE_LIENS[(rang + 1) % ORDRE_LIENS.length];
-  return { ...RIEN, flecheMaj: { id: fleche.id, nature: suivant } };
 }

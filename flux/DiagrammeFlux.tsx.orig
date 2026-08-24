@@ -41,14 +41,13 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   acheverRendu,
   baliserFlux,
-  flechesEffectives,
   HAUTEUR_MAX_TEXTE,
   libelleLien,
   LIENS,
   mots,
   tracerFleches,
 } from "./moteur.js";
-import type { EcartFleche, EtapeFlux, MotsFlux, ProcessusFlux } from "./moteur.js";
+import type { EtapeFlux, MotsFlux, ProcessusFlux } from "./moteur.js";
 
 
 import {
@@ -59,18 +58,14 @@ import {
   basculerPartageColonne,
   couperEchelle,
   cyclerLien,
-  cyclerLienFleche,
   deposerEtape,
   insererEtape,
   renommerEchelle,
-  retirerFleche,
   retirerSupport,
   supprimerEchelle,
   supprimerEtape,
-  tirerFleche,
 } from "./mutations.js";
 import type { Mutation } from "./mutations.js";
-
 
 /** ORIGINE DES CHAÎNES DE TEXTE D'UNE MUTATION (`texte`, `phase`).
 
@@ -96,12 +91,7 @@ export type MutationHote = Mutation & { origineTexte: OrigineTexte };
 import "./moteur.css";
 
 /* Seules ces commandes sont traitées ici. Le moteur n'émet donc que celles-là :
-   un bouton visible mais inerte est pire que son absence.
-
-   `fleches` n'y est PAS : elle s'ajoute uniquement quand l'hôte passe la prop
-   `fleches`, c'est-à-dire quand il sait lire la table et exécuter les mutations
-   correspondantes. Un hôte qui ne l'a pas câblée garde le diagramme d'avant, au
-   balisage près. */
+   un bouton visible mais inerte est pire que son absence. */
 const COMMANDES = {
   texte: true,
   phases: true,
@@ -110,7 +100,6 @@ const COMMANDES = {
   etapes: true,
   colonnes: true,
 } as const;
-
 
 const ZOOM_MIN = 0.4;
 const ZOOM_MAX = 1;
@@ -148,11 +137,6 @@ export interface DiagrammeFluxProps {
       mots du composant sont désormais fournis. */
   demanderNomOutil?: () => Promise<string | null>;
 
-  /** ÉCARTS AU TRACÉ CALCULÉ : lignes de la table `fleches`. Absente, les
-      flèches à la main sont ÉTEINTES — ni poignée, ni puce de retrait — et le
-      tracé est celui d'avant, au pixel. Passer un tableau vide les allume. */
-  fleches?: EcartFleche[];
-
   /** Appelé pour chaque interaction d'édition. Le composant ne parle pas à la
       base : il dit ce qu'il faut écrire, l'hôte décide comment. `ordre` doit
       passer par `reordonner_etapes()` — jamais par des écritures ligne à
@@ -173,10 +157,8 @@ export function DiagrammeFlux({
   onZoom,
   mots: motsFournis,
   demanderNomOutil,
-  fleches,
   onMutation,
 }: DiagrammeFluxProps) {
-
   /* Un seul dictionnaire pour le moteur et pour ce qui est porté ici, sinon
      l'en-tête et le diagramme pourraient parler deux langues. */
   const t = useMemo(() => mots(motsFournis), [motsFournis]);
@@ -210,15 +192,6 @@ export function DiagrammeFlux({
     return () => n.removeEventListener("scroll", noter, true);
   }, []);
 
-  /* Opt-in strict : la commande `fleches` n'apparaît que si l'hôte a passé la
-     prop. La dépendance est le BOOLÉEN, pas le tableau : les écarts changent à
-     chaque relecture, et reconstruire le balisage pour eux perdrait le focus. */
-  const flechesActives = fleches !== undefined;
-  const commandes = useMemo(
-    () => (flechesActives ? { ...COMMANDES, fleches: true } : COMMANDES),
-    [flechesActives],
-  );
-
   /* Le balisage ne dépend pas du zoom : celui-ci est posé sur le nœud. */
   const html = useMemo(
     () =>
@@ -233,28 +206,15 @@ export function DiagrammeFlux({
           zoom: 1,
           entete: false,
           enveloppe: false,
-          commandes,
+          commandes: COMMANDES,
           mots: t,
         },
       }),
-    [processus, etapes, paletteRoles, outils, edition, etapeActive, commandes, t],
+    [processus, etapes, paletteRoles, outils, edition, etapeActive, t],
 
   );
 
   const fluxNode = () => hote.current?.querySelector<HTMLElement>(".flux") ?? null;
-
-  /* Options du TRACÉ, à jour à chaque rendu : le tracé, lui, doit suivre les
-     écarts — c'est lui qui dessine les flèches dessinées et masquées. */
-  const trace = useMemo(
-    () => ({ edition, mots: t, commandes, ...(fleches ? { fleches } : {}) }),
-    [edition, t, commandes, fleches],
-  );
-  /* Le geste de tirage lit les écarts hors cycle de rendu. */
-  const ecarts = useRef(fleches);
-  ecarts.current = fleches;
-  const traceRef = useRef(trace);
-  traceRef.current = trace;
-
 
   /* Après chaque reconstruction : placer les cartes partagées, ajuster les
      zones de texte, tracer. Avant la peinture, pour éviter un saut visible. */
@@ -262,7 +222,7 @@ export function DiagrammeFlux({
     const flux = fluxNode();
     if (!flux) return;
     flux.style.setProperty("zoom", String(zoom));
-    acheverRendu(flux, etapes, trace);
+    acheverRendu(flux, etapes, { edition, mots: t });
     const defile = hote.current?.querySelector<HTMLElement>(".flux-defile");
     if (defile && defilement.current) defile.scrollLeft = defilement.current;
     // `zoom` volontairement hors dépendances : l'effet suivant s'en charge,
@@ -293,8 +253,8 @@ export function DiagrammeFlux({
     const flux = fluxNode();
     if (!flux) return;
     flux.style.setProperty("zoom", String(zoom));
-    acheverRendu(flux, etapes, trace);
-  }, [zoom, etapes, trace]);
+    acheverRendu(flux, etapes, { edition, mots: t });
+  }, [zoom, etapes, edition, t]);
 
   /* Redimensionnement et arrivée des polices. */
   useEffect(() => {
@@ -307,7 +267,7 @@ export function DiagrammeFlux({
 
     const retracer = () => {
       const flux = n.querySelector<HTMLElement>(".flux");
-      if (flux && vivant) acheverRendu(flux, etapes, trace);
+      if (flux && vivant) acheverRendu(flux, etapes, { edition, mots: t });
     };
 
     /* On ne réagit qu'à la largeur. `acheverRendu` ajuste des hauteurs, ce qui
@@ -332,7 +292,7 @@ export function DiagrammeFlux({
       cancelAnimationFrame(enAttente);
       obs.disconnect();
     };
-  }, [etapes, trace]);
+  }, [etapes, edition, t]);
 
   /* La carte respire à la frappe. `input` sert UNIQUEMENT à la hauteur : rien
      n'est écrit ici, l'écriture reste sur `change`, à la sortie du champ. Sans
@@ -351,7 +311,7 @@ export function DiagrammeFlux({
       /* La hauteur d'une carte déplace les flèches : les retracer tout de
          suite, sinon elles pointent à côté jusqu'à la sortie du champ. */
       const flux = fluxNode();
-      if (flux) tracerFleches(flux, vues.current, traceRef.current);
+      if (flux) tracerFleches(flux, vues.current, { edition, mots: t });
     };
     n.addEventListener("input", grandir);
     return () => n.removeEventListener("input", grandir);
@@ -365,27 +325,12 @@ export function DiagrammeFlux({
   emettre.current = onMutation;
 
   /* `origineTexte` par défaut à `"valeur"` : seuls les deux gestes de saisie
-     l'annoncent, tout le reste écrit en base.
-
-     LA LISTE DES CHAMPS EST LA GARDE : une mutation vide ne part pas. Tout
-     nouveau champ de mutation doit y être ajouté, sinon le geste est avalé en
-     silence — c'est exactement ce qui arrive aux flèches sans les trois lignes
-     `fleche*`. */
+     l'annoncent, tout le reste écrit en base. */
   const appliquer = useCallback((m: Mutation, origineTexte: OrigineTexte = "valeur") => {
     if (!m) return;
-    if (
-      m.refus ||
-      m.creation ||
-      m.suppression ||
-      m.ordre ||
-      m.ecritures.length ||
-      m.flecheCreer ||
-      m.flecheSupprimer ||
-      m.flecheMaj
-    )
+    if (m.refus || m.creation || m.suppression || m.ordre || m.ecritures.length)
       emettre.current?.({ ...m, origineTexte });
   }, []);
-
 
   /* Un seul gestionnaire délégué par type d'évènement, posé sur l'hôte : le
      sous-arbre est réécrit à chaque rendu, des écouteurs individuels seraient
@@ -397,29 +342,10 @@ export function DiagrammeFlux({
       if (!cible) return;
       const et = vues.current;
       const i = cible.dataset.i != null ? Number(cible.dataset.i) : null;
-      /* Une flèche DESSINÉE porte sa nature en base : le clic doit agir sur la
-         ligne, pas sur l'étape d'arrivée — sinon il repeindrait aussi les
-         flèches calculées qui aboutissent au même endroit. */
-      const idFleche = cible.dataset.fleche;
-      const tracee = () =>
-        flechesEffectives(vues.current, ecarts.current ?? null).find((f) =>
-          idFleche
-            ? f.id === idFleche
-            : f.de === Number(cible.dataset.de) && f.vers === Number(cible.dataset.vers),
-        ) ?? null;
       switch (cible.dataset.action) {
         case "basculer-lien":
-          if (idFleche) {
-            const f = tracee();
-            if (f) appliquer(cyclerLienFleche(f));
-          } else if (i != null) appliquer(cyclerLien(et, i));
+          if (i != null) appliquer(cyclerLien(et, i));
           break;
-        case "retirer-fleche": {
-          const f = tracee();
-          if (f) appliquer(retirerFleche(et, f));
-          break;
-        }
-
         case "partager-colonne":
           if (i != null) appliquer(basculerPartageColonne(et, i));
           break;
@@ -570,77 +496,6 @@ export function DiagrammeFlux({
     [appliquer, nettoyerGlisse],
   );
 
-  /* TIRAGE D'UNE FLÈCHE : évènements de POINTEUR, pas glisser-déposer HTML5.
-     Deux raisons, et elles ne sont pas cosmétiques. D'abord le glisser HTML5 est
-     déjà pris par le déplacement d'étape : deux `dragstart` sur la même carte se
-     disputeraient la cible de dépôt. Ensuite le tracé se fait au pointeur dans
-     `SchemaEchanges`, et un consultant apprend un geste, pas deux.
-
-     La cible est la CARTE (`[data-index]`), y compris en arrière — une flèche de
-     retour est licite. Le refus « même colonne » est montré pendant le geste,
-     avant le relâchement : c'est le seul moment où il est encore corrigeable. */
-  const tirage = useRef<number | null>(null);
-
-  const nettoyerTirage = useCallback(() => {
-    tirage.current = null;
-    hote.current
-      ?.querySelectorAll(".flux__carte--cible-fleche, .flux__carte--refus-fleche")
-      .forEach((el) =>
-        el.classList.remove("flux__carte--cible-fleche", "flux__carte--refus-fleche"),
-      );
-  }, []);
-
-  const carteSous = (ev: PointerEvent): HTMLElement | null => {
-    const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
-    return (el?.closest?.("[data-index]") as HTMLElement | null) ?? null;
-  };
-
-  const surTirage = useCallback(
-    (ev: PointerEvent) => {
-      const poignee = (ev.target as HTMLElement).closest?.("[data-tirage]") as HTMLElement | null;
-      if (!poignee) return;
-      ev.preventDefault();
-      const source = Number(poignee.dataset.tirage);
-      tirage.current = source;
-
-      const bouger = (e: PointerEvent) => {
-        nettoyerTirage();
-        tirage.current = source;
-        const carte = carteSous(e);
-        if (!carte) return;
-        const cible = Number(carte.dataset.index);
-        if (cible === source) return;
-        const essai = tirerFleche(vues.current, source, cible, ecarts.current ?? null);
-        carte.classList.add(
-          essai.refus ? "flux__carte--refus-fleche" : "flux__carte--cible-fleche",
-        );
-      };
-
-      const lacher = (e: PointerEvent) => {
-        window.removeEventListener("pointermove", bouger);
-        window.removeEventListener("pointerup", lacher);
-        window.removeEventListener("pointercancel", fin);
-        const carte = carteSous(e);
-        nettoyerTirage();
-        if (!carte) return;
-        const cible = Number(carte.dataset.index);
-        appliquer(tirerFleche(vues.current, source, cible, ecarts.current ?? null));
-      };
-
-      const fin = () => {
-        window.removeEventListener("pointermove", bouger);
-        window.removeEventListener("pointerup", lacher);
-        window.removeEventListener("pointercancel", fin);
-        nettoyerTirage();
-      };
-
-      window.addEventListener("pointermove", bouger);
-      window.addEventListener("pointerup", lacher);
-      window.addEventListener("pointercancel", fin);
-    },
-    [appliquer, nettoyerTirage],
-  );
-
   /* Pose des écouteurs. Hors édition on n'en pose aucun : le diagramme est
      alors une image, et un `dragstart` qui traîne suffirait à donner
      l'impression qu'on peut déplacer une carte. */
@@ -654,22 +509,10 @@ export function DiagrammeFlux({
       ["dragend", nettoyerGlisse],
       ["dragover", surSurvol],
       ["drop", surDepot],
-      ["pointerdown", surTirage],
     ] as const;
-
     paires.forEach(([nom, fn]) => n.addEventListener(nom, fn as EventListener));
     return () => paires.forEach(([nom, fn]) => n.removeEventListener(nom, fn as EventListener));
-  }, [
-    edition,
-    surClic,
-    surChangement,
-    surDebutGlisse,
-    nettoyerGlisse,
-    surSurvol,
-    surDepot,
-    surTirage,
-  ]);
-
+  }, [edition, surClic, surChangement, surDebutGlisse, nettoyerGlisse, surSurvol, surDepot]);
 
   /** Règle le zoom pour que tout le diagramme tienne dans la largeur offerte.
       Le pas de 5 % évite un curseur à valeur illisible.

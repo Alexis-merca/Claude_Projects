@@ -216,16 +216,9 @@ export const MOTS_FR = {
 
   legendeAide: '— cliquez une flèche pour changer',
   flecheTitre: (libelle) => `Lien ${libelle} — cliquer pour changer`,
-  /* Mots des FLÈCHES MANUELLES. Ils n'apparaissent que sous la commande
-     optionnelle `fleches` : le chemin par défaut n'en émet aucun, et reste donc
-     identique au mono-fichier au caractère près. */
-  flecheTirerTitre: 'Tirer une flèche vers une autre étape',
-  flecheRetirerTitre: 'Retirer cette flèche dessinée',
-  flecheMasquerTitre: 'Masquer cette flèche calculée',
   /** Libellés d'affichage des natures de lien. Les CLÉS sont les valeurs en
       base (`etapes.lien`) et ne se traduisent pas. */
   liens: { '': 'non qualifié', auto: 'automatique', manuel: 'manuel' },
-
   ecartMois: 'mois',
   ecartSemaines: 'sem',
   ecartJours: 'j'
@@ -282,11 +275,7 @@ export const MOTS_EN = {
 
   legendeAide: '— click an arrow to change it',
   flecheTitre: (libelle) => `${libelle} link — click to change`,
-  flecheTirerTitre: 'Drag an arrow to another step',
-  flecheRetirerTitre: 'Remove this drawn arrow',
-  flecheMasquerTitre: 'Hide this computed arrow',
   liens: { '': 'unqualified', auto: 'automated', manuel: 'manual' },
-
   ecartMois: 'mo',
   ecartSemaines: 'wk',
   ecartJours: 'd'
@@ -449,83 +438,6 @@ export function colonnesDesEtapes(etapes) {
   });
   return colonnes;
 }
-
-/** Index de colonne de chaque étape. Sert au refus « même colonne » côté hôte
-    et à savoir si une flèche revient en arrière. */
-export function colonneParEtape(etapes) {
-  const m = new Map();
-  colonnesDesEtapes(etapes).forEach((col, k) => col.indices.forEach((j) => m.set(j, k)));
-  return m;
-}
-
-/**
- * LES FLÈCHES : LE CALCUL RESTE LE CALCUL, ON N'ENREGISTRE QUE LES ÉCARTS.
- *
- * Le tracé implicite — chaque étape d'une colonne vers chaque étape de la
- * suivante — reste la règle. `ecarts` (la table `fleches`) ne porte que ce qui
- * s'en écarte :
- *   - `masquee: false` → une flèche AJOUTÉE à la main, qui n'existerait pas ;
- *   - `masquee: true`  → une flèche IMPLICITE MASQUÉE, qui existerait sans elle.
- *
- * D'où la propriété qu'on tient : AUCUN ÉCART ⇒ exactement les paires d'avant,
- * dans le même ordre. Ne remplace pas ce modèle par « tout devient explicite au
- * premier dessin » : la première flèche manuelle effacerait le diagramme.
- *
- * @param {object[]} etapes    étapes du processus, dans l'ordre
- * @param {object[]} [ecarts]  lignes de `fleches` : { id, de_id, vers_id, nature, masquee }
- * @returns {object[]} { de, vers, id, nature, manuelle, retour } — index d'étapes
- */
-export function flechesEffectives(etapes, ecarts) {
-  const liste = etapes || [];
-  const colonnes = colonnesDesEtapes(liste);
-  const colonne = colonneParEtape(liste);
-
-  const indexParId = new Map();
-  liste.forEach((et, j) => { if (et && et.id != null) indexParId.set(String(et.id), j); });
-
-  const masquees = new Set();
-  const ajoutees = [];
-  (ecarts || []).forEach((f) => {
-    const ja = indexParId.get(String(f.de_id));
-    const jb = indexParId.get(String(f.vers_id));
-    /* Un écart dont une extrémité n'est pas affichée est simplement ignoré :
-       la table le garde, le tracé n'en tient pas compte. */
-    if (ja == null || jb == null) return;
-    if (f.masquee) { masquees.add(ja + '>' + jb); return; }
-    ajoutees.push({ de: ja, vers: jb, id: f.id, nature: f.nature || '', manuelle: true });
-  });
-  const dessinees = new Set(ajoutees.map((f) => f.de + '>' + f.vers));
-
-  const sortie = [];
-  for (let k = 0; k < colonnes.length - 1; k++) {
-    for (const ja of colonnes[k].indices) {
-      for (const jb of colonnes[k + 1].indices) {
-        const clef = ja + '>' + jb;
-        if (masquees.has(clef) || dessinees.has(clef)) continue;
-        /* NATURE D'UNE FLÈCHE IMPLICITE : celle de l'étape qui REÇOIT. Toutes
-           les implicites qui arrivent sur une même carte partagent donc la
-           même — correct pour un calcul. Voir juste dessous : une flèche
-           MANUELLE porte la sienne. N'unifie pas les deux lectures, on
-           repeindrait des flèches que personne n'a touchées. */
-        sortie.push({
-          de: ja, vers: jb, id: null,
-          nature: (liste[jb] && liste[jb].lien) || '',
-          manuelle: false, retour: false,
-        });
-      }
-    }
-  }
-  for (const f of ajoutees) {
-    /* NATURE D'UNE FLÈCHE MANUELLE : la sienne, portée par la ligne en base.
-       Elle vient peut-être d'ailleurs que de la colonne précédente : lire le
-       lien de l'étape reçue la peindrait comme une voisine qu'elle n'est pas. */
-    const ka = colonne.get(f.de);
-    const kb = colonne.get(f.vers);
-    sortie.push({ ...f, retour: !(ka < kb) });
-  }
-  return sortie;
-}
-
 
 /** Groupes de phase consécutifs : un bandeau de frise par groupe.
 
@@ -796,8 +708,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
                 ${cmd('supports') ? bandeauSupportsEdition(j, supports, t, options.outils) : bandeauSupports(supports, options.outils)}
                 <div class="carte__tete">
                   ${cmd('deplacement') ? `<span class="carte__poignee" draggable="true" data-poignee="${j}"
-                        title="${t.poigneeTitre}">⠿</span>` : ''}${cmdOptionnelle('fleches') ? `
-                  <span class="carte__tirage" data-tirage="${j}" title="${t.flecheTirerTitre}">→</span>` : ''}
+                        title="${t.poigneeTitre}">⠿</span>` : ''}
                 </div>
                 <textarea class="carte__texte" rows="1" data-champ="etape.${j}.texte"
                           placeholder="${t.etapePlaceholder}">${echapper(et.texte || '')}</textarea>
@@ -983,97 +894,52 @@ export function tracerFleches(zone, etapes, options = {}) {
 
   /* Tout ce qui est dans la colonne k précède tout ce qui est dans la colonne
      k+1 : on trace donc CHAQUE carte de k vers CHAQUE carte de k+1. Deux fois
-     deux font quatre flèches, et c'est la sémantique voulue pour les flèches
-     implicites. Le tracé ne traverse aucune carte : il quitte le bord droit de
-     la carte de départ, ne monte ou descend que dans la gouttière entre les
-     deux colonnes, puis entre par le bord gauche de l'arrivée.
-     `flechesEffectives` rend ces paires, plus les écarts enregistrés : sans
-     écart, la liste et son ordre sont ceux d'avant. */
-  const fleches = flechesEffectives(liste, options.fleches);
-  /* Poignées de retrait : commande OPTIONNELLE, opt-in strict. Sans elle, rien
-     de neuf n'est émis et `cibles.innerHTML` reste caractère pour caractère
-     celui du mono-fichier. */
-  const retraits = Boolean(
-    options.edition && options.commandes && options.commandes.fleches === true,
-  );
-  const puces = [];
+     deux font quatre flèches, et c'est la sémantique voulue tant que les
+     flèches sont implicites. Le tracé ne traverse aucune carte : il quitte le
+     bord droit de la carte de départ, ne monte ou descend que dans la gouttière
+     entre les deux colonnes, puis entre par le bord gauche de l'arrivée. */
+  const paires = [];
+  const colonnes = colonnesDesEtapes(liste);
+  for (let k = 0; k < colonnes.length - 1; k++) {
+    for (const ja of colonnes[k].indices) {
+      for (const jb of colonnes[k + 1].indices) paires.push([ja, jb]);
+    }
+  }
 
-  for (const f of fleches) {
-    const ja = f.de, jb = f.vers;
+  for (const [ja, jb] of paires) {
     const ca = carteDe(ja), cb = carteDe(jb);
     if (!ca || !cb) continue;
     const a = boite(ca), b = boite(cb);
-    let d, cx, cy;
+    const x1 = a.x + a.l + 2;
+    const y1 = a.y + a.h / 2;
+    const x2 = b.x - 3;
+    const y2 = b.y + b.h / 2;
+    const dx = x2 - x1, dy = y2 - y1;
+    const mx = x1 + dx / 2;
+    /* Le rayon doit tenir dans l'écart horizontal ET vertical : sinon les deux
+       quarts de cercle se chevauchent et la flèche part à l'envers, avec une
+       pointe qui déborde sur les cartes. Sous 2 px de rayon utile, on trace
+       un simple segment droit. */
+    const r = Math.min(9, Math.abs(dx) / 2 - 2, Math.abs(dy) / 2);
+    const s = dy > 0 ? 1 : -1;
+    const d = (Math.abs(dy) < 2 || r < 2 || dx <= 0)
+      ? `M${x1},${y1} L${x2},${y2}`
+      : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
 
-    if (f.retour) {
-      /* FLÈCHE DE RETOUR EN ARRIÈRE — la boucle de reprise. Tracé simple et
-         assumé : sortie par le BAS de la carte de départ, passage sous les deux
-         couloirs concernés, remontée dans le bas de l'arrivée. Aucun segment ne
-         traverse une carte, mais la boucle peut en longer d'autres : le routage
-         fin n'appartient pas à ce lot, et une boucle lisible vaut mieux qu'une
-         boucle savante fausse. */
-      const basCellule = (el) => {
-        const cel = el.parentElement;
-        const r = cel ? boite(cel) : null;
-        return r ? r.y + r.h : 0;
-      };
-      const bas = Math.max(basCellule(ca), basCellule(cb), a.y + a.h + 12, b.y + b.h + 12) - 5;
-      const xa = a.x + a.l / 2;
-      const xb = b.x + b.l / 2;
-      const sens = xb >= xa ? 1 : -1;
-      const r = Math.min(9, Math.abs(xb - xa) / 2, Math.abs(bas - Math.max(a.y + a.h, b.y + b.h)) / 2);
-      d = r < 2
-        ? `M${xa},${a.y + a.h} L${xa},${bas} L${xb},${bas} L${xb},${b.y + b.h + 3}`
-        : `M${xa},${a.y + a.h} L${xa},${bas - r} Q${xa},${bas} ${xa + sens * r},${bas} L${xb - sens * r},${bas} Q${xb},${bas} ${xb},${bas - r} L${xb},${b.y + b.h + 3}`;
-      cx = (xa + xb) / 2;
-      cy = bas;
-    } else {
-      const x1 = a.x + a.l + 2;
-      const y1 = a.y + a.h / 2;
-      const x2 = b.x - 3;
-      const y2 = b.y + b.h / 2;
-      const dx = x2 - x1, dy = y2 - y1;
-      const mx = x1 + dx / 2;
-      /* Le rayon doit tenir dans l'écart horizontal ET vertical : sinon les deux
-         quarts de cercle se chevauchent et la flèche part à l'envers, avec une
-         pointe qui déborde sur les cartes. Sous 2 px de rayon utile, on trace
-         un simple segment droit. */
-      const r = Math.min(9, Math.abs(dx) / 2 - 2, Math.abs(dy) / 2);
-      const s = dy > 0 ? 1 : -1;
-      d = (Math.abs(dy) < 2 || r < 2 || dx <= 0)
-        ? `M${x1},${y1} L${x2},${y2}`
-        : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
-      cx = mx;
-      cy = y1 + dy / 2;
-    }
 
-    /* La nature vient de la flèche : lien de l'étape reçue si elle est
-       implicite, colonne `nature` de la ligne si elle est dessinée. Le clic doit
-       donc agir sur la bonne SOURCE — d'où `data-fleche` au lieu de `data-i`
-       pour une flèche manuelle. */
-    const nature = f.nature || '';
+    /* Le lien est porté par l'étape qui REÇOIT la flèche : une carte qui en
+       reçoit plusieurs leur donne donc la même nature — correct tant que les
+       flèches sont implicites. `data-i` est l'index de cette étape reçue. */
+    const nature = (liste[jb] && liste[jb].lien) || '';
     const style = LIENS[nature] || LIENS[''];
 
     if (options.edition) {
-      zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien"${
-        f.manuelle ? ` data-fleche="${echapper(f.id)}"` : ` data-i="${jb}"`} d="${d}"
+      zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien" data-i="${jb}" d="${d}"
         fill="none" stroke="transparent" stroke-width="16"><title>${t.flecheTitre(libelleLien(nature, t))}</title></path>`);
-    }
-    if (retraits) {
-      /* Retirer une flèche est un geste À PART du changement de nature : deux
-         cibles distinctes, jamais un clic qui devine. La puce est au milieu du
-         tracé, là où elle ne recouvre aucune carte. */
-      puces.push(`<g class="fleche-retirer" data-action="retirer-fleche"${
-        f.manuelle ? ` data-fleche="${echapper(f.id)}"` : ''} data-de="${ja}" data-vers="${jb}"
-        transform="translate(${Math.round(cx)},${Math.round(cy)})"><title>${
-        f.manuelle ? t.flecheRetirerTitre : t.flecheMasquerTitre}</title>
-        <circle r="7.5" fill="#FFFFFF" stroke="${style.couleur}" stroke-width="1.2"></circle>
-        <path d="M-3,-3 L3,3 M3,-3 L-3,3" stroke="${style.couleur}" stroke-width="1.4" stroke-linecap="round" fill="none"></path></g>`);
     }
     chemins.push(`<path d="${d}" fill="none" stroke="${style.couleur}" stroke-width="1.5"${
       style.tirets ? ` stroke-dasharray="${style.tirets}"` : ''} marker-end="url(#${style.marqueur})"/>`);
   }
-
 
   const pointe = (id, couleur) =>
     `<marker id="${id}" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto">
@@ -1094,7 +960,7 @@ export function tracerFleches(zone, etapes, options = {}) {
   if (cibles) {
     cibles.style.width = largeur;
     cibles.style.height = hauteur;
-    cibles.innerHTML = zonesClic.join('') + puces.join('');
+    cibles.innerHTML = zonesClic.join('');
   }
 }
 

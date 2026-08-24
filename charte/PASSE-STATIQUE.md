@@ -4714,3 +4714,72 @@ test, pour un fichier autonome dont les données ne portent jamais
 demandent `playwright-core`, absent du dépôt. Chromium, lui, est déjà présent
 sous `/opt/pw-browsers`. Un `npm install --no-save playwright-core` suffit à les
 rendre exécutables — ils ne l'avaient jamais été ici.)*
+
+## 63. Flèches manuelles — lot B, et un saut de ligne qui a coûté dix échecs — 24/08/2026
+
+### 63.1 Le modèle : le calcul reste, on enregistre les écarts
+
+Table `fleches(processus_id, de_id, vers_id, nature, masquee)`, les trois clefs
+étrangères en `on delete cascade`, une contrainte d'unicité sur le triplet. Une
+ligne est soit **une flèche ajoutée** (`masquee = false`), soit **une flèche
+calculée masquée** (`masquee = true`). Aucun écart ⇒ le tracé d'aujourd'hui.
+
+Deux modèles écartés, et pourquoi : *tout devient explicite* aurait fait
+disparaître le diagramme à la première flèche manuelle ; *purement additif*
+n'aurait jamais permis d'élaguer les quatre flèches que le lot A produit sur un
+croisement 2×2.
+
+### 63.2 LE SAUT DE LIGNE — ce que le portage a attrapé
+
+Le portage à la main dans `flux/` a fait tomber **dix cas** de la comparaison
+caractère par caractère. Cause unique : **une ligne vide** ajoutée entre le
+`</div>` de `carte__tete` et le `<textarea>` de la carte, dans le gabarit
+d'édition.
+
+Elle vient du diff de l'agent, pas du portage — vérifié dans le diff lui-même,
+où la ligne ajoutée est un `+` seul. Visuellement inoffensive : c'est de
+l'espace entre deux éléments. **Et c'est exactement pour ça qu'elle était
+dangereuse** — « inoffensif » est la façon dont un garde-fou se perd. Une fois la
+ligne retirée : *« MOTEUR CONFORME À L'ORIGINAL »*, et la géométrie identique
+dans un vrai navigateur.
+
+**Leçon** : le portage à la main n'est pas une corvée de synchronisation, c'est
+le seul moment où la conformité est réellement testée. Sans lui, la sortie du
+moteur React aurait dérivé d'un caractère, puis de deux.
+
+### 63.3 Ce que l'agent a trouvé et que je n'avais pas prévu
+
+J'avais demandé que défaire la suppression d'une étape restaure ses flèches, par
+analogie avec `recoller_frictions`. **L'analogie était fausse, et l'agent l'a
+vu** : `on delete cascade` **détruit** les flèches, là où les frictions sont
+seulement *détachées*. Il n'y a donc rien à recoller.
+
+Sa solution compose avec le mécanisme existant au lieu d'en ajouter un : le
+geste pose **une suppression explicite par flèche AVANT celle de l'étape**.
+Retournée par `opsInverses`, la liste recrée l'étape **puis** ses flèches — dans
+cet ordre, puisque l'insertion exige que les deux extrémités existent. Et comme
+la cascade a déjà supprimé ces lignes au moment où le retour se rejoue,
+`retour_flux` traite l'absence comme normale plutôt que comme un refus.
+
+*(Note de méthode : j'ai d'abord conclu que cette restauration manquait, en
+lisant `retour-flux.ts` à la **mauvaise révision** — le commit précédent. Le
+diff m'a détrompé. Lire un fichier sans fixer sa révision, sur un dépôt qui
+avance, c'est mesurer autre chose que ce qu'on croit.)*
+
+### 63.4 La nature d'une flèche a désormais deux sources
+
+Une flèche **implicite** lit la nature de l'étape qui la reçoit ; une flèche
+**dessinée** porte la sienne, dans sa propre colonne. Le clic émet donc
+`data-fleche` pour l'une et `data-i` pour l'autre. C'est écrit à côté des deux
+lectures : les confondre repeindrait des flèches.
+
+Le retrait est une **cible distincte** du changement de nature — une puce au
+milieu du tracé — plutôt qu'un clic qui devine. Et comme au lot A, la commande
+neuve est en opt-in strict : absente, rien n'est émis.
+
+### 63.5 Le cas qui motivera le lot C existe déjà
+
+L'utilisateur a tiré sa première flèche manuelle sur Sekurit : **de l'étape 2 à
+l'étape 6**. Elle enjambe donc trois colonnes, et le tracé actuel la fait passer
+à travers les cartes intermédiaires — le lot C n'a plus besoin d'être imaginé, il
+a son cas réel.

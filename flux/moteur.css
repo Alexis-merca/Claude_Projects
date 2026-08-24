@@ -328,6 +328,32 @@
 }
 .carte__poignee:hover { color: var(--violet); background: var(--violet-50); }
 .carte__poignee:active { cursor: grabbing; }
+
+/* FLÈCHES MANUELLES. `carte__tete` a `justify-content: flex-end` : la poignée de
+   tirage se place donc à gauche du ⠿ par `margin-right: auto`, jamais par un
+   changement de justification — deux cartes sans poignée de déplacement
+   garderaient sinon leur ⠿ ailleurs. */
+.carte__tirage {
+  cursor: crosshair; color: var(--bord); font-size: 13px; line-height: 1;
+  padding: 2px 4px; border-radius: var(--r-chip); user-select: none;
+  margin-right: auto;
+}
+.carte__tirage:hover { color: var(--violet); background: var(--violet-50); }
+/* Pendant le tirage, la carte survolée annonce qu'elle peut recevoir. Le refus
+   « même colonne » se dit par le contour ROUGE et non par l'absence de retour :
+   un geste sans réponse se lit comme une panne. */
+.flux__carte--cible-fleche { box-shadow: inset 0 0 0 2px var(--violet); }
+.flux__carte--refus-fleche { box-shadow: inset 0 0 0 2px var(--rouge); }
+.flux--tirage .carte__texte, .flux--tirage .flux__carte-texte { cursor: crosshair; }
+/* Le trait de tirage suit le pointeur : il ne doit jamais l'intercepter. */
+.fleche-tirage { pointer-events: none; }
+/* Retrait d'une flèche : cible pleine, distincte du clic sur le tracé. */
+.fleche-retirer { pointer-events: all; cursor: pointer; opacity: 0; transition: opacity .12s; }
+.fleche-retirer:hover, .fleche-cible:hover + .fleche-retirer { opacity: 1; }
+.flux-svg--cibles:hover .fleche-retirer { opacity: .55; }
+.flux-svg--cibles:hover .fleche-retirer:hover { opacity: 1; }
+
+
 .carte__texte {
   width: 100%; border: none; background: transparent;
   padding: 2px 4px; outline: none; overflow: hidden;
