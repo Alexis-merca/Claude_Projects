@@ -5,6 +5,12 @@ document précédent. Mise à jour le 11/08/2026 : le bloc « bilan de déploiem
 est passé en production, et la tentative de le vérifier à l'écran a échoué pour
 une raison qui méritait d'être écrite (2a).
 
+**Mise à jour du 24/08/2026** — et elle referme trois entrées d'un coup : la
+bascule FR/EN est livrée et recettée, l'espace d'administration (G1) aussi, et
+la passe navigateur (2a) a enfin eu lieu. Le document retardait sur son produit,
+ce que sa propre règle de tenue interdit. L'ordre proposé pour la suite est en
+fin de document.
+
 > La version antérieure annonçait comme « à faire » quatre chantiers déjà en
 > production : les vagues 1, 2, 3a et la moitié de la 4. Elle décrivait aussi
 > un « reste à trancher » — les libellés des cinq niveaux de maturité — résolu
@@ -30,6 +36,10 @@ mesure ; une entrée « à faire » dit ce qui a été constaté et où.
 | **Environnement IT juste** | Placement multi-blocs `(outil, bloc)`, bloc déduit de la clef de use case, outils répétés estompés avec légende. Mesuré : 14 outils / 35 placements sur la trame, contre 14 / 14 avant. `PASSE-STATIQUE.md` §24–26. |
 | **L'« après » ne ment plus** | Une étape passée sous Mercateam **garde ses systèmes de référence** (ERP, SIRH, GTA, GED) et perd le générique et l'inconnu. Mesuré : 7 outils au lieu de 1 en simulation sur la trame (`b09ccf0`, §28). |
 | **Le bilan de déploiement, complet** | Quatrième état `en_cours` sur l'étape, bilan à deux états sur la friction (`resolue` / `persistante`), `cible` en texte libre par étape ; saisie à l'écran, et page « Trajectoire de déploiement » à l'impression, conditionnée à la présence d'au moins une cible. Les trois champs entrent dans `client_json` **dès la migration** — sans quoi tout instantané pris ensuite les aurait omis, et une restauration du jour même les aurait effacés en silence. `100cfe4`, `75eed5e`, `40898e8` ; §31–32. **Rendu à l'écran par personne** (voir 2b). |
+| **Bascule FR / EN à double sens** | L'interface et **le contenu saisi**. La source d'un texte est la langue dans laquelle il a été tapé ; l'autre langue est une vue calculée, corrigeable. Les trois règles de frappe vivent dans `frappe()` et nulle part ailleurs. Recette navigateur passée, **20/20**. |
+| **Glossaire métier partagé** | `reglages.glossaire`, **135 termes**, versés depuis trois sources classées par force (code livré, cache constant, terme d'industrie déclaré comme proposition — `charte/GLOSSAIRE.md`). Il entre dans la consigne du modèle ; il ne remplace jamais un mot dans sa sortie. |
+| **L'écran d'administration, quatre onglets** | Clients et sites, trames et maturité, bibliothèque d'outils, glossaire. Tous sur `reglages`, tous tenant la même propriété : **la donnée partagée complète le code, elle ne le remplace pas** — magasin vide = écran d'avant, à l'identique. §58. |
+| **L'accueil, c'est l'écran d'administration** | `/` et `/clients` y redirigent en réacheminant `search` et `hash` — le fragment porte les jetons de connexion Google. Les cinq gestes de l'ancienne liste (créer, dupliquer, supprimer avec son décompte, marquer comme trame, déconnecter) ont été rendus un par un. §59. Testé par l'utilisateur le 24/08. |
 | *Hors plan* | Versions complètes (prise, liste, restauration elle-même annulable), export PPTX, et **filtre de sécurité par domaine** `est_mercateam()` — sans lui, tout compte OAuth authentifié voyait tous les diagnostics. |
 
 ---
@@ -62,7 +72,26 @@ ajouter. L'arbitrage se joue donc au niveau du use case, où il tient en
 quelques décisions, et non de l'étape, où il en faudrait des dizaines.
 *Non engagé — à concevoir avant de coder.*
 
-### 2. Vérification — le trou le plus large
+### 2. Vérification — ~~le trou le plus large~~, refermé le 21/08
+
+> **2a est clos.** La passe navigateur a eu lieu le 21/08 : « tout fonctionne
+> comme on l'espérait, pas de bugs visuels à noter, les fonctionnalités
+> délivrent l'attendu » — **20/20**. Une seconde passe, sur l'écran
+> d'administration, a suivi le 24/08 (`RECETTE-ADMIN.md`, 26 points). La phrase
+> qui ouvrait cette section pendant trois semaines — *personne n'a vu cette
+> application fonctionner* — n'est plus vraie.
+>
+> **Ce que le déblocage a coûté à comprendre** : la session de l'agent était
+> `signed_out` parce que la préversion et l'éditeur ne partageaient pas leur
+> connexion. C'est la plateforme qui l'a corrigé le 24/08 en courtisant la
+> session par `postMessage` (§58.4) — après un mois où la question revenait à
+> chaque envoi.
+>
+> Ce qui reste vrai, et qu'il faut garder : **cette application n'est
+> vérifiable visuellement que par un humain connecté.** Chaque gros lot mérite
+> donc sa liste de contrôle écrite d'avance, pas une inspection improvisée.
+
+*Texte d'origine, conservé pour la mémoire du problème :*
 
 **2a. Aucune passe navigateur n'a jamais été faite.** Liste de contrôle prête :
 `RECETTE-NAVIGATEUR.md`, 24 points ordonnés par discrétion de la panne.
@@ -183,12 +212,31 @@ Déclarés par l'utilisateur comme ses trois grosses améliorations à venir. Ri
 n'est engagé : ce qui suit note ce qui est su, et surtout ce qui reste à
 trancher avant d'écrire une ligne.
 
-### G1. Un espace d'administration — **NOUVEAU, à concevoir**
+### G1. Un espace d'administration — **LIVRÉ, 21 au 24/08**
 
-Gérer le paramétrage, les clients et les sites depuis l'application, au lieu de
-passer par la base ou par un import JSON.
+Quatre onglets, et il est devenu l'accueil. Détail en `charte/ADMIN.md` et
+`PASSE-STATIQUE.md` §57–59.
 
-**Ce qu'on sait déjà, et qui contraint la conception :**
+**Ce que la mesure a répondu aux quatre inconnues ci-dessous :**
+
+- *Client et site ne sont pas deux objets* → ils l'étaient déjà. **Sept lignes
+  sur neuf** employaient `nom` comme client et `site` comme site, sans qu'aucun
+  code ne l'exige. Une seule divergeait, faute d'avoir écrit la convention
+  quelque part. **Aucune colonne ajoutée**, donc aucun risque de la perdre à
+  l'export.
+- *Le « paramétrage » n'existe nulle part comme objet* → il existe maintenant :
+  `reglages(clef, valeur jsonb, version)`, une ligne par bibliothèque, une
+  fonction de fusion gardée par clef pour chacune.
+- *Les tables de classement sont du code, et c'est délibéré* → elles le
+  restent. La bibliothèque **complète** `TABLE_A`, elle ne la remplace pas, et
+  les corrections par site l'emportent sur les deux. Un magasin vide rend
+  l'écran d'avant, à l'identique — c'est la preuve exigée à chaque envoi.
+- *Il n'y a aucun rôle applicatif* → on assume que tout le monde y entre.
+  Décision de l'utilisateur : l'accès est déjà borné par `est_mercateam()` en
+  base, et un garde-fou d'interface qui ne repose sur aucune politique ne
+  protégerait rien.
+
+*Contexte d'origine, avant que la mesure ne tranche :*
 
 - **Client et site ne sont pas deux objets.** `clients` porte `nom`, `site`,
   `date_visite` et `code` dans la même ligne : deux sites d'un même groupe sont
@@ -236,8 +284,12 @@ point de départ plutôt qu'une idée neuve :
   frictions illisibles ; l'utilisateur contourne en photographiant l'écran
   (`RETOURS-USAGE.md` 15) ;
 - la vue d'impression **n'honore pas** les couleurs de rôle choisies à la main ;
-- l'impression est **entièrement en français**, et elle lit la base : depuis la
-  bascule à double sens, un champ dont la source est l'anglais sortira en
+- **la vue d'impression n'a JAMAIS lu le magasin de traductions.** Elle lit la
+  base directement. Conséquence, mesurée le 21/08 : tout le travail de la
+  bascule FR/EN — l'interface, le contenu saisi, le glossaire de 135 termes —
+  **n'atteint pas le livrable**. Une restitution en anglais est aujourd'hui
+  impossible, alors que c'est ce pour quoi la bascule a été demandée. Et
+  l'inverse est vrai aussi : un champ dont la source est l'anglais sort en
   anglais dans un PDF français ;
 - le seuil de **12 lignes par page** de la trajectoire imprimée est un calcul,
   jamais une mesure ;
@@ -251,3 +303,40 @@ survie des outils au niveau du use case, la catégorie « déclaratif » (le
 meilleur rapport effort/valeur de la liste, et le seul qui change ce qu'on
 montre au client), la dette clef/libellé de la couche schéma, et les deux
 recettes navigateur — dont celle de la bascule FR/EN, jamais commencée.
+
+> **Mise à jour du 24/08 :** les deux recettes navigateur sont faites (2a), et
+> G1 est livré. Restent G2 et G3, plus la liste ci-dessus.
+
+---
+
+## L'ordre proposé au 24/08
+
+Un seul critère tranche, et c'est celui qui tranche depuis l'origine : **le
+livrable est une restitution client.**
+
+**1. G3 — la refonte de l'export.** C'est le plus gros écart entre l'outil et
+ce qu'il produit. Deux faits le disent mieux qu'un argument : l'utilisateur
+**photographie son écran** parce que le PPTX est inexploitable, et **la vue
+d'impression n'a jamais lu le magasin de traductions** — donc la bascule FR/EN,
+qui a occupé une semaine entière, s'arrête à la porte du livrable.
+
+Premier pas recommandé : **mesurer avant de refondre**. Le seuil de 12 lignes
+par page est un calcul, le flou du PPTX n'a jamais été caractérisé, et la
+traduction à l'impression est un chemin de code, pas un réglage. Une passe de
+constat, puis un plan — pas une réécriture à l'aveugle.
+
+**2. La catégorie « déclaratif » (1a).** Petit, et c'est le seul de la liste qui
+change un **chiffre montré au client** : « X % du processus repose sur du
+déclaratif ». La machinerie `estGenerique` / `estSpecifique` existe déjà.
+
+**3. G2 — retour / avant.** Demandé deux fois, jamais engagé. Le point dur n'a
+pas bougé : les écritures partent une par une, gardées par la version ; un
+« retour » est l'inverse d'une écriture déjà en base, peut-être concurrente de
+celle d'un collègue. **Et depuis le 21/08 on sait que ce n'est plus théorique** :
+deux personnes écrivent réellement dans la base en même temps.
+
+**4. Les frictions transverses (1b)**, puis l'arbitrage de survie des outils
+(1c), qui demande d'être conçu avant d'être codé.
+
+**La dette (3a–3e) ne passe pas devant** tant qu'elle ne fait rien perdre. Elle
+coûtera plus cher plus tard ; elle ne coûte rien à un client aujourd'hui.
