@@ -4553,3 +4553,77 @@ proposerait de défaire un geste d'avant-hier : la garde par valeur refuserait,
 mais **le bouton aurait menti en s'affichant actif**. Un bouton qui promet ce
 qu'il ne peut pas tenir est pire qu'un bouton grisé. Et un retour refusé sort de
 la pile — il refuserait toujours.
+
+## 61. Un document de format qui ne peut plus dériver — 24/08/2026
+
+Demande de l'utilisateur : un menu d'import avec ses options, et **un `.md`
+copiable** permettant de donner à une IA des diagnostics dans n'importe quel
+format et d'obtenir en retour le JSON importable.
+
+### 61.1 La moitié demandée existait déjà
+
+`BarreSuperieure` portait **déjà** le menu décrit — langue du fichier en FR/EN,
+puis « importer comme nouveau » / « injecter dans ce diagnostic ». Ce qui
+manquait était ailleurs, et c'était le vrai geste : **il n'y avait aucun point
+d'entrée depuis l'accueil.** Pour importer un diagnostic neuf il fallait d'abord
+en ouvrir un autre, ce qui n'a aucun sens quand on arrive avec un fichier de
+l'extérieur.
+
+Le menu est devenu un composant partagé (`MenuImport`), employé aux deux
+endroits — `BarreSuperieure` a **perdu 37 lignes** au passage. Deux menus
+d'import qui divergeraient seraient pires qu'un seul mal placé.
+
+### 61.2 CE QUI REND UN DOCUMENT DE FORMAT DANGEREUX
+
+Un document de format faux est **plus nuisible qu'aucun document** : il produit
+du JSON que `lireFichier` accepte en **jetant des champs en silence**. On croit
+avoir importé.
+
+D'où l'exigence, et c'est la seule qui compte : **l'exemple du document est
+rejoué par un test.** Il n'est pas recopié dans le test — il en est **extrait**,
+par le premier bloc ` ```json ` du fichier, et le test lève si ce bloc
+disparaît. Puis il passe par `lireFichier` et compare le résultat à l'entrée,
+champ par champ, `si` excepté (seul champ que la lecture ajoute).
+
+Le jour où le format bouge, ce test tombe. Sans lui le document dérive : c'est
+mécanique, et `db/schema.sql` l'a déjà prouvé en finissant par affirmer une
+contre-vérité sur la sécurité.
+
+Un second test vérifie que le document **cite les catalogues tels qu'ils sont
+dans le code** — les quatre états de bilan d'étape, les deux de friction, les
+dix clefs de use case, les natures de lien.
+
+### 61.3 Vérifié de bout en bout, par le chemin réel
+
+Le test unitaire ne prouve que la lecture. J'ai donc importé **l'exemple du
+document** par `importer_client_json`, le chemin que l'utilisateur empruntera :
+
+- les deux rôles conservés **au caractère près**, `role` et `role2` non vidés —
+  le piège n°1, celui qu'une IA déclenche à coup sûr ;
+- la friction rattachée à l'**étape d'ordre 2** ;
+- le chiffre **transverse** (`etape_id` nul) ;
+- `use_case: uc1`, `maturite: 2`, `maturite_bilan: null` ;
+- `supports` en chaîne à virgules, `note_interne` conservée, `lien` conservés.
+
+Puis suppression, et relevé revenu **exactement** à sa valeur d'avant
+(`11 | 55 | 624 | 178 | 116 | 56`), zéro résidu.
+
+### 61.4 Les deux consignes qui ne portent pas sur le format
+
+Elles sont en tête du document, avant tout schéma, parce qu'elles décident de ce
+qu'on montrera à un client :
+
+- **ne rien traduire.** Le contenu reste dans la langue de la source ; c'est le
+  menu d'import qui déclare cette langue. Le fichier ne porte aucun marqueur —
+  traduire de son propre chef perdrait la langue d'origine du relevé ;
+- **ne rien inventer.** Si la source ne donne pas la maturité, c'est `null`. Une
+  lacune comblée par du plausible serait présentée comme un relevé de terrain.
+
+### 61.5 Une petite incohérence relevée au passage
+
+`lireFichier` **valide** `bilan` (hors catalogue → non évalué) mais **ne valide
+pas** `lien` : `texte(e.lien)` laisse passer n'importe quelle chaîne. Un
+`"automatique"` au lieu de `"auto"` entrerait donc en base sans rien casser
+d'apparent. Le document dit le bon catalogue, ce qui suffit tant que le fichier
+vient de lui — mais la validation manque, et deux champs voisins ne devraient
+pas avoir deux régimes.
