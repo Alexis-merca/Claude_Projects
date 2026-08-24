@@ -55,6 +55,7 @@ import {
   ajouterEtape,
   ajouterSupport,
   changerTexte,
+  basculerPartageColonne,
   couperEchelle,
   cyclerLien,
   deposerEtape,
@@ -97,6 +98,7 @@ const COMMANDES = {
   deplacement: true,
   supports: true,
   etapes: true,
+  colonnes: true,
 } as const;
 
 const ZOOM_MIN = 0.4;
@@ -343,6 +345,9 @@ export function DiagrammeFlux({
       switch (cible.dataset.action) {
         case "basculer-lien":
           if (i != null) appliquer(cyclerLien(et, i));
+          break;
+        case "partager-colonne":
+          if (i != null) appliquer(basculerPartageColonne(et, i));
           break;
         case "couper-phase":
           if (i != null) appliquer(couperEchelle(et, i));

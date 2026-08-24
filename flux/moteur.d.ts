@@ -11,6 +11,9 @@ export interface EtapeFlux {
   phase?: string | null;
   supports?: string | null;
   lien?: string | null;
+  /** « J'occupe la colonne de l'étape précédente ». Relatif, donc rien à
+      renuméroter : les colonnes se déduisent en une passe à chaque rendu. */
+  colonne_partagee?: boolean | null;
 }
 
 export interface ProcessusFlux {
@@ -42,6 +45,8 @@ export interface MotsFlux {
   phaseAjouter?: string;
   phaseAjouterTitre?: string;
   phaseCouperTitre?: string;
+  colonnePartagerTitre?: string;
+  colonneSeparerTitre?: string;
   roleRenommerTitre?: string;
   roleMonter?: string;
   roleDescendre?: string;
@@ -136,7 +141,16 @@ export function empriseDesEtapes(
 ): Array<{ ligne: number; cheval: number }>;
 export function groupesDePhase(
   etapes: EtapeFlux[],
-): Array<{ label: string; span: number; debut: number }>;
+  colonnes?: { indices: number[] }[],
+): Array<{
+  label: string;
+  /** En COLONNES de grille : c'est l'étendue du bandeau. */
+  span: number;
+  debut: number;
+  /** En INDEX D'ÉTAPES : c'est la plage que l'hôte renomme. */
+  debutEtape: number;
+  spanEtapes: number;
+}>;
 export function gabaritColonnes(n: number, edition?: boolean): string;
 export function couleursRole(role: string, paletteRoles?: string[]): [string, string];
 export function chipRole(role: string, paletteRoles?: string[], variante?: string): string;
@@ -181,3 +195,6 @@ export const LIENS: Record<
 >;
 export const ORDRE_LIENS: string[];
 export const PASTELS: Array<[string, string]>;
+
+/** Colonnes du diagramme, chacune avec les index d'étapes qu'elle porte. */
+export function colonnesDesEtapes(etapes: EtapeFlux[]): { indices: number[] }[];

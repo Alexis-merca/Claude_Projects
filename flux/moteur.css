@@ -186,6 +186,10 @@
   display: flex; flex-direction: column; gap: 8px;
 }
 .flux__cellule--cheval { align-items: flex-start; }
+/* Plusieurs étapes dans la même colonne ET le même couloir : elles s'empilent,
+   et la bande de couloir suit puisque c'est la grille qui la dimensionne. */
+.flux__cellule--empilee { flex-direction: column; align-items: stretch; gap: 12px; }
+.flux__cellule--empilee.flux__cellule--cheval { align-items: stretch; }
 .flux__carte--cheval {
   z-index: 4;
   box-shadow: 0 2px 8px rgba(0, 0, 0, .10), inset 0 0 0 1px var(--violet-200);
@@ -312,6 +316,8 @@
   background: var(--rouge-clair); color: var(--rouge-fonce);
 }
 .bouton--puce:disabled { opacity: .3; cursor: default; }
+/* Bascule enfoncée : le partage de colonne est un état, pas une action. */
+.bouton--puce-tenu { background: var(--violet-50); color: var(--violet); box-shadow: inset 0 0 0 1px var(--violet-200); }
 .bouton--puce svg { display: block; margin: 0 auto; }
 .flux__carte--edition { position: relative; gap: 6px; padding: 10px 12px 8px; }
 .flux__carte--edition:focus-within { box-shadow: inset 0 0 0 2px var(--violet); }

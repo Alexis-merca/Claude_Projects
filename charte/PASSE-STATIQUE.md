@@ -4627,3 +4627,90 @@ pas** `lien` : `texte(e.lien)` laisse passer n'importe quelle chaîne. Un
 d'apparent. Le document dit le bon catalogue, ce qui suffit tant que le fichier
 vient de lui — mais la validation manque, et deux champs voisins ne devraient
 pas avoir deux régimes.
+
+## 62. Plusieurs étapes par colonne — lot A — 24/08/2026
+
+Premier des trois lots demandés sur le diagramme. Décision de l'utilisateur :
+deux étapes peuvent partager une colonne **qu'elles soient dans des couloirs
+différents ou dans le même**.
+
+### 62.1 Le modèle est RELATIF, et c'est ce qui rend le reste gratuit
+
+Le réflexe était un numéro de colonne sur l'étape. Il a été écarté : un numéro
+absolu doit être renuméroté à chaque insertion, suppression et réordonnancement
+— donc `reordonner_etapes`, l'opération `ordre` du retour/avant, la duplication
+et l'import devraient **tous** le maintenir, et une renumérotation ratée se voit
+comme un diagramme disloqué.
+
+À la place, un booléen : **`etapes.colonne_partagee`** — « j'occupe la colonne de
+la précédente ». `colonnesDesEtapes()` les déduit en une passe.
+
+Trois raisons, et la première est la meilleure : **c'est déjà le motif du
+moteur**, `groupesDePhase` regroupant par suites consécutives depuis toujours.
+Rien à renuméroter, donc l'ordre du tableau reste la seule vérité de position et
+les quatre chemins ci-dessus ne bougent pas. Et la contrainte imposée — les
+étapes d'une colonne sont contiguës dans le tableau — n'en est pas une : une
+colonne est un *moment*, les étapes qui l'occupent forment un ensemble, et leur
+ordre entre elles n'a aucun sens.
+
+### 62.2 LE PIÈGE : le renommage d'une phase écrivait sur des index d'étapes
+
+Le champ de renommage d'une échelle émet `data-champ="phase.debut.span"` — **des
+index d'étapes**, que l'hôte applique à une plage. Faire regrouper les bandeaux
+par colonne sans toucher à ce couple aurait posé les libellés de phase **à
+côté** dès qu'une colonne portait deux étapes. Aucune erreur, aucune case vide.
+
+Résolu à un seul endroit : `groupesDePhase` renvoie désormais **les deux
+repères** — `debut`/`span` en colonnes pour la grille, `debutEtape`/`spanEtapes`
+en index d'étapes pour le balisage. La conversion se fait là, une fois.
+
+Même vigilance ailleurs : `data-cellule` et `data-frontiere` restent des index
+d'étapes (celui de la **première** étape de la colonne), parce que
+`deposerEtape` attend une position d'insertion, pas un numéro de colonne.
+
+### 62.3 Ce qui aurait produit une donnée fausse sans le dire
+
+`calculEnvIT` apparie `etapes[i]` et `etapes[i+1]` pour déduire les **échanges
+entre outils**. Laissé tel quel, il aurait enregistré un échange entre deux
+étapes **simultanées** — une flèche fausse dans le schéma des échanges, sans
+aucun signe à l'écran. Il apparie désormais colonne k et colonne k+1.
+
+### 62.4 Le bouton neuf est en opt-in STRICT
+
+`cmdOptionnelle('colonnes')` : absente de `options.commandes`, la commande ne
+rend **rien**. Sans cette précaution, le chemin par défaut — celui que la
+comparaison au mono-fichier emprunte — aurait gagné un bouton et cessé d'être
+identique à l'original.
+
+### 62.5 Les deux preuves, obtenues sans navigateur puis avec
+
+Portage à la main dans `flux/`, puis la suite du dépôt, **contre un mono-fichier
+NON modifié** :
+
+- `moteur.test.mjs` → **« MOTEUR CONFORME À L'ORIGINAL — balisage identique au
+  caractère près »** ;
+- `geometrie.test.cjs`, dans un vrai Chromium → **« GÉOMÉTRIE IDENTIQUE »**,
+  positions et tailles des cartes **et tracés des flèches** compris.
+
+La seconde comptait plus qu'il n'y paraît : `placerCartesACheval` a changé de
+formule — le décalage se mesure désormais depuis `offsetTop` au lieu de
+supposer un padding de 12 px, sans quoi une carte à cheval **dans une cellule
+empilée** aurait cumulé deux décalages et serait sortie du diagramme. Le test
+prouve qu'à une seule carte le résultat est identique **au pixel**.
+
+### 62.6 Le mono-fichier n'est PAS porté, et c'est délibéré
+
+`diagnostic-os.html` n'est pas une copie du module : c'est **l'original dont le
+module a été extrait**, avec d'autres signatures (`tracerFleches(zone, p)`,
+`placerCartesACheval()` sans argument) et des fonctions restées en ligne. Les
+trois exemplaires ne partagent pas leur source — ils partagent leur **sortie**,
+et c'est ce que le test vérifie.
+
+Y porter la fonctionnalité changerait donc la **référence** et affaiblirait le
+test, pour un fichier autonome dont les données ne portent jamais
+`colonne_partagee`. On garde l'original comme témoin.
+
+*(Note d'environnement : `geometrie.test.cjs` et `interactions.test.cjs`
+demandent `playwright-core`, absent du dépôt. Chromium, lui, est déjà présent
+sous `/opt/pw-browsers`. Un `npm install --no-save playwright-core` suffit à les
+rendre exécutables — ils ne l'avaient jamais été ici.)*

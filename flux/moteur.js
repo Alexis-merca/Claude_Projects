@@ -145,6 +145,10 @@ export function normaliserOutil(nom) {
 export const ICONE_COUPURE = `<svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor"
   stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M6 1.5v9" stroke-dasharray="2 2"/></svg>`;
 
+/** Deux cartes empilées dans une seule colonne : le signe du partage de colonne. */
+export const ICONE_PARTAGE = `<svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor"
+  stroke-width="1.2" aria-hidden="true"><rect x="2.5" y="1.6" width="7" height="3.4" rx="1"/><rect x="2.5" y="7" width="7" height="3.4" rx="1"/></svg>`;
+
 /* ---------------------------------------------------------------------------
    Les mots du moteur
    ---------------------------------------------------------------------------
@@ -187,6 +191,8 @@ export const MOTS_FR = {
   phaseAjouter: '+ Échelle',
   phaseAjouterTitre: 'Ajouter une échelle de temps en fin de frise',
   phaseCouperTitre: 'Commencer une nouvelle échelle de temps à partir de cette étape',
+  colonnePartagerTitre: 'Mettre cette étape dans la colonne de la précédente',
+  colonneSeparerTitre: 'Redonner une colonne à part à cette étape',
   roleRenommerTitre: 'Renommer le rôle',
   roleMonter: 'Monter la ligne',
   roleDescendre: 'Descendre la ligne',
@@ -244,6 +250,8 @@ export const MOTS_EN = {
   phaseAjouter: '+ Time band',
   phaseAjouterTitre: 'Add a time band at the end of the timeline',
   phaseCouperTitre: 'Start a new time band at this step',
+  colonnePartagerTitre: 'Move this step into the previous step’s column',
+  colonneSeparerTitre: 'Give this step its own column again',
   roleRenommerTitre: 'Rename the role',
   roleMonter: 'Move the lane up',
   roleDescendre: 'Move the lane down',
@@ -410,18 +418,64 @@ export function empriseDesEtapes(etapes, couloirs) {
   });
 }
 
-/** Groupes de phase consécutifs : un bandeau de frise par groupe. */
-export function groupesDePhase(etapes) {
+/** Colonnes du diagramme, déduites d'un booléen RELATIF porté par l'étape.
+
+    `colonne_partagee` dit « j'occupe la colonne de la précédente ». Aucun numéro
+    de colonne n'est stocké : la déduction se refait à chaque rendu, donc rien
+    n'est à renuméroter quand on insère, supprime ou réordonne. C'est exactement
+    le motif de `groupesDePhase`, qui regroupe déjà par suites consécutives.
+
+    LA PREMIÈRE ÉTAPE NE PEUT PAS PARTAGER : elle n'a pas de précédente, sa
+    valeur est ignorée quoi qu'elle porte.
+
+    Rend, pour chaque colonne, les INDEX D'ÉTAPES qu'elle contient — dans
+    l'ordre du tableau, qui reste la seule vérité de position. */
+export function colonnesDesEtapes(etapes) {
+  const colonnes = [];
+  (etapes || []).forEach((et, i) => {
+    if (i > 0 && et && et.colonne_partagee) colonnes[colonnes.length - 1].indices.push(i);
+    else colonnes.push({ indices: [i] });
+  });
+  return colonnes;
+}
+
+/** Groupes de phase consécutifs : un bandeau de frise par groupe.
+
+    LE REGROUPEMENT SE FAIT PAR COLONNE, pas par étape : un bandeau s'étend sur
+    des colonnes de grille. Mais il RENVOIE AUSSI la plage d'étapes
+    correspondante (`debutEtape`, `spanEtapes`), et c'est elle que le balisage
+    émet dans `data-champ="phase.debut.span"`, `data-i` et `data-span` — sans
+    quoi renommer une phase écrirait sur les mauvaises étapes dès qu'une colonne
+    en porte deux, sans aucune erreur visible. La conversion colonne → plage
+    d'étapes se fait donc ICI, une seule fois.
+
+    La phase d'une colonne est celle de sa PREMIÈRE étape : deux étapes
+    simultanées appartiennent au même moment, donc à la même échelle de temps.
+
+    `colonnes` absent : une colonne par étape, et la sortie est celle d'avant. */
+export function groupesDePhase(etapes, colonnes) {
+  const cols = colonnes || colonnesDesEtapes(etapes);
   const groupes = [];
-  etapes.forEach((et, i) => {
-    const lab = et.phase || '';
+  cols.forEach((col, k) => {
+    const lab = (etapes[col.indices[0]] && etapes[col.indices[0]].phase) || '';
     const dernier = groupes[groupes.length - 1];
-    if (dernier && dernier.label === lab) dernier.span += 1;
-    else groupes.push({ label: lab, span: 1, debut: i });
+    if (dernier && dernier.label === lab) {
+      dernier.span += 1;
+      dernier.spanEtapes += col.indices.length;
+    } else {
+      groupes.push({
+        label: lab,
+        span: 1,
+        debut: k,
+        debutEtape: col.indices[0],
+        spanEtapes: col.indices.length,
+      });
+    }
   });
   return groupes;
 }
 
+/** `n` est le nombre de COLONNES, qui n'est plus le nombre d'étapes. */
 export function gabaritColonnes(n, edition) {
   return `var(--couloir) repeat(${n}, fit-content(var(--colonne-max)))${edition ? ' 150px' : ''}`;
 }
@@ -503,6 +557,12 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
      étant pire que son absence. */
   const cmd = (nom) => !options.commandes || options.commandes[nom] === true;
 
+  /* Commande NOUVELLE, donc à opt-in STRICT : absente de `options.commandes`,
+     elle ne rend rien. Sans ça, le chemin par défaut — celui que la comparaison
+     caractère par caractère avec le mono-fichier emprunte — gagnerait un bouton
+     et cesserait d'être identique à l'original. */
+  const cmdOptionnelle = (nom) => Boolean(options.commandes && options.commandes[nom] === true);
+
   const zoomAffiche = options.zoom == null ? 1 : options.zoom;
   const zoomApplique = options.impression ? 1 : zoomAffiche;
   const palette = options.paletteRoles || p.roles || [];
@@ -545,21 +605,30 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
   const R = couloirs.length;
   const emprise = empriseDesEtapes(etapes, couloirs);
 
+  /* --- colonnes : plusieurs étapes peuvent occuper la même --- */
+  const colonnes = colonnesDesEtapes(etapes);
+  const nc = colonnes.length;
+
   /* --- frise temporelle : un bandeau par groupe de phase --- */
-  const groupes = groupesDePhase(etapes);
+  const groupes = groupesDePhase(etapes, colonnes);
+  /* Traits de séparation : des index de COLONNE. */
   const coupures = groupes.slice(1).map((g) => g.debut);
   /* Écart déduit du libellé lui-même s'il est codé (J-7, J1, S+2, M+3). */
   const jours = groupes.map((g) => jalonEnJours(g.label));
 
   const frise = groupes.map((g, i) => {
     const ecart = i > 0 ? ecartLisible(jours[i - 1], jours[i], t) : '';
+    /* `data-champ`, `data-i` et `data-span` restent des INDEX D'ÉTAPES : c'est
+       une plage d'étapes que l'hôte renomme. Le bandeau, lui, s'étend sur des
+       colonnes. Mélanger les deux poserait les libellés de phase à côté dès
+       qu'une colonne porte deux étapes, sans aucune erreur. */
     const corps = ed && cmd('phases')
       ? `<div class="flux__phase-edition">
-           <input class="flux__phase-champ" value="${echapper(g.label)}" data-champ="phase.${g.debut}.${g.span}"
-                  placeholder="${t.phasePlaceholder}" title="${t.phaseRenommerTitre(g.span)}">
+           <input class="flux__phase-champ" value="${echapper(g.label)}" data-champ="phase.${g.debutEtape}.${g.spanEtapes}"
+                  placeholder="${t.phasePlaceholder}" title="${t.phaseRenommerTitre(g.spanEtapes)}">
            <button type="button" class="bouton--puce bouton--puce-claire" data-action="supprimer-phase"
-                   data-i="${g.debut}" data-span="${g.span}" data-role="supprimer"
-                   title="${t.phaseSupprimerTitre(g.span)}">×</button>
+                   data-i="${g.debutEtape}" data-span="${g.spanEtapes}" data-role="supprimer"
+                   title="${t.phaseSupprimerTitre(g.spanEtapes)}">×</button>
          </div>`
       : `<span class="flux__phase-libelle">${echapper(g.label)}</span>`;
     return `
@@ -594,33 +663,46 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
            style="grid-row:${2 + i};grid-column:1;background:${fondBande}">${corps}</div>`;
   }).join('');
 
-  /* --- cellules et cartes --- */
+  /* --- cellules et cartes ---
+
+     UNE CELLULE = (couloir, colonne), et elle contient ZÉRO, UNE OU PLUSIEURS
+     cartes : deux étapes du même couloir dans la même colonne s'y empilent.
+
+     `data-cellule` et `data-frontiere` restent des INDEX D'ÉTAPES — celui de la
+     PREMIÈRE étape de la colonne visée. C'est ce que `deposerEtape` attend :
+     une position d'insertion dans le tableau, pas un numéro de colonne.
+     `data-index`, `data-poignee` et tous les `data-i` des boutons de carte
+     restent l'index de LEUR étape. */
   const cellules = [];
   couloirs.forEach((r, i) => {
-    for (let j = 0; j < n; j++) {
-      const coupe = coupures.includes(j) ? ' flux__cellule--coupe' : '';
-      const pos = `grid-row:${2 + i};grid-column:${2 + j}`;
-      const em = emprise[j];
+    for (let k = 0; k < nc; k++) {
+      const dansColonne = colonnes[k].indices;
+      /* Position d'insertion associée à la colonne : sa première étape. */
+      const ancre = dansColonne[0];
+      const coupe = coupures.includes(k) ? ' flux__cellule--coupe' : '';
+      const pos = `grid-row:${2 + i};grid-column:${2 + k}`;
+      const ici = dansColonne.filter((j) => emprise[j].ligne === i);
 
-      if (em.ligne === i) {
-        const et = etapes[j];
-        const cible = ed ? ` data-cellule="${j}" data-role-nom="${echapper(r.nom)}"` : '';
-        const supports = listeSupports(et.supports);
-        const partage = em.cheval ? ' flux__carte--cheval' : '';
-        const cellCheval = em.cheval ? ' flux__cellule--cheval' : '';
-        const marqueCheval = em.cheval ? ` data-cheval="${em.cheval}"` : '';
+      if (ici.length) {
+        const cible = ed ? ` data-cellule="${ancre}" data-role-nom="${echapper(r.nom)}"` : '';
+        const cellCheval = ici.some((j) => emprise[j].cheval) ? ' flux__cellule--cheval' : '';
+        const empilee = ici.length > 1 ? ' flux__cellule--empilee' : '';
 
-        if (!ed) {
-          cellules.push(`
-            <div class="flux__cellule${coupe}${cellCheval}" style="${pos}">
+        const cartes = ici.map((j) => {
+          const et = etapes[j];
+          const em = emprise[j];
+          const supports = listeSupports(et.supports);
+          const partage = em.cheval ? ' flux__carte--cheval' : '';
+          const marqueCheval = em.cheval ? ` data-cheval="${em.cheval}"` : '';
+
+          if (!ed) {
+            return `
               <div class="flux__carte${partage}" data-etape="${et.ordre}"${marqueCheval}>
                 ${bandeauSupports(supports, options.outils)}
                 <span class="flux__carte-texte">${echapper(et.texte)}</span>
-              </div>
-            </div>`);
-        } else {
-          cellules.push(`
-            <div class="flux__cellule${coupe}${cellCheval}" style="${pos}"${cible}>
+              </div>`;
+          }
+          return `
               <div class="flux__carte flux__carte--edition${partage}${options.etapeActive === et.ordre ? ' flux__carte--actif' : ''}"
                    data-etape="${et.ordre}" data-index="${j}"${marqueCheval}>
                 ${cmd('supports') ? bandeauSupportsEdition(j, supports, t, options.outils) : bandeauSupports(supports, options.outils)}
@@ -636,21 +718,26 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
                   <button type="button" class="bouton--puce" data-action="droite-etape" data-i="${j}" ${j === n - 1 ? 'disabled' : ''} title="${t.etapeDroite}">→</button>
                   <button type="button" class="bouton--puce" data-action="inserer-etape" data-i="${j}" title="${t.etapeInserer}">+</button>
                   ` : ''}${cmd('phases') ? `<button type="button" class="bouton--puce" data-action="couper-phase" data-i="${j}"
-                          title="${t.phaseCouperTitre}">${ICONE_COUPURE}</button>` : ''}${cmd('etapes') ? `
+                          title="${t.phaseCouperTitre}">${ICONE_COUPURE}</button>` : ''}${cmdOptionnelle('colonnes') ? `
+                  <button type="button" class="bouton--puce${et.colonne_partagee ? ' bouton--puce-tenu' : ''}" data-action="partager-colonne" data-i="${j}" ${j === 0 ? 'disabled' : ''}
+                          title="${et.colonne_partagee ? t.colonneSeparerTitre : t.colonnePartagerTitre}">${ICONE_PARTAGE}</button>` : ''}${cmd('etapes') ? `
                   <button type="button" class="bouton--puce" data-action="supprimer-etape" data-role="supprimer" data-i="${j}" title="${t.etapeSupprimer}">×</button>` : ''}
                 </div>
-              </div>
+              </div>`;
+        }).join('');
+
+        cellules.push(`
+            <div class="flux__cellule${coupe}${cellCheval}${empilee}" style="${pos}"${cible}>${cartes}
             </div>`);
-        }
       } else {
         cellules.push(`<div class="flux__cellule${coupe}" style="${pos}"${
-          ed ? ` data-cellule="${j}" data-role-nom="${echapper(r.nom)}"` : ''}></div>`);
+          ed ? ` data-cellule="${ancre}" data-role-nom="${echapper(r.nom)}"` : ''}></div>`);
       }
 
       /* Bande de dépôt sur la frontière avec le couloir suivant. */
       if (ed && cmd('deplacement') && i < R - 1) {
-        cellules.push(`<div class="flux__frontiere" style="grid-row:${2 + i};grid-column:${2 + j}"
-          data-frontiere="${j}" data-role-haut="${echapper(r.nom)}" data-role-bas="${echapper(couloirs[i + 1].nom)}"
+        cellules.push(`<div class="flux__frontiere" style="grid-row:${2 + i};grid-column:${2 + k}"
+          data-frontiere="${ancre}" data-role-haut="${echapper(r.nom)}" data-role-bas="${echapper(couloirs[i + 1].nom)}"
           title="${t.frontiereTitre}"></div>`);
       }
     }
@@ -658,7 +745,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
     /* colonne d'ajout en fin de couloir */
     if (ed && cmd('etapes')) {
       cellules.push(`
-        <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + n}" data-cellule="${n}" data-role-nom="${echapper(r.nom)}">
+        <div class="flux__cellule" style="grid-row:${2 + i};grid-column:${2 + nc}" data-cellule="${n}" data-role-nom="${echapper(r.nom)}">
           <button type="button" class="flux__ajout" data-action="ajouter-etape-role" data-role-nom="${echapper(r.nom)}"
                   title="${t.etapeAjouterTitre}">${t.etapeAjouter}</button>
         </div>`);
@@ -692,14 +779,14 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
      ce que vérifie la comparaison stricte. */
   const corps = `<div class="flux-defile">
       <div class="flux${ed ? ' flux--edition' : ''}" data-proc="${echapper(p.id)}"
-           style="grid-template-columns:${gabaritColonnes(n, ed)};zoom:${zoomApplique}">
+           style="grid-template-columns:${gabaritColonnes(nc, ed)};zoom:${zoomApplique}">
         <svg class="flux-svg" xmlns="http://www.w3.org/2000/svg"></svg>
         <svg class="flux-svg flux-svg--cibles" xmlns="http://www.w3.org/2000/svg"></svg>
         <div style="grid-row:1;grid-column:1"></div>
         ${bandes}
         ${frise}
         ${ed && cmd('phases') ? `<button type="button" class="flux__phase-ajout" data-action="ajouter-phase"
-                        style="grid-row:1;grid-column:${2 + n}"
+                        style="grid-row:1;grid-column:${2 + nc}"
                         title="${t.phaseAjouterTitre}">${t.phaseAjouter}</button>` : ''}
         ${etiquettes}
         ${cellules.join('')}
@@ -750,10 +837,15 @@ export function placerCartesACheval(zone) {
   zone.querySelectorAll('[data-cheval]').forEach((carte) => {
     const sens = Number(carte.dataset.cheval);
     const cellule = carte.parentElement;
-    const marge = 12;   /* padding vertical de la cellule */
-    const decal = sens > 0
-      ? cellule.offsetHeight - carte.offsetHeight / 2 - marge
-      : -carte.offsetHeight / 2 - marge;
+    /* Le décalage est calculé DEPUIS LA POSITION DÉJÀ OCCUPÉE par la carte dans
+       sa cellule (`offsetTop`), pas depuis le haut de la cellule. Dans une
+       cellule empilée, une carte à cheval est déjà poussée vers le bas par ses
+       voisines : partir du haut de la cellule cumulerait les deux décalages et
+       la carte sortirait du diagramme. Pour une cellule à une seule carte,
+       `offsetTop` vaut le padding et le résultat est celui d'avant, au pixel. */
+    const h = carte.offsetHeight;
+    const vise = sens > 0 ? cellule.offsetHeight - h / 2 : -h / 2;
+    const decal = vise - carte.offsetTop;
     carte.style.transform = `translateY(${decal}px)`;
     carte.dataset.decalage = String(decal);
   });
@@ -794,8 +886,30 @@ export function tracerFleches(zone, etapes, options = {}) {
     return { x, y, l: el.offsetWidth, h: el.offsetHeight };
   };
 
-  for (let i = 0; i < cartes.length - 1; i++) {
-    const a = boite(cartes[i]), b = boite(cartes[i + 1]);
+  /* Retrouver la carte d'une étape par son `ordre`, et non par sa position dans
+     le document : une colonne partagée casse la correspondance index ↔ carte. */
+  const parOrdre = new Map();
+  cartes.forEach((c) => parOrdre.set(String(c.dataset.etape), c));
+  const carteDe = (j) => parOrdre.get(String(liste[j] && liste[j].ordre)) || cartes[j];
+
+  /* Tout ce qui est dans la colonne k précède tout ce qui est dans la colonne
+     k+1 : on trace donc CHAQUE carte de k vers CHAQUE carte de k+1. Deux fois
+     deux font quatre flèches, et c'est la sémantique voulue tant que les
+     flèches sont implicites. Le tracé ne traverse aucune carte : il quitte le
+     bord droit de la carte de départ, ne monte ou descend que dans la gouttière
+     entre les deux colonnes, puis entre par le bord gauche de l'arrivée. */
+  const paires = [];
+  const colonnes = colonnesDesEtapes(liste);
+  for (let k = 0; k < colonnes.length - 1; k++) {
+    for (const ja of colonnes[k].indices) {
+      for (const jb of colonnes[k + 1].indices) paires.push([ja, jb]);
+    }
+  }
+
+  for (const [ja, jb] of paires) {
+    const ca = carteDe(ja), cb = carteDe(jb);
+    if (!ca || !cb) continue;
+    const a = boite(ca), b = boite(cb);
     const x1 = a.x + a.l + 2;
     const y1 = a.y + a.h / 2;
     const x2 = b.x - 3;
@@ -813,12 +927,14 @@ export function tracerFleches(zone, etapes, options = {}) {
       : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
 
 
-    /* Le lien est porté par l'étape qui reçoit la flèche. */
-    const nature = (liste[i + 1] && liste[i + 1].lien) || '';
+    /* Le lien est porté par l'étape qui REÇOIT la flèche : une carte qui en
+       reçoit plusieurs leur donne donc la même nature — correct tant que les
+       flèches sont implicites. `data-i` est l'index de cette étape reçue. */
+    const nature = (liste[jb] && liste[jb].lien) || '';
     const style = LIENS[nature] || LIENS[''];
 
     if (options.edition) {
-      zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien" data-i="${i + 1}" d="${d}"
+      zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien" data-i="${jb}" d="${d}"
         fill="none" stroke="transparent" stroke-width="16"><title>${t.flecheTitre(libelleLien(nature, t))}</title></path>`);
     }
     chemins.push(`<path d="${d}" fill="none" stroke="${style.couleur}" stroke-width="1.5"${

@@ -33,6 +33,7 @@ export function deposerEtape(
 export function renommerEchelle(
   etapes: EtapeFlux[], debut: number, span: number, libelle: string
 ): Mutation;
+export function basculerPartageColonne(etapes: EtapeFlux[], index: number): Mutation;
 export function couperEchelle(etapes: EtapeFlux[], index: number): Mutation;
 export function supprimerEchelle(etapes: EtapeFlux[], debut: number, span: number): Mutation;
 export function ajouterEchelle(etapes: EtapeFlux[], roleParDefaut?: string): Mutation;

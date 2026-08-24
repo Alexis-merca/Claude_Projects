@@ -94,6 +94,39 @@ export function ajouterSupport(etapes, index, nom, inscrireAuClient) {
 }
 
 /* ---------------------------------------------------------------------------
+   Colonnes partagées
+   ------------------------------------------------------------------------- */
+
+const partageDe = (et) => Boolean(et && et.colonne_partagee);
+
+/** Bascule « cette étape occupe la colonne de la précédente ».
+
+    La première étape n'a pas de précédente : le moteur ignore sa valeur, on
+    refuse donc le geste plutôt que d'écrire un drapeau sans effet. */
+export function basculerPartageColonne(etapes, index) {
+  const et = etapes[index];
+  if (!et) return RIEN;
+  if (index === 0) {
+    return { ...RIEN, refus: "La première étape ne peut pas partager la colonne d'une précédente." };
+  }
+  return {
+    ecritures: [{ id: et.id, champs: { colonne_partagee: !partageDe(et) } }],
+    ordre: null,
+  };
+}
+
+/** Recadrage après un geste STRUCTUREL (insertion, suppression, déplacement).
+
+    Le drapeau est relatif : l'étape qui SUIVAIT celle qu'on retire ou devant
+    laquelle on insère change de voisine, et son « la même colonne que la
+    précédente » désignerait alors une autre étape — une colonne se recomposerait
+    toute seule, sans geste de l'utilisateur et sans rien à l'écran qui le dise.
+    On le remet donc à faux : la colonne se défait, ce qui est visible. */
+function detacher(etape) {
+  return partageDe(etape) ? [{ id: etape.id, champs: { colonne_partagee: false } }] : [];
+}
+
+/* ---------------------------------------------------------------------------
    Déplacement
    ------------------------------------------------------------------------- */
 
@@ -130,7 +163,13 @@ export function deposerEtape(etapes, source, colonne, role, role2) {
     if (phaseDe(et) !== reprise) champs.phase = reprise;
   }
 
+  /* Une étape déposée prend une colonne à part : son ancien partage désignait
+     une voisine qu'elle vient de quitter. */
+  if (partageDe(et)) champs.colonne_partagee = false;
+
   const ecritures = Object.keys(champs).length ? [{ id: et.id, champs }] : [];
+  const suivante = etapes[source + 1];
+  if (suivante && suivante.id !== et.id) ecritures.push(...detacher(suivante));
   const bouge = liste.some((x, i) => x.id !== etapes[i].id);
   return { ecritures, ordre: bouge ? liste.map((x) => x.id) : null };
 }
@@ -203,6 +242,7 @@ export function ajouterEchelle(etapes, roleParDefaut) {
       phase: nomEchelleLibre(etapes),
       supports: '',
       lien: '',
+      colonne_partagee: false,
     },
   };
 }
