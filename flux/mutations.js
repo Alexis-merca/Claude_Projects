@@ -326,38 +326,42 @@ export function cyclerLienFleche(fleche) {
 }
 
 /**
- * RÉGLER LE TRACÉ D'UNE FLÈCHE À LA MAIN — un DÉCALAGE, jamais un point de
- * passage.
+ * FAIRE PASSER UNE FLÈCHE PAR UN POINT — en coordonnées de GRILLE, jamais en
+ * pixels.
  *
- * `delta` est le déplacement du geste, en pixels d'écran : il S'AJOUTE au
- * décalage déjà enregistré, parce que ce qu'on tire est le segment tel qu'il est
- * dessiné, réglage compris. `delta === null` remet au tracé calculé.
+ * `bande` est l'index de la frontière horizontale entre couloirs de rôle,
+ * `colonne` celui de la gouttière. Le reste du chemin est RECALCULÉ autour de ce
+ * point : c'est ce qui fait qu'un passage survit à une carte qui grandit d'une
+ * ligne ou à une colonne qui apparaît, là où un décalage en pixels devenait une
+ * position absurde.
  *
- * Une flèche CALCULÉE n'a pas de ligne où poser le nombre : on la matérialise,
- * avec sa nature actuelle et sans masque, donc sans rien changer au tracé. C'est
- * un écart de plus dans la table, mais un écart NEUTRE — et c'est le seul moyen
- * de garder « un seul nombre par flèche » sans inventer une seconde table.
+ * `bande === null` retire le passage et rend la flèche au calcul.
+ *
+ * Une flèche CALCULÉE n'a pas de ligne où poser le point : on la matérialise,
+ * avec sa nature actuelle et sans masque. Conséquence assumée : elle ne suit plus
+ * la nature de son étape d'arrivée, puisqu'elle porte désormais la sienne.
  */
-export function reglerFleche(etapes, fleche, delta) {
+export function passerFleche(etapes, fleche, bande, colonne) {
   if (!fleche) return RIEN;
-  const actuel = fleche.decalage == null ? 0 : Number(fleche.decalage) || 0;
-  const valeur = delta == null ? null : Math.round(actuel + delta);
+  const b = bande == null ? null : Math.round(bande);
+  const c = bande == null || colonne == null ? null : Math.round(colonne);
+  const actuel = fleche.passage || null;
   if (fleche.manuelle && fleche.id) {
-    /* Rien à écrire si la valeur ne change pas : un clic sans glissé ne doit pas
-       faire avancer la version du processus, sinon un simple survol maladroit
-       met un collègue en conflit. */
-    if ((fleche.decalage == null ? null : actuel) === valeur) return RIEN;
-    return { ...RIEN, flecheMaj: { id: fleche.id, decalage: valeur } };
+    /* Rien à écrire si le point ne change pas : un clic sans effet ne doit pas
+       faire avancer la version du processus, sinon un geste maladroit met un
+       collègue en conflit. */
+    if ((actuel ? actuel.bande : null) === b && (actuel ? actuel.colonne : null) === c) return RIEN;
+    return { ...RIEN, flecheMaj: { id: fleche.id, passage_bande: b, passage_colonne: c } };
   }
-  if (valeur == null) return RIEN;
+  if (b == null || c == null) return RIEN;
   const a = etapes[fleche.de];
-  const b = etapes[fleche.vers];
-  if (!a || !b) return RIEN;
+  const v = etapes[fleche.vers];
+  if (!a || !v) return RIEN;
   return {
     ...RIEN,
     flecheCreer: {
-      de_id: a.id, vers_id: b.id, nature: fleche.nature || '', masquee: false,
-      decalage: valeur,
+      de_id: a.id, vers_id: v.id, nature: fleche.nature || '', masquee: false,
+      passage_bande: b, passage_colonne: c,
     },
   };
 }

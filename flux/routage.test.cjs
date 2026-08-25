@@ -13,8 +13,12 @@
      milieu géométrique du tracé, donc parfois sur une pastille de support :
      illisibles. Elles se placent désormais sur un segment de gouttière ou de
      couloir ;
-   - **le pont prend la profondeur la plus faible qui suffit.** Une flèche qui
-     saute une seule carte passe juste dessous, pas sous tout le diagramme.
+   - **une carte qui gêne se franchit par le dessus, pas par en dessous.**
+     C'est la demande du 25/08 — « une flèche ne passe que par des segments non
+     occupés ». Le moteur cherche un chemin libre et n'emprunte le plongeon sous
+     le diagramme qu'en dernier recours, quand il n'en existe aucun ;
+   - **un point de passage désigné à la main est respecté**, et le reste du
+     chemin est recalculé autour de lui.
 
    LES DONNÉES SONT RÉELLES. C'est le processus « Intégration des nouveaux
    collaborateurs » de `sekurit-float-france`, avec la flèche que l'utilisateur
@@ -54,7 +58,7 @@ const CAS = {
     { id: 'e8', ordre: 8, role: 'Collaborateur', role2: '', texte: "Journée d'intégration (dernière édition fin 2021 avec l'école SG) — beaucoup de personnes en même temps", phase: 'Après J1', supports: '', lien: '', colonne_partagee: false },
   ],
   fleches: [
-    { id: 'f1', de_id: 'e2', vers_id: 'e4', nature: '', masquee: false, decalage: null },
+    { id: 'f1', de_id: 'e2', vers_id: 'e4', nature: '', masquee: false, passage_bande: null, passage_colonne: null },
   ],
 };
 
@@ -145,26 +149,83 @@ const dedans = (p, c) => p[0] > c.x && p[0] < c.x + c.l && p[1] > c.y && p[1] < 
     ok(`${mode} · deux rendus, mêmes tracés`, JSON.stringify(r.ds) === JSON.stringify(r2.ds));
 
     if (!edition) {
-      /* LA PROFONDEUR DU PONT. La flèche manuelle enjambe l'étape 3 : elle doit
-         passer JUSTE sous cette carte, pas sous tout le diagramme. Le défaut
-         signalé en capture le 25/08 la faisait descendre au bas de la grille.
+      /* PAR OÙ ELLE CONTOURNE. C'est LA demande du 25/08 : « une flèche ne passe
+         que par des segments non occupés », et surtout pas sous la tuile qui la
+         gêne. Avant la recherche de chemin, la flèche manuelle plongeait sous le
+         diagramme entier pour enjamber l'étape 3 ; la version d'aujourd'hui doit
+         la franchir PAR LE DESSUS, en empruntant la bande libre au-dessus de la
+         rangée.
 
-         Le tracé du pont est le DERNIER : `flechesEffectives` sort d'abord les
-         flèches calculées, puis les dessinées. Et la carte à franchir est la
-         plus basse de celles que le pont surplombe — la chercher plutôt que la
-         désigner par son index, l'ordre du DOM étant celui des couloirs et non
-         celui des étapes. */
+         Le tracé concerné est le DERNIER : `flechesEffectives` sort d'abord les
+         flèches calculées, puis les dessinées.
+
+         La carte franchie est cherchée, jamais désignée par son index — l'ordre
+         du DOM est celui des couloirs, pas celui des étapes. C'est une carte que
+         le tracé surplombe horizontalement sans en être une extrémité. */
       const pontPts = r.pts[r.pts.length - 1];
-      const pont = Math.max(...pontPts.map((p) => p[1]));
-      const x0 = Math.min(...pontPts.map((p) => p[0]));
-      const x1 = Math.max(...pontPts.map((p) => p[0]));
-      const surplombees = r.cartes.filter((c) => c.x + c.l > x0 && c.x < x1);
-      const aFranchir = Math.max(...surplombees.map((c) => c.y + c.h));
-      ok('le pont passe juste sous la carte enjambée, pas sous le diagramme',
-        pont > aFranchir && pont < aFranchir + 40 && pont < r.hauteur * 0.6,
-        `pont à ${Math.round(pont)}, carte enjambée finit à ${Math.round(aFranchir)}, diagramme à ${r.hauteur}`);
+      const bout = (c, p) => p[0] > c.x - 6 && p[0] < c.x + c.l + 6
+        && p[1] > c.y - 6 && p[1] < c.y + c.h + 6;
+      const extremites = r.cartes.filter(
+        (c) => bout(c, pontPts[0]) || bout(c, pontPts[pontPts.length - 1]),
+      );
+      const franchies = r.cartes.filter((c) => !extremites.includes(c)
+        && pontPts.some((p) => p[0] > c.x && p[0] < c.x + c.l));
+
+      /* Sans carte franchie, les deux mesures qui suivent seraient vraies pour
+         rien : le cas de la capture ne serait plus reproduit. */
+      ok('la flèche dessinée franchit bien une carte', franchies.length > 0,
+        `${franchies.length} carte(s) surplombée(s)`);
+
+      const parDessus = franchies.filter((c) => pontPts
+        .filter((p) => p[0] > c.x && p[0] < c.x + c.l)
+        .every((p) => p[1] < c.y));
+      ok('elle la franchit PAR LE DESSUS, pas par en dessous',
+        franchies.length > 0 && parDessus.length === franchies.length,
+        `${franchies.length - parDessus.length} carte(s) franchie(s) par en dessous`);
+
+      /* ET ELLE RESTE DANS LE DIAGRAMME. Le plongeon sous la grille reste le
+         dernier recours du moteur quand aucun chemin libre n'existe ; ici il en
+         existe un, donc il ne doit pas servir. */
+      const bas = Math.max(...pontPts.map((p) => p[1]));
+      ok('elle ne descend pas sous le diagramme', bas < r.hauteur * 0.5,
+        `descend à ${Math.round(bas)} pour un diagramme de ${r.hauteur}`);
     }
   }
+
+  /* ---- LE POINT DE PASSAGE, LE GESTE À LA MAIN ------------------------------
+
+     La consigne est structurelle : « passe par cette BANDE, à cette COLONNE ».
+     Les bandes sont les frontières horizontales entre couloirs de rôle, plus une
+     au-dessus du premier et une sous le dernier : quatre rôles donnent donc cinq
+     bandes, et la dernière — index 4 — est celle qui court SOUS le diagramme.
+
+     C'est ce qui rend la mesure lisible : sans consigne, la flèche passe par le
+     haut (mesuré ci-dessus) ; avec celle-là, elle doit descendre sous toutes les
+     cartes. Le changement ne peut venir que du point de passage. */
+  const BANDE_BASSE = CAS.processus.roles.length;
+  const AVEC_PASSAGE = {
+    ...CAS,
+    fleches: [{ ...CAS.fleches[0], passage_bande: BANDE_BASSE, passage_colonne: 3 }],
+  };
+
+  const p = await page.evaluate(([a, e]) => window.rendre(a, e), [AVEC_PASSAGE, false]);
+  const trace = p.pts[p.pts.length - 1];
+  const basCartes = Math.max(...p.cartes.map((c) => c.y + c.h));
+  const basTrace = Math.max(...trace.map((q) => q[1]));
+
+  ok('passage désigné · la flèche descend jusqu\'à la bande visée',
+    basTrace > basCartes,
+    `tracé jusqu'à ${Math.round(basTrace)}, cartes jusqu'à ${Math.round(basCartes)}`);
+
+  /* La consigne ne suspend pas le critère : le chemin est RECALCULÉ autour du
+     point de passage, il n'est pas plaqué dessus. Il ne coupe donc rien. */
+  let dedansPassage = 0;
+  p.pts.forEach((tr) => { dedansPassage += tr.filter((q) => p.cartes.some((c) => dedans(q, c))).length; });
+  ok('passage désigné · aucun tracé ne coupe une carte', dedansPassage === 0,
+    `${dedansPassage} point(s) dans une carte`);
+
+  const p2 = await page.evaluate(([a, e]) => window.rendre(a, e), [AVEC_PASSAGE, false]);
+  ok('passage désigné · deux rendus, mêmes tracés', JSON.stringify(p.ds) === JSON.stringify(p2.ds));
 
   await nav.close();
   await new Promise((r) => serveur.close(r));

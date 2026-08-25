@@ -356,18 +356,25 @@
 .fleche:hover .fleche-retirer, .fleche:focus-within .fleche-retirer { opacity: .8; }
 .fleche-retirer:hover, .fleche-retirer:focus-visible { opacity: 1; }
 .fleche-retirer:focus-visible circle { stroke-width: 2.2; }
-/* PRISE DU SEGMENT MOBILE : on attrape la ligne, pas une poignée à viser. Le
-   curseur dit l'axe — c'est le seul retour avant le glissé, et il évite qu'on
-   tire une profondeur vers la droite en croyant la déplacer. Aucune peinture :
-   la prise est transparente, sinon elle épaissirait le tracé au survol. */
-.fleche-regler { pointer-events: stroke; }
-.fleche-regler--prof { cursor: ns-resize; }
-.fleche-regler--voie { cursor: ew-resize; }
-/* Pendant le glissé, le groupe entier est translaté en aperçu : le rendre plus
-   opaque que ses voisines dit LAQUELLE on règle. La forme du tracé, elle, ne
-   change pas — c'est ce qui permet de comparer à sa position d'origine. */
-.fleche-regler--actif { stroke: var(--principal); stroke-opacity: 0.25; }
-.flux svg g.fleche:has(.fleche-regler--actif) { opacity: 1; }
+/* ÉPINGLE DE PASSAGE : elle ouvre la désignation, elle ne déplace rien. Même
+   révélation par flèche que la poignée de retrait — jamais par couche, sinon
+   toutes les épingles apparaissent d'un coup, dont plusieurs sur des tuiles. */
+.fleche-passage { pointer-events: all; cursor: pointer; opacity: 0; transition: opacity .12s; }
+.fleche:hover .fleche-passage, .fleche:focus-within .fleche-passage { opacity: .8; }
+.fleche-passage:hover, .fleche-passage:focus-visible { opacity: 1; }
+.fleche-passage:focus-visible circle { stroke-width: 2.2; }
+/* Un passage POSÉ reste visible au repos : c'est la seule marque qui dise que ce
+   tracé n'est pas celui du calcul. Contour plein et point central — une forme,
+   pas seulement une teinte : ces pages s'impriment. */
+.fleche-passage--pose { opacity: 1; }
+/* Pendant la désignation, la flèche visée passe au premier plan et les nœuds
+   candidats deviennent cliquables. Les autres flèches s'effacent, sinon on ne
+   sait plus pour laquelle on choisit. */
+.flux svg g.fleche--designation { opacity: 1; }
+.flux svg.flux-designation g.fleche:not(.fleche--designation) { opacity: .25; }
+.flux-noeud { pointer-events: all; cursor: pointer; opacity: .55; transition: opacity .12s, r .12s; }
+.flux-noeud:hover, .flux-noeud:focus-visible { opacity: 1; }
+.flux-noeud--pose { opacity: 1; stroke-width: 2.4; }
 
 
 

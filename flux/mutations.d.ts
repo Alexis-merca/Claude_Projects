@@ -30,15 +30,21 @@ export interface Mutation {
     vers_id: string;
     nature: string;
     masquee: boolean;
-    /** Réglage à la main dès la création : matérialiser une flèche calculée pour
-        y poser son décalage est UNE écriture, pas deux. */
-    decalage?: number | null;
+    /** Point de passage dès la création : matérialiser une flèche calculée pour y
+        poser son passage est UNE écriture, pas deux. */
+    passage_bande?: number | null;
+    passage_colonne?: number | null;
   };
   /** Écart à effacer : flèche dessinée retirée, ou masque levé. */
   flecheSupprimer?: string;
   /** Champs d'une flèche DESSINÉE — les siens, pas ceux de l'étape reçue.
-      `decalage: null` = retour au tracé calculé. */
-  flecheMaj?: { id: string; nature?: string; decalage?: number | null };
+      `passage_bande: null` = retour au tracé calculé. */
+  flecheMaj?: {
+    id: string;
+    nature?: string;
+    passage_bande?: number | null;
+    passage_colonne?: number | null;
+  };
 
 }
 
@@ -70,10 +76,12 @@ export function tirerFleche(
 ): Mutation;
 export function retirerFleche(etapes: EtapeFlux[], fleche: FlecheTracee): Mutation;
 export function cyclerLienFleche(fleche: FlecheTracee): Mutation;
-/** `delta` en pixels, RELATIF au tracé dessiné. `null` = retour au calculé. */
-export function reglerFleche(
+/** Point de passage en repères de GRILLE (bande × gouttière), jamais en pixels.
+    `bande = null` retire le passage et rend la flèche au tracé calculé. */
+export function passerFleche(
   etapes: EtapeFlux[],
   fleche: FlecheTracee,
-  delta: number | null,
+  bande: number | null,
+  colonne: number | null,
 ): Mutation;
 

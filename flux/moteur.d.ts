@@ -71,7 +71,8 @@ export interface MotsFlux {
   flecheTirerTitre?: string;
   flecheRetirerTitre?: string;
   flecheMasquerTitre?: string;
-  flecheReglerTitre?: string;
+  flechePassageTitre?: string;
+  flechePassageNoeudTitre?: string;
   /** Clés = valeurs de `etapes.lien`, qui ne se traduisent pas. */
   liens?: Record<string, string>;
   ecartMois?: string;
@@ -87,9 +88,18 @@ export interface EcartFleche {
   /** Nature PROPRE à la flèche dessinée ; ignorée quand `masquee`. */
   nature?: string | null;
   masquee?: boolean | null;
-  /** Réglage à la main : DÉCALAGE en pixels relatif au tracé calculé, pas un
-      point de passage. `null` = tracé calculé. */
-  decalage?: number | null;
+  /** POINT DE PASSAGE, en coordonnées de GRILLE : la bande (frontière entre deux
+      couloirs de rôle) et la colonne (gouttière). Jamais des pixels — un nombre
+      de pixels ne veut plus rien dire dès qu'une carte grandit d'une ligne.
+      Les deux à `null` = tracé calculé. */
+  passage_bande?: number | null;
+  passage_colonne?: number | null;
+}
+
+/** Un point de passage lu, en coordonnées de grille. */
+export interface PassageFleche {
+  bande: number;
+  colonne: number;
 }
 
 /** Flèche réellement tracée, en index d'étapes. */
@@ -101,7 +111,7 @@ export interface FlecheTracee {
   nature: string;
   manuelle: boolean;
   retour: boolean;
-  decalage?: number | null;
+  passage?: PassageFleche | null;
 }
 
 
@@ -157,6 +167,10 @@ export interface OptionsTrace {
   mots?: MotsFlux;
   fleches?: EcartFleche[];
   commandes?: OptionsFlux["commandes"];
+  /** Clef de la flèche en cours de DÉSIGNATION d'un point de passage :
+      l'identifiant d'une flèche dessinée, ou « de>vers » pour une calculée.
+      Absente, aucun nœud n'est émis. */
+  designation?: string | null;
 }
 
 export function tracerFleches(
