@@ -4783,3 +4783,72 @@ L'utilisateur a tiré sa première flèche manuelle sur Sekurit : **de l'étape 
 l'étape 6**. Elle enjambe donc trois colonnes, et le tracé actuel la fait passer
 à travers les cartes intermédiaires — le lot C n'a plus besoin d'être imaginé, il
 a son cas réel.
+
+## 64. Routage — lot C, ses deux défauts, et la mesure sur le cas réel — 25/08/2026
+
+### 64.1 Ce que la capture a montré, et que les cas synthétiques rataient
+
+L'agent avait ajouté au harnais un croisement 2×2, une flèche longue, une boucle.
+Aucun ne reproduisait la configuration que l'utilisateur a produite en trois
+clics : **une flèche entre deux couloirs, enjambant une carte**. Elle traversait
+la tuile, et la poignée de retrait tombait sur ses pastilles de support.
+
+Puis, une fois le contournement corrigé : **le pont descendait sous tout le
+diagramme** pour rejoindre une tuile voisine. « Pas fou de faire autant le
+tour. »
+
+**Leçon** : des cas synthétiques choisis par celui qui écrit le code testent ce
+qu'il a prévu. Le cas qui casse vient de l'usage.
+
+### 64.2 La mesure, sur les vraies données
+
+L'agent a déclaré ne pas pouvoir mesurer sur les 55 processus réels — sa copie
+n'y a pas accès. Moi si : base plus Chromium.
+
+Réduction utile : **une seule flèche et zéro colonne partagée dans toute la
+base**, donc **un seul processus** peut avoir un tracé non linéaire. Les 54
+autres sont linéaires, et leur conformité est déjà celle que le test au
+caractère près garantit contre le mono-fichier.
+
+Mesuré sur ce processus — Sekurit, intégration des nouveaux collaborateurs,
+flèche étape 2 → étape 4 :
+
+| | lecture | édition |
+|---|---|---|
+| tracés | 8 | 8 |
+| points de carte coupés | **0** | **0** |
+| poignées hors carte | — | **8 / 8** |
+
+Et la profondeur du pont : **y 302**, soit **12 px sous la carte enjambée** (qui
+finit à 290), pour un diagramme de 692 px. Sur la capture il descendait à ~635.
+
+### 64.3 Le réglage à la main : un décalage, pas un point de passage
+
+`fleches.decalage`, entier nullable, en pixels au zoom 1, **relatif au tracé
+calculé**. `null` = calculé, donc la non-régression reste gratuite.
+
+Une liste de coordonnées absolues aurait été le piège : elle meurt à la première
+insertion d'étape, carte qui grandit d'une ligne, colonne partagée ou changement
+de zoom — et une flèche pointant dans le vide ne se signale pas.
+
+Deux propriétés à garder en tête : régler une flèche **calculée** la matérialise
+dans `fleches` (écart neutre, `masquee = false`), et **elle cesse alors de
+suivre la nature de son étape d'arrivée** puisqu'elle porte la sienne. C'est
+assumé et écrit dans le code.
+
+### 64.4 Le test qui fige tout ça — `flux/routage.test.cjs`
+
+Le critère du lot C se calcule : on échantillonne chaque chemin SVG à 400 points
+et on teste l'appartenance aux boîtes des cartes. Le test porte **le relevé
+réel**, pas un cas inventé, et vérifie quatre choses : aucun tracé ne coupe une
+carte, les poignées tombent hors carte, deux rendus donnent les mêmes chemins,
+et le pont reste juste sous ce qu'il franchit.
+
+Il a fallu un serveur HTTP de trois lignes : le moteur est un module ES, et un
+`import` depuis `file://` est refusé par la politique d'origine. Moins cher que
+de déformer le moteur pour les besoins d'un test.
+
+*(Mon assertion sur la profondeur du pont était fausse à la première écriture :
+je prenais le point le plus bas de TOUS les tracés, et désignais la carte
+enjambée par un index — or l'ordre du DOM est celui des couloirs, pas celui des
+étapes. Le test a échoué sur ma faute, pas sur le code.)*

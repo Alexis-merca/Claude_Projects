@@ -71,6 +71,7 @@ export interface MotsFlux {
   flecheTirerTitre?: string;
   flecheRetirerTitre?: string;
   flecheMasquerTitre?: string;
+  flecheReglerTitre?: string;
   /** Clés = valeurs de `etapes.lien`, qui ne se traduisent pas. */
   liens?: Record<string, string>;
   ecartMois?: string;
@@ -86,6 +87,9 @@ export interface EcartFleche {
   /** Nature PROPRE à la flèche dessinée ; ignorée quand `masquee`. */
   nature?: string | null;
   masquee?: boolean | null;
+  /** Réglage à la main : DÉCALAGE en pixels relatif au tracé calculé, pas un
+      point de passage. `null` = tracé calculé. */
+  decalage?: number | null;
 }
 
 /** Flèche réellement tracée, en index d'étapes. */
@@ -97,7 +101,9 @@ export interface FlecheTracee {
   nature: string;
   manuelle: boolean;
   retour: boolean;
+  decalage?: number | null;
 }
+
 
 
 /** Dictionnaire complet, une fois les défauts appliqués. */
@@ -235,8 +241,19 @@ export const LIENS: Record<
 export const ORDRE_LIENS: string[];
 export const PASTELS: Array<[string, string]>;
 
+/** Attribution de voies sur un axe : n tracés se partageant une bande de
+    largeur `place` reçoivent n décalages, en pixels, par rapport au centre.
+    `n <= 1` rend `[0]` — le tracé unique est celui d'avant, au caractère près ;
+    place insuffisante : des zéros, donc le chevauchement plutôt qu'un peigne. */
+export function voies(
+  n: number,
+  place: number,
+  options?: { ecartMin?: number; pas?: number; centre?: boolean },
+): number[];
+
 /** Colonnes du diagramme, chacune avec les index d'étapes qu'elle porte. */
 export function colonnesDesEtapes(etapes: EtapeFlux[]): { indices: number[] }[];
+
 /** Index de colonne par index d'étape. */
 export function colonneParEtape(etapes: EtapeFlux[]): Map<number, number>;
 /** Le tracé calculé, corrigé des écarts enregistrés. Sans écart : les paires

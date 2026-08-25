@@ -347,11 +347,30 @@
 .flux--tirage .carte__texte, .flux--tirage .flux__carte-texte { cursor: crosshair; }
 /* Le trait de tirage suit le pointeur : il ne doit jamais l'intercepter. */
 .fleche-tirage { pointer-events: none; }
-/* Retrait d'une flèche : cible pleine, distincte du clic sur le tracé. */
+/* Retrait d'une flèche : cible pleine, distincte du clic sur le tracé.
+   LA RÉVÉLATION EST PAR FLÈCHE, jamais par couche : un survol de la couche
+   entière montrait TOUTES les poignées à la fois — cinq ⊗ sur le diagramme,
+   dont plusieurs sur des tuiles. `.fleche` groupe la zone de clic et sa poignée,
+   donc seul le tracé survolé (ou dont la poignée a le focus clavier) se montre. */
 .fleche-retirer { pointer-events: all; cursor: pointer; opacity: 0; transition: opacity .12s; }
-.fleche-retirer:hover, .fleche-cible:hover + .fleche-retirer { opacity: 1; }
-.flux-svg--cibles:hover .fleche-retirer { opacity: .55; }
-.flux-svg--cibles:hover .fleche-retirer:hover { opacity: 1; }
+.fleche:hover .fleche-retirer, .fleche:focus-within .fleche-retirer { opacity: .8; }
+.fleche-retirer:hover, .fleche-retirer:focus-visible { opacity: 1; }
+.fleche-retirer:focus-visible circle { stroke-width: 2.2; }
+/* PRISE DU SEGMENT MOBILE : on attrape la ligne, pas une poignée à viser. Le
+   curseur dit l'axe — c'est le seul retour avant le glissé, et il évite qu'on
+   tire une profondeur vers la droite en croyant la déplacer. Aucune peinture :
+   la prise est transparente, sinon elle épaissirait le tracé au survol. */
+.fleche-regler { pointer-events: stroke; }
+.fleche-regler--prof { cursor: ns-resize; }
+.fleche-regler--voie { cursor: ew-resize; }
+/* Pendant le glissé, le groupe entier est translaté en aperçu : le rendre plus
+   opaque que ses voisines dit LAQUELLE on règle. La forme du tracé, elle, ne
+   change pas — c'est ce qui permet de comparer à sa position d'origine. */
+.fleche-regler--actif { stroke: var(--principal); stroke-opacity: 0.25; }
+.flux svg g.fleche:has(.fleche-regler--actif) { opacity: 1; }
+
+
+
 
 
 .carte__texte {

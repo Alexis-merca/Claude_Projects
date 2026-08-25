@@ -1,6 +1,6 @@
 /* Types de la traduction des interactions en opérations de base. */
 
-import type { EtapeFlux } from './moteur.js';
+import type { EcartFleche, EtapeFlux, FlecheTracee } from './moteur.js';
 
 export interface Ecriture {
   id: string;
@@ -23,7 +23,15 @@ export interface Mutation {
   /** Outil à inscrire dans `clients.outils` : une écriture sur le client, pas
       sur l'étape. Émis quand un support est saisi à la main. */
   outilClient?: string;
+  /** Écart au tracé calculé à créer : flèche dessinée (`masquee: false`) ou
+      masque d'une flèche calculée (`masquee: true`). */
+  flecheCreer?: { de_id: string; vers_id: string; nature: string; masquee: boolean };
+  /** Écart à effacer : flèche dessinée retirée, ou masque levé. */
+  flecheSupprimer?: string;
+  /** Nature d'une flèche DESSINÉE — la sienne, pas celle de l'étape reçue. */
+  flecheMaj?: { id: string; nature: string };
 }
+
 
 export function cyclerLien(etapes: EtapeFlux[], index: number): Mutation;
 export function changerTexte(etapes: EtapeFlux[], index: number, texte: string): Mutation;
@@ -42,3 +50,13 @@ export function ajouterSupport(
   etapes: EtapeFlux[], index: number, nom: string, inscrireAuClient?: boolean
 ): Mutation;
 export function nomEchelleLibre(etapes: EtapeFlux[]): string;
+
+export function memeColonne(etapes: EtapeFlux[], a: number, b: number): boolean;
+export function tirerFleche(
+  etapes: EtapeFlux[],
+  source: number,
+  cible: number,
+  ecarts?: EcartFleche[] | null,
+): Mutation;
+export function retirerFleche(etapes: EtapeFlux[], fleche: FlecheTracee): Mutation;
+export function cyclerLienFleche(fleche: FlecheTracee): Mutation;

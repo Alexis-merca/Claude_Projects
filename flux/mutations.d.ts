@@ -25,11 +25,21 @@ export interface Mutation {
   outilClient?: string;
   /** Écart au tracé calculé à créer : flèche dessinée (`masquee: false`) ou
       masque d'une flèche calculée (`masquee: true`). */
-  flecheCreer?: { de_id: string; vers_id: string; nature: string; masquee: boolean };
+  flecheCreer?: {
+    de_id: string;
+    vers_id: string;
+    nature: string;
+    masquee: boolean;
+    /** Réglage à la main dès la création : matérialiser une flèche calculée pour
+        y poser son décalage est UNE écriture, pas deux. */
+    decalage?: number | null;
+  };
   /** Écart à effacer : flèche dessinée retirée, ou masque levé. */
   flecheSupprimer?: string;
-  /** Nature d'une flèche DESSINÉE — la sienne, pas celle de l'étape reçue. */
-  flecheMaj?: { id: string; nature: string };
+  /** Champs d'une flèche DESSINÉE — les siens, pas ceux de l'étape reçue.
+      `decalage: null` = retour au tracé calculé. */
+  flecheMaj?: { id: string; nature?: string; decalage?: number | null };
+
 }
 
 
@@ -60,3 +70,10 @@ export function tirerFleche(
 ): Mutation;
 export function retirerFleche(etapes: EtapeFlux[], fleche: FlecheTracee): Mutation;
 export function cyclerLienFleche(fleche: FlecheTracee): Mutation;
+/** `delta` en pixels, RELATIF au tracé dessiné. `null` = retour au calculé. */
+export function reglerFleche(
+  etapes: EtapeFlux[],
+  fleche: FlecheTracee,
+  delta: number | null,
+): Mutation;
+

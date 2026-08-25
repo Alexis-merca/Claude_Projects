@@ -324,3 +324,41 @@ export function cyclerLienFleche(fleche) {
   const suivant = ORDRE_LIENS[(rang + 1) % ORDRE_LIENS.length];
   return { ...RIEN, flecheMaj: { id: fleche.id, nature: suivant } };
 }
+
+/**
+ * RÉGLER LE TRACÉ D'UNE FLÈCHE À LA MAIN — un DÉCALAGE, jamais un point de
+ * passage.
+ *
+ * `delta` est le déplacement du geste, en pixels d'écran : il S'AJOUTE au
+ * décalage déjà enregistré, parce que ce qu'on tire est le segment tel qu'il est
+ * dessiné, réglage compris. `delta === null` remet au tracé calculé.
+ *
+ * Une flèche CALCULÉE n'a pas de ligne où poser le nombre : on la matérialise,
+ * avec sa nature actuelle et sans masque, donc sans rien changer au tracé. C'est
+ * un écart de plus dans la table, mais un écart NEUTRE — et c'est le seul moyen
+ * de garder « un seul nombre par flèche » sans inventer une seconde table.
+ */
+export function reglerFleche(etapes, fleche, delta) {
+  if (!fleche) return RIEN;
+  const actuel = fleche.decalage == null ? 0 : Number(fleche.decalage) || 0;
+  const valeur = delta == null ? null : Math.round(actuel + delta);
+  if (fleche.manuelle && fleche.id) {
+    /* Rien à écrire si la valeur ne change pas : un clic sans glissé ne doit pas
+       faire avancer la version du processus, sinon un simple survol maladroit
+       met un collègue en conflit. */
+    if ((fleche.decalage == null ? null : actuel) === valeur) return RIEN;
+    return { ...RIEN, flecheMaj: { id: fleche.id, decalage: valeur } };
+  }
+  if (valeur == null) return RIEN;
+  const a = etapes[fleche.de];
+  const b = etapes[fleche.vers];
+  if (!a || !b) return RIEN;
+  return {
+    ...RIEN,
+    flecheCreer: {
+      de_id: a.id, vers_id: b.id, nature: fleche.nature || '', masquee: false,
+      decalage: valeur,
+    },
+  };
+}
+

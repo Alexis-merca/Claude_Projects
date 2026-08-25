@@ -68,12 +68,37 @@ export interface MotsFlux {
   supportSaisirNom?: string;
   legendeAide?: string;
   flecheTitre?: (libelle: string) => string;
+  flecheTirerTitre?: string;
+  flecheRetirerTitre?: string;
+  flecheMasquerTitre?: string;
   /** Clés = valeurs de `etapes.lien`, qui ne se traduisent pas. */
   liens?: Record<string, string>;
   ecartMois?: string;
   ecartSemaines?: string;
   ecartJours?: string;
 }
+
+/** Écart au tracé calculé : une ligne de la table `fleches`. */
+export interface EcartFleche {
+  id: string;
+  de_id: string;
+  vers_id: string;
+  /** Nature PROPRE à la flèche dessinée ; ignorée quand `masquee`. */
+  nature?: string | null;
+  masquee?: boolean | null;
+}
+
+/** Flèche réellement tracée, en index d'étapes. */
+export interface FlecheTracee {
+  de: number;
+  vers: number;
+  /** Identifiant en base pour une flèche dessinée, `null` si calculée. */
+  id: string | null;
+  nature: string;
+  manuelle: boolean;
+  retour: boolean;
+}
+
 
 /** Dictionnaire complet, une fois les défauts appliqués. */
 export type MotsFluxComplet = Required<MotsFlux>;
@@ -95,7 +120,9 @@ export interface OptionsFlux {
       c'est alors l'hôte qui la porte, et les deux ne se dupliquent pas. */
   enveloppe?: boolean;
   /** Commandes d'édition émises. Absent : toutes. Présent : seules celles à
-      `true` — un contrôle que l'hôte ne traite pas ne doit pas apparaître. */
+      `true` — un contrôle que l'hôte ne traite pas ne doit pas apparaître.
+      `colonnes` et `fleches` sont NOUVELLES, donc à opt-in STRICT : absentes,
+      elles ne rendent rien, et la sortie reste celle du mono-fichier. */
   commandes?: {
     texte?: boolean;
     phases?: boolean;
@@ -104,6 +131,8 @@ export interface OptionsFlux {
     roles?: boolean;
     etapes?: boolean;
     tableau?: boolean;
+    colonnes?: boolean;
+    fleches?: boolean;
   };
   /** Libellés d'interface. Absent : dictionnaire français par défaut. */
   mots?: MotsFlux;
@@ -115,10 +144,19 @@ export function baliserFlux(arg: {
   options?: OptionsFlux;
 }): string;
 
+/** Options du TRACÉ. `fleches` porte les écarts au calcul ; absent, le tracé
+    est exactement celui d'avant. */
+export interface OptionsTrace {
+  edition?: boolean;
+  mots?: MotsFlux;
+  fleches?: EcartFleche[];
+  commandes?: OptionsFlux["commandes"];
+}
+
 export function tracerFleches(
   zone: Element | null,
   etapes: EtapeFlux[],
-  options?: { edition?: boolean; mots?: MotsFlux },
+  options?: OptionsTrace,
 ): void;
 
 export function placerCartesACheval(zone: Element | null): void;
@@ -131,8 +169,9 @@ export const HAUTEUR_MAX_TEXTE: number;
 export function acheverRendu(
   zone: Element | null,
   etapes: EtapeFlux[],
-  options?: { edition?: boolean; mots?: MotsFlux },
+  options?: OptionsTrace,
 ): void;
+
 
 export function rolesCouloirs(roles: string[]): Array<{ nom: string; iRole: number }>;
 export function empriseDesEtapes(
@@ -198,3 +237,12 @@ export const PASTELS: Array<[string, string]>;
 
 /** Colonnes du diagramme, chacune avec les index d'étapes qu'elle porte. */
 export function colonnesDesEtapes(etapes: EtapeFlux[]): { indices: number[] }[];
+/** Index de colonne par index d'étape. */
+export function colonneParEtape(etapes: EtapeFlux[]): Map<number, number>;
+/** Le tracé calculé, corrigé des écarts enregistrés. Sans écart : les paires
+    d'avant, dans le même ordre. */
+export function flechesEffectives(
+  etapes: EtapeFlux[],
+  ecarts?: EcartFleche[] | null,
+): FlecheTracee[];
+

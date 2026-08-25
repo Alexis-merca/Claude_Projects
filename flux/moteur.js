@@ -222,6 +222,8 @@ export const MOTS_FR = {
   flecheTirerTitre: 'Tirer une flèche vers une autre étape',
   flecheRetirerTitre: 'Retirer cette flèche dessinée',
   flecheMasquerTitre: 'Masquer cette flèche calculée',
+  flecheReglerTitre: 'Glisser pour décaler ce segment — double-clic : tracé calculé',
+
   /** Libellés d'affichage des natures de lien. Les CLÉS sont les valeurs en
       base (`etapes.lien`) et ne se traduisent pas. */
   liens: { '': 'non qualifié', auto: 'automatique', manuel: 'manuel' },
@@ -285,6 +287,8 @@ export const MOTS_EN = {
   flecheTirerTitre: 'Drag an arrow to another step',
   flecheRetirerTitre: 'Remove this drawn arrow',
   flecheMasquerTitre: 'Hide this computed arrow',
+  flecheReglerTitre: 'Drag to offset this segment — double-click: computed route',
+
   liens: { '': 'unqualified', auto: 'automated', manuel: 'manual' },
 
   ecartMois: 'mo',
@@ -492,7 +496,15 @@ export function flechesEffectives(etapes, ecarts) {
        la table le garde, le tracé n'en tient pas compte. */
     if (ja == null || jb == null) return;
     if (f.masquee) { masquees.add(ja + '>' + jb); return; }
-    ajoutees.push({ de: ja, vers: jb, id: f.id, nature: f.nature || '', manuelle: true });
+    ajoutees.push({
+      de: ja, vers: jb, id: f.id, nature: f.nature || '', manuelle: true,
+      /* Le réglage à la main est un DÉCALAGE en pixels relatif au tracé calculé,
+         jamais un point de passage : il survit donc à une insertion d'étape, à
+         une carte qui grandit, à un changement de largeur de colonne. `null`
+         (absent) = tracé calculé, et c'est l'état par défaut. */
+      decalage: f.decalage == null ? null : Number(f.decalage),
+    });
+
   });
   const dessinees = new Set(ajoutees.map((f) => f.de + '>' + f.vers));
 
@@ -526,6 +538,44 @@ export function flechesEffectives(etapes, ecarts) {
   return sortie;
 }
 
+/**
+ * ATTRIBUTION DE VOIES — un seul mécanisme, employé sur DEUX axes.
+ *
+ * Le problème est le même dans les deux cas : plusieurs tracés se disputent un
+ * même espace libre, et il faut leur donner des positions distinctes.
+ *   - verticalement, dans la gouttière entre deux colonnes : chaque flèche y
+ *     reçoit son ABSCISSE ;
+ *   - horizontalement, dans le couloir sous les bandes : chaque flèche longue
+ *     ou de retour y reçoit sa PROFONDEUR.
+ *
+ * D'où le choix de rendre des DÉCALAGES et non des coordonnées : l'appelant
+ * ajoute le décalage à sa propre référence, et le mécanisme ignore l'axe.
+ *
+ * DEUX PROPRIÉTÉS À NE PAS PERDRE :
+ *   1. `n <= 1` rend `[0]`. Une flèche seule garde donc EXACTEMENT le tracé
+ *      d'avant, au caractère près — c'est la règle « le routage ne s'active que
+ *      sur conflit », et c'est elle que vérifient la comparaison au mono-fichier
+ *      et la géométrie en navigateur sur les diagrammes linéaires.
+ *   2. Si la place manque, on rend des zéros — donc le tracé d'avant, avec son
+ *      chevauchement. Un chevauchement lisible vaut mieux qu'un peigne à deux
+ *      pixels d'écart, et surtout mieux qu'un tracé qui coupe une carte.
+ *
+ * @param {number} n         nombre de tracés à placer
+ * @param {number} place     largeur utile de la bande, en pixels
+ * @param {object} [opts]    { ecartMin, pas, centre }
+ * @returns {number[]} n décalages, en pixels
+ */
+export function voies(n, place, opts = {}) {
+  if (!(n > 1)) return [0];
+  const ecartMin = opts.ecartMin == null ? 8 : opts.ecartMin;
+  const pasVoulu = opts.pas == null ? 16 : opts.pas;
+  const centre = opts.centre !== false;
+  /* Centré : n voies tiennent dans la bande, donc n intervalles.
+     Non centré (le couloir, qui ne va que vers le bas) : n-1 intervalles. */
+  const pas = Math.floor(Math.min(pasVoulu, place / (centre ? n : n - 1)));
+  if (!(pas >= ecartMin)) return new Array(n).fill(0);
+  return Array.from({ length: n }, (_, i) => (centre ? i - (n - 1) / 2 : i) * pas);
+}
 
 /** Groupes de phase consécutifs : un bandeau de frise par groupe.
 
@@ -998,54 +1048,322 @@ export function tracerFleches(zone, etapes, options = {}) {
   );
   const puces = [];
 
-  for (const f of fleches) {
+  /* ---- LE ROUTAGE ----------------------------------------------------------
+
+     Deux problèmes, un seul mécanisme (`voies`), appelé sur deux axes.
+
+     1. Plusieurs flèches dans une même gouttière tournaient TOUTES à
+        `x1 + dx/2` : les cartes d'une colonne ont la même emprise horizontale,
+        donc sur un croisement 2×2 les quatre verticales coïncidaient
+        exactement — un trait au lieu de quatre liens. Chaque flèche de la
+        gouttière reçoit désormais son abscisse.
+
+     2. Une flèche qui enjambe PLUS D'UNE colonne tournait au milieu, c'est-à-dire
+        DANS les colonnes traversées : elle coupait leurs cartes. Elle passe
+        maintenant par le couloir sous les bandes, comme une boucle de retour, et
+        ne monte ou descend que dans des gouttières.
+
+     LA RÈGLE : le routage ne s'active QUE sur conflit. Une flèche seule dans sa
+     gouttière reçoit le décalage 0 et garde le `d` d'avant, au caractère près. */
+  const colonnes = colonnesDesEtapes(liste);
+  const colonne = colonneParEtape(liste);
+  const boites = new Map();
+  const boiteDe = (j) => {
+    if (!boites.has(j)) {
+      const c = carteDe(j);
+      boites.set(j, c ? boite(c) : null);
+    }
+    return boites.get(j);
+  };
+
+  /* Bords de chaque colonne : l'emprise de ses cartes. La gouttière `k` est
+     l'espace libre entre la colonne k-1 et la colonne k ; `k = 0` désigne
+     l'espace à gauche de la première colonne, `k = nc` celui à droite de la
+     dernière. C'est là — et nulle part ailleurs — qu'un tracé peut monter ou
+     descendre sans rencontrer de carte. */
+  const bordG = [], bordD = [];
+  colonnes.forEach((col, k) => {
+    let g = Infinity, dr = -Infinity;
+    col.indices.forEach((j) => {
+      const r = boiteDe(j);
+      if (r) { g = Math.min(g, r.x); dr = Math.max(dr, r.x + r.l); }
+    });
+    bordG[k] = g === Infinity ? 0 : g;
+    bordD[k] = dr === -Infinity ? 0 : dr;
+  });
+  const gouttiere = (k) => {
+    if (k <= 0) return { centre: bordG[0] - 12, place: 20 };
+    if (k >= colonnes.length) return { centre: bordD[colonnes.length - 1] + 12, place: 20 };
+    return {
+      centre: (bordD[k - 1] + bordG[k]) / 2,
+      /* 4 px retirés : le tracé ne doit pas frôler le bord d'une carte. */
+      place: Math.max(0, bordG[k] - bordD[k - 1] - 4),
+    };
+  };
+
+  /* LE CRITÈRE DU LOT, RENDU EXÉCUTABLE DANS LE MOTEUR : aucun tracé ne coupe le
+     rectangle d'une carte. `coupe` teste un segment orthogonal contre TOUTES les
+     cartes, marge comprise. Il ne sert qu'à CHOISIR un trajet, jamais à en
+     déformer un : quand rien ne coupe, le `d` est celui d'avant, au caractère. */
+  const MARGE_CARTE = 1.5;
+  let toutesBoites = null;
+  const boitesCartes = () => {
+    if (!toutesBoites) {
+      toutesBoites = liste.map((_, j) => boiteDe(j)).filter(Boolean);
+    }
+    return toutesBoites;
+  };
+  const coupe = (xa, ya, xb, yb) => boitesCartes().some((r) =>
+    Math.min(xa, xb) < r.x + r.l - MARGE_CARTE && Math.max(xa, xb) > r.x + MARGE_CARTE &&
+    Math.min(ya, yb) < r.y + r.h - MARGE_CARTE && Math.max(ya, yb) > r.y + MARGE_CARTE);
+
+  /* Classement des tracés. `parLeBas` : boucle de retour (lot B) OU flèche
+     longue (nouveau) — les deux emploient le couloir, il n'y a qu'un tracé. */
+  const traces = fleches.map((f, i) => {
+    const ka = colonne.get(f.de), kb = colonne.get(f.vers);
+    const a = boiteDe(f.de), b = boiteDe(f.vers);
+    /* Une flèche dont les deux cartes sont à la même hauteur est un SEGMENT
+       DROIT : elle n'a pas de verticale, donc rien à disputer dans la
+       gouttière. L'en exclure est ce qui laisse la place aux flèches qui
+       tournent vraiment — sur un croisement 2×2, deux au lieu de quatre. */
+    const droite = !a || !b || Math.abs((b.y + b.h / 2) - (a.y + a.h / 2)) < 2;
+    return {
+      f, i, ka, kb, droite,
+      parLeBas: Boolean(f.retour) || kb - ka > 1,
+      voie: 0, prof: 0,
+      /* Réglage à la main, en pixels et relatif au calcul. 0 ⇒ tracé calculé. */
+      dec: f.decalage == null ? 0 : Number(f.decalage) || 0,
+    };
+
+  });
+
+  /* LE COUDE AU MILIEU DU SEGMENT N'EST PAS TOUJOURS LIBRE : dans une colonne
+     empilée, ou dès qu'une carte voisine est plus large, la verticale calculée
+     tombe DANS une tuile — c'est ce que montrait la capture. `sur(tr, x)` teste
+     les trois segments réellement tracés pour une abscisse de coude donnée. */
+  const sur = (tr, x) => {
+    const a = boiteDe(tr.f.de), b = boiteDe(tr.f.vers);
+    if (!a || !b) return false;
+    const y1 = a.y + a.h / 2, y2 = b.y + b.h / 2;
+    const x1 = a.x + a.l + 2, x2 = b.x - 3;
+    return coupe(x, y1, x, y2) || coupe(x1, y1, x, y1) || coupe(x, y2, x2, y2);
+  };
+
+  /* Axe VERTICAL : une abscisse par flèche dans chaque gouttière encombrée.
+     L'ordre est celui de l'ordonnée d'arrivée, ce qui évite des croisements
+     gratuits, et il est déterministe — deux rendus des mêmes données donnent
+     les mêmes `d`, sans quoi deux captures d'une même restitution ne
+     coïncideraient plus. */
+  const parGouttiere = new Map();
+  traces.forEach((tr) => {
+    if (tr.parLeBas || tr.droite) return;
+    const clef = tr.ka;
+    if (!parGouttiere.has(clef)) parGouttiere.set(clef, []);
+    parGouttiere.get(clef).push(tr);
+  });
+
+  parGouttiere.forEach((groupe, k) => {
+    const g = gouttiere(k + 1);
+    const cle = (tr) => {
+      const b = boiteDe(tr.f.vers), a = boiteDe(tr.f.de);
+      return [b ? b.y : 0, a ? a.y : 0, tr.i];
+    };
+    groupe.sort((u, v) => {
+      const cu = cle(u), cv = cle(v);
+      return cu[0] - cv[0] || cu[1] - cv[1] || cu[2] - cv[2];
+    });
+    const decalages = voies(groupe.length, g.place);
+    groupe.forEach((tr, r) => {
+      tr.voie = decalages[r];
+      /* Plus d'une flèche : toutes tournent autour du MÊME centre, celui de la
+         gouttière. Sinon deux cartes de largeurs différentes replaceraient les
+         voies l'une sur l'autre. Une seule flèche : pas de centre commun, donc
+         le milieu du segment, donc le `d` d'avant. */
+      if (groupe.length > 1) tr.centreGouttiere = g.centre;
+    });
+  });
+
+  /* PASSE DE SÛRETÉ — LE CRITÈRE DU LOT, APPLIQUÉ AU TRACÉ FINAL. Elle vient
+     APRÈS l'attribution des voies, donc elle juge l'abscisse réellement tracée,
+     voie comprise. Trois essais, dans l'ordre du moins au plus intrusif :
+     le coude calculé (le `d` d'avant), le centre de la gouttière, puis le
+     couloir. Chaque repli n'a lieu QUE si le précédent coupe une carte : un
+     diagramme où rien ne coupe garde ses tracés au caractère près. */
+  traces.forEach((tr) => {
+    if (tr.parLeBas || tr.droite) return;
+    const a = boiteDe(tr.f.de), b = boiteDe(tr.f.vers);
+    if (!a || !b) return;
+    const milieu = ((a.x + a.l + 2) + (b.x - 3)) / 2;
+    const base = tr.centreGouttiere == null ? milieu : tr.centreGouttiere;
+    if (!sur(tr, base + tr.voie)) return;
+    const g = gouttiere(tr.ka + 1).centre;
+    if (!sur(tr, g)) { tr.centreGouttiere = g; tr.voie = 0; return; }
+    tr.parLeBas = true;
+  });
+
+  /* Axe HORIZONTAL — LA PROFONDEUR LA PLUS FAIBLE QUI SUFFIT.
+     Le lot C posait TOUTES les flèches de couloir sous le bas du diagramme
+     entier (`fond()`), mesuré sur toutes les cellules et toutes les cartes :
+     une flèche qui sautait une seule tuile descendait donc sous trois couloirs
+     de rôle pour rien. Ce n'est pas le critère : le tracé ne doit franchir que
+     ce qu'il RENCONTRE, c'est-à-dire les cartes dont l'emprise horizontale
+     croise son propre segment de couloir. Les bandes de rôle ne comptent pas —
+     un segment qui traverse une bande entre deux cartes ne coupe rien, et les
+     verticales de gouttière le font déjà.
+
+     Le fond global reste mesuré, mais pour une SEULE chose : la réserve de
+     hauteur en bas du diagramme, qui ne vaut que si un couloir descend plus bas
+     que le contenu. */
+  let fondCouloir = null;
+  const fond = () => {
+    if (fondCouloir == null) {
+      let m = 0;
+      zone.querySelectorAll('.flux__cellule').forEach((cel) => {
+        const r = boite(cel);
+        m = Math.max(m, r.y + r.h);
+      });
+      boitesCartes().forEach((r) => { m = Math.max(m, r.y + r.h); });
+      fondCouloir = m;
+    }
+    return fondCouloir;
+  };
+
+  /* Bas des cartes dont l'emprise horizontale croise [xa, xb] : la profondeur
+     minimale qui suffit à ce tracé-là. Les deux cartes d'extrémité en font
+     partie par construction, puisque les descentes partent de leurs bords. */
+  const basCroise = (xa, xb) => {
+    const g = Math.min(xa, xb) - MARGE_CARTE, dr = Math.max(xa, xb) + MARGE_CARTE;
+    let m = 0;
+    boitesCartes().forEach((r) => {
+      if (r.x < dr && r.x + r.l > g) m = Math.max(m, r.y + r.h);
+    });
+    return m;
+  };
+
+  const auCouloir = traces.filter((tr) => tr.parLeBas)
+    .sort((u, v) => u.ka - v.ka || u.kb - v.kb || u.i - v.i);
+
+  /* Les descentes se placent AVANT la profondeur, parce que c'est leur abscisse
+     qui dit quelles cartes le couloir doit franchir. Elles sont vérifiées
+     contre une descente jusqu'au fond global — le cas le plus défavorable —
+     pour que le choix ne dépende pas de la profondeur qu'il détermine. */
+  const libre = (k, bordee, ya, yb) => {
+    const c = gouttiere(k).centre;
+    if (!coupe(c, ya, c, yb)) return c;
+    for (const x of [bordee + 4, bordee - 4]) if (!coupe(x, ya, x, yb)) return x;
+    return c;
+  };
+  const placees = [];
+  for (const tr of auCouloir) {
+    const a = boiteDe(tr.f.de), b = boiteDe(tr.f.vers);
+    if (!a || !b) continue;
+    tr.y1 = a.y + a.h / 2;
+    tr.y2 = b.y + b.h / 2;
+    const plancher = fond() + 12;
+    tr.xg1 = libre(tr.ka + 1, a.x + a.l + 4, tr.y1, plancher);
+    tr.xg2 = libre(tr.kb, b.x - 4, tr.y2, plancher);
+    /* Une profondeur par flèche, mais seulement entre flèches qui se
+       DISPUTENT vraiment la place : deux ponts dont les segments de couloir ne
+       se croisent pas peuvent partager la même profondeur sans se superposer.
+       On décale de 10 px tant qu'un pont déjà posé et chevauchant est trop
+       proche — déterministe, et minimal par construction. */
+    let yc = basCroise(tr.xg1, tr.xg2) + 12;
+    const chevauche = (o) =>
+      Math.min(o.xg1, o.xg2) < Math.max(tr.xg1, tr.xg2) &&
+      Math.max(o.xg1, o.xg2) > Math.min(tr.xg1, tr.xg2);
+    for (let garde = 0; garde < 40; garde++) {
+      const gene = placees.find((o) => chevauche(o) && Math.abs(o.yc - yc) < 10);
+      if (!gene) break;
+      yc = gene.yc + 10;
+    }
+    tr.yc = yc;
+    placees.push(tr);
+  }
+
+
+  for (const tr of traces) {
+    const f = tr.f;
     const ja = f.de, jb = f.vers;
     const ca = carteDe(ja), cb = carteDe(jb);
     if (!ca || !cb) continue;
     const a = boite(ca), b = boite(cb);
     let d, cx, cy;
 
-    if (f.retour) {
-      /* FLÈCHE DE RETOUR EN ARRIÈRE — la boucle de reprise. Tracé simple et
-         assumé : sortie par le BAS de la carte de départ, passage sous les deux
-         couloirs concernés, remontée dans le bas de l'arrivée. Aucun segment ne
-         traverse une carte, mais la boucle peut en longer d'autres : le routage
-         fin n'appartient pas à ce lot, et une boucle lisible vaut mieux qu'une
-         boucle savante fausse. */
-      const basCellule = (el) => {
-        const cel = el.parentElement;
-        const r = cel ? boite(cel) : null;
-        return r ? r.y + r.h : 0;
-      };
-      const bas = Math.max(basCellule(ca), basCellule(cb), a.y + a.h + 12, b.y + b.h + 12) - 5;
-      const xa = a.x + a.l / 2;
-      const xb = b.x + b.l / 2;
-      const sens = xb >= xa ? 1 : -1;
-      const r = Math.min(9, Math.abs(xb - xa) / 2, Math.abs(bas - Math.max(a.y + a.h, b.y + b.h)) / 2);
-      d = r < 2
-        ? `M${xa},${a.y + a.h} L${xa},${bas} L${xb},${bas} L${xb},${b.y + b.h + 3}`
-        : `M${xa},${a.y + a.h} L${xa},${bas - r} Q${xa},${bas} ${xa + sens * r},${bas} L${xb - sens * r},${bas} Q${xb},${bas} ${xb},${bas - r} L${xb},${b.y + b.h + 3}`;
-      cx = (xa + xb) / 2;
-      cy = bas;
+    if (tr.parLeBas) {
+      /* FLÈCHE LONGUE OU DE RETOUR — le passage par le couloir. Sortie par le
+         bord droit de la carte de départ, descente dans la gouttière qui suit sa
+         colonne, parcours du couloir à sa profondeur, remontée dans la gouttière
+         qui précède la colonne d'arrivée, entrée par le bord gauche.
+
+         Le lot B descendait au MILIEU de la carte : dans une colonne empilée,
+         cette descente traversait la carte du dessous. Les verticales passent
+         donc désormais par les gouttières, comme les flèches courtes. */
+      const x1 = a.x + a.l + 2;
+      const y1 = tr.y1;
+      const x2 = b.x - 3;
+      const y2 = tr.y2;
+      const xg1 = tr.xg1, xg2 = tr.xg2;
+      /* RÉGLAGE MANUEL : un décalage, pas un point de passage. Il s'ajoute à la
+         profondeur CALCULÉE, donc il survit à une insertion d'étape ou à une
+         carte qui grandit. La borne basse est le bas des cartes franchies plus
+         8 px : c'est elle qui garantit que le critère du lot C reste vrai APRÈS
+         un réglage — un consultant ne peut pas poser le couloir dans une tuile,
+         même en tirant vers le haut de toutes ses forces. */
+      const planche = basCroise(xg1, xg2) + 8;
+      const yc = Math.min(
+        Math.max(planche, tr.yc + (tr.dec || 0)),
+        tr.yc + 600,
+      );
+      tr.ycTrace = yc;
+      d = `M${x1},${y1} L${xg1},${y1} L${xg1},${yc} L${xg2},${yc} L${xg2},${y2} L${x2},${y2}`;
+      /* Poignée AU MILIEU DU SEGMENT DE COULOIR — hors carte par construction. */
+      cx = (xg1 + xg2) / 2;
+      cy = yc;
+      /* Le SEGMENT MOBILE, c'est-à-dire celui que le réglage déplace : la
+         traversée du couloir. Jamais les amorces qui touchent les cartes. */
+      tr.mobile = { d: `M${xg1},${yc} L${xg2},${yc}`, axe: 'prof' };
     } else {
       const x1 = a.x + a.l + 2;
       const y1 = a.y + a.h / 2;
       const x2 = b.x - 3;
       const y2 = b.y + b.h / 2;
       const dx = x2 - x1, dy = y2 - y1;
-      const mx = x1 + dx / 2;
+      /* Sans conflit, `centreGouttiere` est absent et `voie` vaut 0 : `mx` est
+         le milieu du segment, exactement comme avant ce lot. */
+      const calc = (tr.centreGouttiere == null ? x1 + dx / 2 : tr.centreGouttiere) + tr.voie;
+      /* RÉGLAGE MANUEL, borné À LA GOUTTIÈRE : le seul degré de liberté d'une
+         flèche ordinaire est l'abscisse de sa verticale, et cette verticale ne
+         peut vivre qu'entre les deux colonnes. La borne est donc l'espace libre
+         lui-même — poser le segment dans une tuile est impossible, ce qui garde
+         le critère du lot C vrai après réglage. Décalage nul : `mx` vaut `calc`,
+         donc le `d` d'avant, au caractère près. */
+      const gt = gouttiere(tr.ka + 1);
+      const bg = Math.min(x1 + 6, gt.centre), bd = Math.max(x2 - 6, gt.centre);
+      const mx = tr.dec
+        ? Math.min(Math.max(calc + tr.dec, Math.min(bg, bd)), Math.max(bg, bd))
+        : calc;
       /* Le rayon doit tenir dans l'écart horizontal ET vertical : sinon les deux
          quarts de cercle se chevauchent et la flèche part à l'envers, avec une
          pointe qui déborde sur les cartes. Sous 2 px de rayon utile, on trace
-         un simple segment droit. */
-      const r = Math.min(9, Math.abs(dx) / 2 - 2, Math.abs(dy) / 2);
+         un simple segment droit. La forme `min(mx - x1, x2 - mx) - 2` vaut
+         `|dx|/2 - 2` quand la voie est nulle : le tracé d'avant est intact. */
+      const r = Math.min(9, Math.min(mx - x1, x2 - mx) - 2, Math.abs(dy) / 2);
       const s = dy > 0 ? 1 : -1;
-      d = (Math.abs(dy) < 2 || r < 2 || dx <= 0)
+      const droit = Math.abs(dy) < 2 || r < 2 || dx <= 0;
+      d = droit
         ? `M${x1},${y1} L${x2},${y2}`
         : `M${x1},${y1} L${mx - r},${y1} Q${mx},${y1} ${mx},${y1 + s * r} L${mx},${y2 - s * r} Q${mx},${y2} ${mx + r},${y2} L${x2},${y2}`;
+      /* Poignée SUR LA VERTICALE DE GOUTTIÈRE, jamais au milieu géométrique : la
+         verticale est le seul segment dont on sait qu'il ne rencontre pas de
+         carte. Tracé droit (pas de verticale) : son milieu est déjà entre les
+         deux cartes, donc dans la gouttière. */
       cx = mx;
       cy = y1 + dy / 2;
+      /* Segment mobile : la verticale. Un tracé droit n'en a pas, donc il n'y a
+         rien à régler — et rien à proposer. */
+      if (!droit) tr.mobile = { d: `M${mx},${y1 + s * r} L${mx},${y2 - s * r}`, axe: 'voie' };
     }
+
 
     /* La nature vient de la flèche : lien de l'étape reçue si elle est
        implicite, colonne `nature` de la ligne si elle est dessinée. Le clic doit
@@ -1054,25 +1372,67 @@ export function tracerFleches(zone, etapes, options = {}) {
     const nature = f.nature || '';
     const style = LIENS[nature] || LIENS[''];
 
-    if (options.edition) {
-      zonesClic.push(`<path class="fleche-cible" data-action="basculer-lien"${
+    const cible = options.edition
+      ? `<path class="fleche-cible" data-action="basculer-lien"${
         f.manuelle ? ` data-fleche="${echapper(f.id)}"` : ` data-i="${jb}"`} d="${d}"
-        fill="none" stroke="transparent" stroke-width="16"><title>${t.flecheTitre(libelleLien(nature, t))}</title></path>`);
-    }
+        fill="none" stroke="transparent" stroke-width="16"><title>${t.flecheTitre(libelleLien(nature, t))}</title></path>`
+      : '';
     if (retraits) {
       /* Retirer une flèche est un geste À PART du changement de nature : deux
-         cibles distinctes, jamais un clic qui devine. La puce est au milieu du
-         tracé, là où elle ne recouvre aucune carte. */
-      puces.push(`<g class="fleche-retirer" data-action="retirer-fleche"${
+         cibles distinctes, jamais un clic qui devine. La puce est posée sur un
+         segment de gouttière ou de couloir — hors carte PAR CONSTRUCTION.
+
+         Zone de clic et poignée sont GROUPÉES : c'est ce groupe que la feuille
+         de style survole, donc une seule poignée paraît à la fois. `tabindex`
+         la rend atteignable au clavier — la seule commande de flèche qui le
+         soit : changer la nature reste au pointeur. */
+      const commun = `${f.manuelle ? ` data-fleche="${echapper(f.id)}"` : ''} data-de="${ja}" data-vers="${jb}"`;
+      /* PRISE DU SEGMENT MOBILE — le réglage à la main. Un chemin transparent
+         posé sur le SEUL segment réglable, avec le curseur de l'axe : on attrape
+         la ligne elle-même, comme dans un éditeur de diapositives. Le double-clic
+         y revient au tracé calculé (`decalage` remis à `null`), il ne recopie pas
+         la valeur calculée — sinon le réglage figerait un tracé qui ne suivrait
+         plus les corrections futures. */
+      const prise = tr.mobile
+        ? `<path class="fleche-regler fleche-regler--${tr.mobile.axe}" data-action="regler-fleche" data-axe="${
+          tr.mobile.axe}"${commun} data-decalage="${tr.dec || 0}" d="${tr.mobile.d}"
+        fill="none" stroke="transparent" stroke-width="14"><title>${t.flecheReglerTitre}</title></path>`
+        : '';
+      puces.push(`<g class="fleche">${cible}${prise}<g class="fleche-retirer" tabindex="0" role="button" data-action="retirer-fleche"${
         f.manuelle ? ` data-fleche="${echapper(f.id)}"` : ''} data-de="${ja}" data-vers="${jb}"
         transform="translate(${Math.round(cx)},${Math.round(cy)})"><title>${
         f.manuelle ? t.flecheRetirerTitre : t.flecheMasquerTitre}</title>
         <circle r="7.5" fill="#FFFFFF" stroke="${style.couleur}" stroke-width="1.2"></circle>
-        <path d="M-3,-3 L3,3 M3,-3 L-3,3" stroke="${style.couleur}" stroke-width="1.4" stroke-linecap="round" fill="none"></path></g>`);
+        <path d="M-3,-3 L3,3 M3,-3 L-3,3" stroke="${style.couleur}" stroke-width="1.4" stroke-linecap="round" fill="none"></path></g></g>`);
+    } else if (cible) {
+      zonesClic.push(cible);
     }
     chemins.push(`<path d="${d}" fill="none" stroke="${style.couleur}" stroke-width="1.5"${
       style.tirets ? ` stroke-dasharray="${style.tirets}"` : ''} marker-end="url(#${style.marqueur})"/>`);
   }
+
+  /* LE COULOIR N'EXISTE QUE S'IL SERT. Il descend sous la dernière rangée : sans
+     réserve, son tracé serait rogné par le débordement. Mais cette hauteur
+     nourrit la pagination de l'impression — un diagramme sans flèche longue ni
+     boucle doit donc garder EXACTEMENT la hauteur d'avant. D'où une réserve
+     posée en style en ligne, et RETIRÉE dès qu'aucune flèche n'emploie le
+     couloir. Elle n'entre pas dans le balisage : la comparaison au mono-fichier
+     reste caractère pour caractère. Elle ne déplace pas non plus les cellules,
+     donc les mesures ci-dessus restent valables.
+
+     Elle est calculée sur la profondeur RÉELLEMENT tracée, réglage manuel
+     compris, et RELATIVEMENT au bas du contenu : un pont posé sous une carte du
+     milieu du diagramme ne demande aucune réserve. C'est ce qui rend le
+     « juste sous ce qu'il franchit » gratuit pour la pagination. */
+  if (fondCouloir != null && auCouloir.length) {
+    const bas = Math.max(0, ...auCouloir.map((tr) => tr.ycTrace || 0)) + 10;
+    const creux = Math.max(0, bas - fond());
+    if (creux > 0) zone.style.paddingBottom = Math.ceil(creux) + 'px';
+    else zone.style.removeProperty('padding-bottom');
+  } else if (zone.style.paddingBottom) {
+    zone.style.removeProperty('padding-bottom');
+  }
+
 
 
   const pointe = (id, couleur) =>

@@ -60,6 +60,7 @@ import {
   couperEchelle,
   cyclerLien,
   cyclerLienFleche,
+  reglerFleche,
   deposerEtape,
   insererEtape,
   renommerEchelle,
@@ -641,6 +642,99 @@ export function DiagrammeFlux({
     [appliquer, nettoyerTirage],
   );
 
+  /* RÉGLAGE À LA MAIN DU TRACÉ — on attrape le segment mobile et on le pousse.
+     Ce qui est enregistré est un DÉCALAGE en pixels par rapport au tracé calculé,
+     et non un point de passage : le moteur peut donc corriger son routage sans
+     que les réglages d'hier deviennent des positions absurdes.
+
+     Le déplacement est divisé par le zoom : l'écart se lit à l'écran, en pixels
+     zoomés, mais le décalage s'enregistre dans les unités du diagramme. Sans ça,
+     un réglage fait à 60 % de zoom sauterait au rechargement.
+
+     Aucune borne ici : c'est le MOTEUR qui rogne le décalage pour ne jamais
+     couper une carte (voir `voies`). La borne doit vivre là où vit la géométrie,
+     sinon deux règles divergent et c'est l'écran qui tranche. */
+  const surReglage = useCallback(
+    (ev: PointerEvent) => {
+      const prise = (ev.target as HTMLElement).closest?.(
+        '[data-action="regler-fleche"]',
+      ) as HTMLElement | null;
+      if (!prise) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      const axe = prise.dataset.axe === "voie" ? "x" : "y";
+      const depart = axe === "x" ? ev.clientX : ev.clientY;
+      const idFleche = prise.dataset.fleche;
+      const de = Number(prise.dataset.de);
+      const vers = Number(prise.dataset.vers);
+      const retrouver = () =>
+        flechesEffectives(vues.current, ecarts.current ?? null).find((f) =>
+          idFleche ? f.id === idFleche : f.de === de && f.vers === vers,
+        ) ?? null;
+
+      const lacher = (e: PointerEvent) => {
+        window.removeEventListener("pointermove", suivre);
+        window.removeEventListener("pointerup", lacher);
+        window.removeEventListener("pointercancel", fin);
+        prise.classList.remove("fleche-regler--actif");
+        const delta = ((axe === "x" ? e.clientX : e.clientY) - depart) / (zoom || 1);
+        /* Sous le seuil, c'est un clic, pas un glissé : ne rien écrire évite de
+           faire avancer la version du processus — et de mettre un collègue en
+           conflit — pour un geste que l'utilisateur n'a pas voulu. */
+        if (Math.abs(delta) < 2) return;
+        const f = retrouver();
+        if (f) appliquer(reglerFleche(vues.current, f, delta));
+      };
+
+      /* Aperçu pendant le glissé : on translate le GROUPE de la flèche, sans
+         retracer. Retracer à chaque `pointermove` réécrirait le sous-arbre sous
+         le doigt, et le geste se perdrait au premier rendu. */
+      const groupe = prise.closest(".fleche") as SVGGElement | null;
+      const suivre = (e: PointerEvent) => {
+        const d = ((axe === "x" ? e.clientX : e.clientY) - depart) / (zoom || 1);
+        if (groupe) {
+          groupe.style.transform = axe === "x" ? `translateX(${d}px)` : `translateY(${d}px)`;
+        }
+      };
+
+      const fin = () => {
+        window.removeEventListener("pointermove", suivre);
+        window.removeEventListener("pointerup", lacher);
+        window.removeEventListener("pointercancel", fin);
+        if (groupe) groupe.style.transform = "";
+        prise.classList.remove("fleche-regler--actif");
+      };
+
+      prise.classList.add("fleche-regler--actif");
+      window.addEventListener("pointermove", suivre);
+      window.addEventListener("pointerup", lacher);
+      window.addEventListener("pointercancel", fin);
+    },
+    [appliquer, zoom],
+  );
+
+  /* Double-clic sur le segment mobile : RETOUR AU TRACÉ CALCULÉ. On remet le
+     décalage à `null` plutôt que d'y recopier la valeur calculée — sinon le
+     réglage figerait un tracé qui ne suivrait plus les corrections du moteur. */
+  const surDoubleClic = useCallback(
+    (ev: MouseEvent) => {
+      const prise = (ev.target as HTMLElement).closest?.(
+        '[data-action="regler-fleche"]',
+      ) as HTMLElement | null;
+      if (!prise) return;
+      const idFleche = prise.dataset.fleche;
+      const de = Number(prise.dataset.de);
+      const vers = Number(prise.dataset.vers);
+      const f =
+        flechesEffectives(vues.current, ecarts.current ?? null).find((x) =>
+          idFleche ? x.id === idFleche : x.de === de && x.vers === vers,
+        ) ?? null;
+      if (f) appliquer(reglerFleche(vues.current, f, null));
+    },
+    [appliquer],
+  );
+
+
   /* Pose des écouteurs. Hors édition on n'en pose aucun : le diagramme est
      alors une image, et un `dragstart` qui traîne suffirait à donner
      l'impression qu'on peut déplacer une carte. */
@@ -655,6 +749,11 @@ export function DiagrammeFlux({
       ["dragover", surSurvol],
       ["drop", surDepot],
       ["pointerdown", surTirage],
+      /* Deux écouteurs `pointerdown` sur le MÊME hôte : `stopPropagation` n'y
+         suffirait pas, d'où `stopImmediatePropagation` côté réglage — sinon le
+         glissé du segment serait aussi lu comme un tirage de nouvelle flèche. */
+      ["pointerdown", surReglage],
+      ["dblclick", surDoubleClic],
     ] as const;
 
     paires.forEach(([nom, fn]) => n.addEventListener(nom, fn as EventListener));
@@ -668,6 +767,8 @@ export function DiagrammeFlux({
     surSurvol,
     surDepot,
     surTirage,
+    surReglage,
+    surDoubleClic,
   ]);
 
 
