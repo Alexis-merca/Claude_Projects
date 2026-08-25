@@ -272,3 +272,24 @@ Le code et les commentaires sont **en français**, y compris les noms de
 variables et de fonctions SQL. Les commentaires expliquent **pourquoi**, pas
 quoi — et notamment pourquoi une chose qui semble redondante ne l'est pas, pour
 empêcher qu'on la « simplifie » six mois plus tard.
+
+### Les messages, eux, doivent être courts — demandé le 24/08/2026
+
+Sans perdre un fait. Ce qui les allongeait n'était pas la longueur des phrases
+mais **la redite** : chaque idée était dite, puis reformulée.
+
+Six règles :
+
+1. **Une idée, une fois.** Pas de « ce n'est pas A, c'est B » quand « c'est B »
+   suffit.
+2. **La mesure, puis rien.** Le chiffre porte l'argument ; ne le paraphrase pas.
+3. **Le contrefactuel s'écrit seulement s'il EST la trouvaille.** « Sans ça on
+   aurait… » est du remplissage, sauf quand c'est le défaut qu'on vient
+   d'éviter.
+4. **Aucun récapitulatif** de ce qu'on vient de faire, sauf si ça a changé.
+5. **On garde tout ce qui est vérifiable** : chiffres, noms de fichiers, de
+   fonctions, de commits. C'est le détail, et il ne coûte rien.
+6. **Le gras sur un mot, pas sur une proposition.**
+
+Ce qui ne change pas : les défauts se disent, les erreurs s'attribuent, les
+approximations s'annoncent. Court ne veut pas dire lisse.
