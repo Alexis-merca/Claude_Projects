@@ -989,7 +989,7 @@ export function placerCartesACheval(zone) {
        `offsetTop` vaut le padding et le résultat est celui d'avant, au pixel. */
     const h = carte.offsetHeight;
     const vise = sens > 0 ? cellule.offsetHeight - h / 2 : -h / 2;
-    const decal = vise - carte.offsetTop;
+    const decal = vise - (carte.offsetTop - cellule.offsetTop);
     carte.style.transform = `translateY(${decal}px)`;
     carte.dataset.decalage = String(decal);
   });
