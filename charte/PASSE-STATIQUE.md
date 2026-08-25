@@ -4852,3 +4852,97 @@ de déformer le moteur pour les besoins d'un test.
 je prenais le point le plus bas de TOUS les tracés, et désignais la carte
 enjambée par un index — or l'ordre du DOM est celui des couloirs, pas celui des
 étapes. Le test a échoué sur ma faute, pas sur le code.)*
+
+---
+
+## 65. La recherche de chemin, et un déclencheur mort depuis le lot B — 25/08/2026
+
+### 65.1 Ce qui a changé d'intention
+
+Le § 64 décrivait un moteur qui **choisissait entre des trajets écrits à
+l'avance** : le coude calculé, le centre de la gouttière, puis le plongeon sous
+le diagramme. Ce troisième repli était la vraie plainte de l'utilisateur : « une
+flèche ne passe que par des segments non occupés », capture à l'appui.
+
+La deuxième version renverse la charge. Le diagramme est déjà un damier —
+gouttières entre colonnes, bandes entre couloirs de rôle — et il suffit de le
+LIRE. Dijkstra sur `(nœud, orientation)`, pénalité de virage à 45, départage
+écrit et total : coût, virages, côté de départ, côté d'arrivée, puis la suite
+des points comparée comme du texte.
+
+**La règle qui tient tout** : la recherche ne part QUE si le trajet direct coupe
+une carte, ou si un point de passage a été désigné. Sans conflit, le `d` est
+celui d'hier au caractère près — et c'est ce que les quatre suites vérifient,
+pas ce que le résumé de l'agent affirme.
+
+### 65.2 Ce que la mesure dit, sur le même relevé réel
+
+| | avant (§ 64) | après |
+|---|---|---|
+| point le plus bas de la flèche 2 → 4 | **692** (sous toute la grille) | **226** |
+| carte enjambée (étape 3) | franchie **par en dessous** | franchie **par le dessus** |
+| points de carte coupés | 0 | 0 |
+
+Le tracé retenu : `M532,93.5 L719,93.5 Q728,93.5 728,102.5 L728,225.5`. Il file
+dans la bande libre au-dessus de la rangée, puis descend dans la gouttière et
+entre par le bord GAUCHE de l'étape 4. Quatre accroches par carte, le côté est
+choisi par la recherche.
+
+**L'ancienne assertion est devenue fausse, et c'est normal** : « le pont passe
+juste sous la carte enjambée » décrivait le moins mauvais des replis, pas
+l'intention. Elle est remplacée par « par le dessus, et sans descendre sous le
+diagramme ». Un test qui survit à un changement d'intention ne mesurait pas
+l'intention.
+
+### 65.3 Le réglage devient structurel
+
+`decalage` en pixels disparaît. À la place, un **point de passage en coordonnées
+de grille** : `passage_bande` × `passage_colonne`. Un nombre de pixels ne veut
+plus rien dire dès qu'une carte grandit d'une ligne ; une bande, si. Le reste du
+chemin est **recalculé** autour du point, pas plaqué dessus.
+
+Le § 64.3 défendait le décalage contre les coordonnées ABSOLUES — et il avait
+raison contre celles-là. Le repère de grille est la troisième voie : il est
+relatif à une structure qui bouge avec le diagramme.
+
+J'ai comblé le trou du harnais au passage : le geste manuel n'était pas couvert.
+Un passage désigné sur la bande basse fait redescendre la flèche sous toutes les
+cartes — et rien ne coupe. Cinq bandes pour quatre rôles, la dernière court sous
+le diagramme : l'index se dérive des données, il n'est pas écrit en dur.
+
+### 65.4 Le défaut que seule l'écriture révèle
+
+En prouvant le retour au tracé calculé sur le client de test, `maj_fleche` a levé
+`42703: record "new" has no field "version"`.
+
+Le déclencheur `fleches_maj_le` — BEFORE UPDATE sur `fleches` — appelait
+`toucher_version()`, qui écrit `new.version`. **La table `fleches` n'a pas de
+colonne `version`.** Un simple `update fleches set nature = 'auto'` échouait
+donc, sans rapport avec le lot C ni avec les nouvelles colonnes.
+
+Étaient morts depuis leur livraison : changer la nature d'une flèche dessinée
+(lot B), rendre une flèche au calcul, déplacer un passage posé, et l'annulation
+de ces trois gestes. Vivants : créer, supprimer, masquer — INSERT et DELETE.
+
+Le nom du déclencheur disait l'intention. Il était branché sur la mauvaise
+fonction. Correction : `horodater_maj_le()`, qui n'écrit que `maj_le`.
+`toucher_version()` reste intacte — `clients` et `processus` s'en servent, et
+elles portent bien la colonne.
+
+**Leçon** : un déclencheur qui ne se déclenche que sur UPDATE ne se signale
+jamais tant que le produit ne fait qu'insérer et supprimer. La preuve par
+l'écriture, une requête par étape, est ce qui l'a sorti — et rien d'autre ne
+l'aurait fait, puisque zéro flèche dessinée existait en base.
+
+Prouvé après correction, sur `test-06-08`, une requête par étape : création avec
+passage ; `maj_fleche` nature → `auto`, `maj_le` avance ; `maj_fleche` passage →
+`null, null`, `maj_le` avance encore ; **version périmée → `null`**, donc la
+garde optimiste mord toujours ; suppression. Aucune autre table ne porte le
+branchement fautif.
+
+### 65.5 Ce qui n'est pas prouvé
+
+Le geste à l'écran — l'épingle, le choix d'un nœud — n'est vérifié que par le
+balisage et la géométrie. Personne n'a encore cliqué dessus. Et la flèche que
+l'utilisateur avait tirée à la main sur Sekurit n'est plus en base : il faudra
+la retirer pour voir le nouveau routage en vrai.
