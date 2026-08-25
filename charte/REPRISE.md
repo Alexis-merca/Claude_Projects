@@ -133,6 +133,29 @@ introduite par soi-même, l'écrire comme telle.
 Chacun a coûté cher à établir. Ils sont écrits dans le code, à l'endroit où on
 risque de les défaire.
 
+### L'APPLICATION EST EN PRODUCTION — 25/08/2026
+
+Des utilisateurs qu'on ne connaît pas s'en servent. **Aucune donnée n'est
+modifiée, hors deux exceptions nommées par l'utilisateur** :
+
+- `test-06-08`, le site jetable ;
+- `sekurit-float-france`, autorisé explicitement.
+
+Tout le reste est en lecture seule : pas d'écriture, pas de suppression, et
+**pas de création non plus** — un client d'essai apparaît dans la liste de tout
+le monde le temps qu'il existe.
+
+**LA CONTRAINTE DOIT PARTIR DANS CHAQUE ENVOI À LOVABLE.** C'est l'agent qui
+écrit le plus : les briefs lui demandent régulièrement des démonstrations —
+concurrence sur une fonction de fusion, import d'un fichier, aller-retour du
+retour/avant — et **c'est lui qui choisit son terrain**. La contrainte ne
+protège rien si elle ne s'applique qu'à la session.
+
+Ce que ça coûte, et qu'il faut assumer : certaines preuves ne se font plus sur
+la donnée qui les rendrait convaincantes. On les fait sur `test-06-08`, on dit
+que c'est un substitut, et on ne présente pas un essai en bac à sable comme une
+vérification en production.
+
 **`src/flux/` : Lovable est la source, le dépôt est un miroir.** Décision du
 18/08/2026. Jusque-là le moteur du diagramme était maintenu dans ce dépôt et
 `src/flux/` en était un import intouchable ; c'est **inversé**. On corrige
