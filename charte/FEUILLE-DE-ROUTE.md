@@ -72,6 +72,38 @@ ajouter. L'arbitrage se joue donc au niveau du use case, où il tient en
 quelques décisions, et non de l'étape, où il en faudrait des dizaines.
 *Non engagé — à concevoir avant de coder.*
 
+### 1bis. Quatre retours d'usage sur le diagramme — 25/08/2026
+
+Relevés par l'utilisateur en travaillant, à traiter plus tard. Chacun porte ce
+qui est déjà su, pour éviter de le redécouvrir.
+
+**1bis-a. Regrouper les étapes par macro-étape**, avec un fond de couleur ou un
+libellé. Exemple donné pour le planning : *gestion de la charge*, *des
+titulaires*, *des remplacements*, *des intérimaires*, *des temps*, *des
+absences*.
+
+> **Ne pas réutiliser `etapes.phase`.** Elle porte déjà l'échelle de TEMPS
+> (« Avant J1 », « J1 »), et la frise se calcule dessus. Le regroupement demandé
+> est **thématique**, donc une seconde dimension : deux étapes du même thème
+> peuvent être à deux moments, et l'inverse. Un champ de plus, et un rendu qui
+> ne se dispute pas la ligne 1 de la grille avec la frise — le fond de cellule
+> est probablement la bonne piste.
+
+**1bis-b. Bug : impossible de mettre une étape entre deux rôles.** Le mécanisme
+**existe** — `etapes.role2`, les cellules `flux__frontiere` avec
+`data-frontiere`, et le décalage à cheval de `placerCartesACheval`. C'est donc
+un défaut, pas une fonctionnalité manquante. **À reproduire avant de corriger** :
+la bande de dépôt n'est émise que si `edition && cmd('deplacement') && i < R-1`.
+
+**1bis-c. Réordonner les rôles au glisser-déposer.** Aujourd'hui deux boutons
+`monter-role` / `descendre-role`. Confort, pas capacité nouvelle.
+
+**1bis-d. Le sélecteur d'outils est un `<select>` natif.** `vueChoixSupport`
+émet un `<select>` : d'où le surlignage bleu système de la capture, hors charte.
+Le styler vraiment demande de le remplacer par un vrai menu (le catalogue shadcn
+en a un) — un `<select>` natif ne se met pas à la charte, c'est le système qui
+dessine sa liste.
+
 ### 2. Vérification — ~~le trou le plus large~~, refermé le 21/08
 
 > **2a est clos.** La passe navigateur a eu lieu le 21/08 : « tout fonctionne

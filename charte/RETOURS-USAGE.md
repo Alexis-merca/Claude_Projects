@@ -516,3 +516,22 @@ qui masquerait le défaut sans le supprimer.
 **Statut** : brief écrit, **non envoyé**. Trois appels à Lovable refusés en
 « autorisation requise », y compris après validation de l'utilisateur. Le brief
 est prêt à être collé tel quel.
+
+## 2026-08-25 — quatre retours sur le diagramme
+
+Relevés en travaillant, après la livraison des colonnes partagées et des flèches
+manuelles. Détail et notes techniques : `FEUILLE-DE-ROUTE.md` § 1bis.
+
+1. **Regrouper les étapes par macro-étape**, fond de couleur ou libellé.
+   Exemple pour le planning : gestion de la charge, des titulaires, des
+   remplacements, des intérimaires, des temps, des absences.
+2. **Bug** : pas possible de mettre une étape entre deux rôles.
+3. **Réordonner les rôles au glisser-déposer.**
+4. **Le sélecteur d'outils sort de la charte** — surlignage bleu système,
+   capture à l'appui.
+
+*Ce qui se lit dans cette liste : trois des quatre portent sur le diagramme en
+mode édition, et deux sur des gestes qui existent déjà mais mal (le rôle entre
+deux couloirs, l'ordre des rôles). L'écran est utilisé pour de bon, et ce sont
+les frottements de la saisie qui remontent maintenant — pas les fonctionnalités
+manquantes.*
