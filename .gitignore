@@ -1,1 +1,6 @@
 node_modules/
+
+# Réglages de permissions PROPRES À UNE MACHINE, jamais partagés : ce fichier
+# pré-autorise des outils (dont `mcp__Lovable__send_message`, qui fait écrire du
+# code par un agent). Le versionner l'imposerait à quiconque clone le dépôt.
+.claude/settings.local.json
