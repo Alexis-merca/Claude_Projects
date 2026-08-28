@@ -54,6 +54,8 @@ export interface MotsFlux {
   roleAjouter?: string;
   poigneeTitre?: string;
   etapePlaceholder?: string;
+  texteGras?: string;
+  texteItalique?: string;
   etapeGauche?: string;
   etapeDroite?: string;
   etapeInserer?: string;
@@ -223,6 +225,9 @@ export function ecartLisible(
   mots?: MotsFlux,
 ): string;
 export function echapper(v: unknown): string;
+/** Texte échappé PUIS converti : `**gras**` → `<strong>`, `_italique_` → `<em>`. */
+export function texteRiche(v: unknown): string;
+
 
 /** Dictionnaire français par défaut. */
 export const MOTS_FR: MotsFluxComplet;

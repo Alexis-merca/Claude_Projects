@@ -71,6 +71,41 @@ function premierEcart(a, b) {
   return `position ${i}\n          original : ${fen(a)}\n          moteur   : ${fen(b)}`;
 }
 
+/* --- LA SEULE DIVERGENCE ADMISE AVEC LE MONO-FICHIER ----------------------
+   Le passage au WYSIWYG a remplacé le `<textarea>` de saisie d'étape par un
+   `<div contenteditable>` : un `<textarea>` ne sait pas afficher deux graisses.
+   C'est un écart VOULU, et c'est le seul.
+
+   On ne retire donc pas l'assertion — on rejoue la substitution sur la sortie
+   du mono-fichier, et on continue de comparer au caractère près. Tout autre
+   écart, dans le même balisage ou ailleurs, repasse la suite au rouge.
+
+   Le compteur n'est pas décoratif : si la reprise cessait de correspondre, la
+   comparaison redeviendrait vraie par accident au lieu d'être vraie par
+   preuve. Un test en fin de suite exige qu'elle ait porté. */
+let substitutions = 0;
+const ESCAPER = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function moderniserSaisie(html) {
+  return html.replace(
+    /<textarea class="carte__texte" rows="1" data-champ="([^"]+)"\n {26}placeholder="([^"]*)">([\s\S]*?)<\/textarea>/g,
+    (_, champ, placeholder, contenu) => {
+      substitutions++;
+      return '<div class="carte__texte" contenteditable="true" role="textbox" aria-multiline="true"\n'
+        + ' '.repeat(21) + `data-champ="${champ}"\n`
+        + ' '.repeat(21) + `data-placeholder="${ESCAPER(placeholder)}">${contenu}</div>`;
+    },
+  );
+}
+
+/* Posée sur `O.vueFlux` lui-même, et pas sur chaque comparaison : un nouveau
+   cas ajouté plus bas hériterait sinon de l'ancien balisage sans qu'on le
+   remarque, et il partirait au rouge pour une raison qui n'est pas la sienne. */
+const vueFluxOriginale = O.vueFlux;
+O.vueFlux = (...a) => moderniserSaisie(vueFluxOriginale(...a));
+
 const base = O.trierBase(O.clone(O.BASE_SOURCE));
 const client = base[0];
 O.etat.base = base;
@@ -347,5 +382,14 @@ ok('couloirs dédoublonnés en gardant l\'index réel',
 }
 
 
-console.log(ko ? `\n${ko} ÉCHEC(S)\n` : '\nMOTEUR CONFORME À L\'ORIGINAL — balisage identique au caractère près\n');
+/* ==========================================================================
+   La reprise du champ de saisie a-t-elle seulement porté ?
+   ========================================================================== */
+ok('la reprise du champ de saisie a porté sur le mono-fichier', substitutions > 0,
+  'aucun `<textarea class="carte__texte">` reconnu dans la sortie du mono-fichier : '
+  + 'le balisage d\'origine a changé, et les comparaisons du mode édition sont '
+  + 'redevenues vraies par accident');
+
+console.log(ko ? `\n${ko} ÉCHEC(S)\n` : '\nMOTEUR CONFORME À L\'ORIGINAL — balisage identique au caractère près\n'
+  + `(à la seule reprise du champ de saisie en WYSIWYG, ${substitutions} fois)\n`);
 process.exit(ko ? 1 : 0);

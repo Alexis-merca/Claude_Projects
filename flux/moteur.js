@@ -201,6 +201,9 @@ export const MOTS_FR = {
   poigneeTitre:
     'Glisser sur un autre couloir, ou sur la frontière entre deux couloirs pour dire que les deux sont concernés',
   etapePlaceholder: 'Action relevée…',
+  /* Barre flottante de mise en forme : les marqueurs restent dans le texte. */
+  texteGras: 'Gras (Ctrl+B)',
+  texteItalique: 'Italique (Ctrl+I)',
   etapeGauche: 'Décaler à gauche',
   etapeDroite: 'Décaler à droite',
   etapeInserer: 'Insérer une étape après',
@@ -270,6 +273,8 @@ export const MOTS_EN = {
   poigneeTitre:
     'Drag onto another lane, or onto the boundary between two lanes to show that both are involved',
   etapePlaceholder: 'Observed action…',
+  texteGras: 'Bold (Ctrl+B)',
+  texteItalique: 'Italic (Ctrl+I)',
   etapeGauche: 'Shift left',
   etapeDroite: 'Shift right',
   etapeInserer: 'Insert a step after',
@@ -320,6 +325,37 @@ export function libelleLien(nature, m) {
 export const echapper = (v) => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+/** Texte d'étape avec ses marqueurs de mise en forme rendus.
+
+    LE STOCKAGE RESTE DU TEXTE BRUT : `**gras**` et `_italique_` sont des
+    marqueurs DANS la chaîne, jamais du HTML en base. Trois raisons, et elles
+    tiennent toutes les trois :
+      1. `echapper` reste la garde du champ saisi à la main ;
+      2. la clef de traduction est la chaîne elle-même — elle doit rester une
+         phrase lisible, comparable d'un site à l'autre ;
+      3. la saisie reste un `<textarea>`, dont `scrollHeight` fixe la hauteur
+         de la carte, que le tracé des flèches lit.
+
+    L'ORDRE EST NON NÉGOCIABLE : on ÉCHAPPE D'ABORD, on convertit ENSUITE.
+    L'inverse rouvrirait exactement l'injection que `echapper` ferme. La sortie
+    ne contient que `<strong>` et `<em>`, rien d'autre.
+
+    STRICTEMENT OPTIONNEL : sans marqueur, la sortie est celle d'`echapper`, au
+    caractère près — c'est ce que compare la suite de conformité, et c'est ce
+    qui garantit que les étapes déjà en base ne bougent pas d'un pixel.
+
+    Le souligné n'ouvre l'italique qu'en bordure de mot : `nom_de_champ` reste
+    du texte, sinon un identifiant saisi en relevé partirait en italique. */
+export function texteRiche(v) {
+  const h = echapper(v);
+  const gras = h.indexOf('**') < 0 ? h : h.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  return gras.indexOf('_') < 0
+    ? gras
+    : gras.replace(/(^|[^\p{L}\p{N}_])_([^_\n]+)_(?![\p{L}\p{N}_])/gu, '$1<em>$2</em>');
+}
+
+
 
 /** Découpe la chaîne « Excel, SharePoint » en étiquettes affichables. */
 export function listeSupports(brut) {
@@ -842,7 +878,7 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
             return `
               <div class="flux__carte${partage}" data-etape="${et.ordre}"${marqueCheval}>
                 ${bandeauSupports(supports, options.outils)}
-                <span class="flux__carte-texte">${echapper(et.texte)}</span>
+                <span class="flux__carte-texte">${texteRiche(et.texte)}</span>
               </div>`;
           }
           return `
@@ -854,8 +890,9 @@ export function baliserFlux({ processus: p, etapes, options = {} }) {
                         title="${t.poigneeTitre}">⠿</span>` : ''}${cmdOptionnelle('fleches') ? `
                   <span class="carte__tirage" data-tirage="${j}" title="${t.flecheTirerTitre}">→</span>` : ''}
                 </div>
-                <textarea class="carte__texte" rows="1" data-champ="etape.${j}.texte"
-                          placeholder="${t.etapePlaceholder}">${echapper(et.texte || '')}</textarea>
+                <div class="carte__texte" contenteditable="true" role="textbox" aria-multiline="true"
+                     data-champ="etape.${j}.texte"
+                     data-placeholder="${echapper(t.etapePlaceholder)}">${texteRiche(et.texte || '')}</div>
                 ${cmd('supports') ? vueChoixSupport(j, supports, options.outils, t) : ''}
                 <div class="carte__outils">
                   ${cmd('etapes') ? `<button type="button" class="bouton--puce" data-action="gauche-etape" data-i="${j}" ${j === 0 ? 'disabled' : ''} title="${t.etapeGauche}">←</button>
@@ -961,10 +998,20 @@ export const HAUTEUR_MAX_TEXTE = 160;
 
 /** Met chaque zone de saisie à la hauteur de son contenu, dans la limite.
     Appelée après rendu ET à chaque frappe par l'hôte : sinon on écrit à
-    l'aveugle dans un `rows="1"`. */
+    l'aveugle dans un `rows="1"`.
+
+    DEUX CAS DEPUIS LE WYSIWYG. La saisie d'étape est un `contenteditable` : il
+    grandit tout seul, on ne lui pose donc qu'un PLAFOND, sinon une hauteur
+    figée couperait la ligne qu'on est en train d'écrire. Les autres zones
+    (`<textarea>`) gardent la mesure par `scrollHeight`. */
 export function ajusterZonesDeTexte(zone) {
   if (!zone) return;
   zone.querySelectorAll('.carte__texte').forEach((z) => {
+    if (z.isContentEditable || z.getAttribute('contenteditable') === 'true') {
+      z.style.maxHeight = HAUTEUR_MAX_TEXTE + 'px';
+      z.style.overflowY = 'auto';
+      return;
+    }
     z.style.height = 'auto';
     const voulue = z.scrollHeight;
     z.style.height = Math.min(voulue, HAUTEUR_MAX_TEXTE) + 'px';

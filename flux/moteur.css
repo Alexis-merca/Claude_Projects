@@ -380,16 +380,30 @@
 
 
 
+/* La saisie d'étape est un `contenteditable` depuis le passage en WYSIWYG : un
+   `<textarea>` ne sait pas afficher deux graisses. Le stockage, lui, reste du
+   texte brut à marqueurs — la conversion se fait aux deux bords. */
 .carte__texte {
   width: 100%; border: none; background: transparent;
   padding: 2px 4px; outline: none; overflow: hidden;
   border-radius: var(--r-chip);
   font: 400 15px/1.4 var(--ui); color: var(--encre);
   resize: none;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  min-height: 1.4em;
 }
 .carte__texte:hover { background: var(--page); }
 .carte__texte:focus { background: var(--page); box-shadow: inset 0 0 0 1px var(--violet-200); }
 .carte__texte::placeholder { color: var(--bord); }
+/* Un `contenteditable` n'a pas de `placeholder` : on le rend nous-mêmes, et
+   seulement quand le champ est vraiment vide. `:empty` couvre le champ jamais
+   rempli ; `:has(> br:only-child)` couvre le cas Chrome, où effacer tout le texte
+   au clavier laisse un `<br>` derrière lui — sans ce second sélecteur, le repère
+   disparaît dès qu'un consultant vide une étape pour la réécrire. */
+.carte__texte[contenteditable]:empty::before,
+.carte__texte[contenteditable]:has(> br:only-child)::before {
+  content: attr(data-placeholder); color: var(--bord); pointer-events: none;
+}
 .carte__support-choix {
   align-self: flex-start;
   border: none; background: transparent; outline: none; cursor: pointer;
