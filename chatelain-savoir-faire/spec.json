@@ -1,0 +1,812 @@
+{
+ "font": "Inter",
+ "cover": {
+  "title": "Savoir-faire Chatelain",
+  "subtitle": "La Chaux-de-Fonds",
+  "date": "27/10/2026"
+ },
+ "slides": [
+  {
+   "type": "cards",
+   "title": "En synthèse",
+   "cols": 2,
+   "card_size": 14.5,
+   "card_gap": 14,
+   "card_title_size": 17,
+   "cards": [
+    {
+     "title": "Notre compréhension de votre savoir-faire",
+     "style": "accent",
+     "icon": "merca",
+     "items": [
+      {
+       "b": "Un savoir-faire d'excellence transmis de personne à personne",
+       "t": " : compagnonnage, tuteurs experts, modes opératoires."
+      },
+      {
+       "b": "Rien n'est formalisé ni partagé",
+       "t": " : pas de définition commune de la compétence, niveaux non décrits, grilles Excel locales."
+      },
+      {
+       "b": "Quatre ateliers, quatre logiques de découpage",
+       "t": " (technique, machine, matière, flux) : aucune vue transverse du site."
+      },
+      {
+       "b": "Un enjeu de transmission et d'agilité",
+       "t": " plus que de conformité : départs attendus d'ici 5 à 10 ans, ateliers déséquilibrés."
+      }
+     ]
+    },
+    {
+     "title": "Pourquoi la démarche n'a pas tenu",
+     "icon": "eye",
+     "items": [
+      {
+       "b": "On a digitalisé avant de standardiser",
+       "t": " : l'outil devait piloter un processus qui n'existait pas encore."
+      },
+      {
+       "b": "Pas de valeur visible pour le terrain",
+       "t": " : référentiel rempli en novembre 2025, quasiment plus d'activité après février 2026."
+      },
+      {
+       "b": "Ni temps, ni priorité, ni gouvernance production",
+       "t": " : un portage RH, des coordinateurs opérateurs 70 % de leur temps."
+      },
+      {
+       "b": "Un pilote trop court, mesuré au volume",
+       "t": " : 839 compétences attribuées, mais ni état zéro ni bénéfice démontré."
+      }
+     ]
+    }
+   ],
+   "message": "Le besoin était d'abord méthodologique ; nous avons déployé un outil comme sur un site déjà standardisé.",
+   "notes": "Sources : rapport d'audit du 26/11/2025, enregistrements Claap (nov. 2024 à oct. 2026), données de la plateforme La-Chaux-De-Fonds (Metabase, extraction du 27/10/2026)."
+  },
+  {
+   "type": "divider",
+   "num": "01",
+   "title": "Notre compréhension de votre savoir-faire",
+   "subtitle": "Comment le savoir-faire est géré et transmis aujourd'hui sur le site"
+  },
+  {
+   "type": "stats",
+   "title": "Un savoir-faire d'excellence, peu formalisé",
+   "phase": "1 · Compréhension",
+   "stats": [
+    {
+     "value": "370",
+     "label": "collaborateurs dans le périmètre audité : 220 en production, 150 en support"
+    },
+    {
+     "value": "~20",
+     "label": "équipes de production, encadrées par ~70 coordinateurs et responsables"
+    },
+    {
+     "value": "~70",
+     "label": "métiers au cœur de l'usine, issus de 231 fonctions historiques"
+    },
+    {
+     "value": "5–10 ans",
+     "label": "horizon des départs de détenteurs de savoir-faire critiques"
+    }
+   ],
+   "cards": [
+    {
+     "num": 1,
+     "title": "Préserver les savoir-faire critiques",
+     "items": [
+      "Le savoir est « dans la tête » des coordinateurs et des experts",
+      "Deux populations : ~3 ans et ~40 ans d'ancienneté",
+      "Des savoir-faire déjà fragilisés en horlogerie"
+     ]
+    },
+    {
+     "num": 2,
+     "title": "Structurer la formation au poste",
+     "items": [
+      "Pas de parcours formalisé : le mode opératoire tient lieu de formation",
+      "Tuteurs choisis pour leur expertise, pas pour leur pédagogie",
+      "Aucun suivi du temps ni de la qualité des formations"
+     ]
+    },
+    {
+     "num": 3,
+     "title": "Gagner en agilité entre ateliers",
+     "items": [
+      "Ateliers chargés de façon inégale (trop de polisseurs, pas assez d'usineurs)",
+      "Prêts et transferts arbitrés au cas par cas",
+      "Collaborateurs sans visibilité sur leurs évolutions possibles"
+     ]
+    }
+   ],
+   "card_size": 13,
+   "quote": {
+    "text": "Je connais plus ou moins les savoir-faire, mais je ne sais pas spécifiquement où ils sont. Quand il faut faire un transfert, je ne sais pas. Quand il faut faire une succession, je ne sais pas.",
+    "who": "RH, janv. 2025"
+   },
+   "notes": "Effectifs : rapport d'audit (220 production, 150 maintenance/labo/logistique, ~20 équipes managées par 70 personnes). 231 fonctions et ~70 métiers : échanges RH nov. 2024 et fév. 2025. Démographie et horizon 5-10 ans : réunions de sept./oct. 2026. Peu de contraintes réglementaires hors RJC : direction des opérations, oct. 2026.",
+   "card_gap": 9,
+   "card_title_size": 15
+  },
+  {
+   "title": "Comment le savoir-faire se transmet aujourd'hui",
+   "phase": "1 · Compréhension",
+   "lanes": [
+    "Direction / Resp. UAP",
+    "Coordinateur",
+    "Tuteur (opérateur expert)",
+    "RH / HSE"
+   ],
+   "nodes": [
+    {
+     "id": "a",
+     "lane": 3,
+     "col": 0,
+     "text": "Accueil d'une journée : RH, sécurité, IT",
+     "icon": "ppt"
+    },
+    {
+     "id": "b",
+     "lane": 1,
+     "col": 1,
+     "text": "Place le nouvel arrivant avec une personne jugée compétente",
+     "icon": "oral"
+    },
+    {
+     "id": "c",
+     "lane": 2,
+     "col": 2,
+     "text": "Transmet le geste et les pratiques informelles",
+     "icon": "oral"
+    },
+    {
+     "id": "d",
+     "lane": 2,
+     "col": 3,
+     "text": "Le mode opératoire (GED) tient lieu de support",
+     "icon": "paper"
+    },
+    {
+     "id": "e",
+     "lane": 1,
+     "col": 3,
+     "text": "Juge l'autonomie au ressenti : niveaux non décrits",
+     "icon": "eye",
+     "status": "pain"
+    },
+    {
+     "id": "f",
+     "lane": 1,
+     "col": 4,
+     "text": "Met à jour, ou non, sa grille Excel locale",
+     "icon": "excel",
+     "status": "pain"
+    },
+    {
+     "id": "g",
+     "lane": 0,
+     "col": 5,
+     "text": "Arbitre prêts et mobilités sans vue transverse",
+     "icon": "eye",
+     "status": "pain"
+    },
+    {
+     "id": "h",
+     "lane": 3,
+     "col": 4,
+     "text": "Suit habilitations et formations externes sur Excel",
+     "icon": "excel"
+    },
+    {
+     "id": "i",
+     "lane": 3,
+     "col": 5,
+     "text": "Interrogée sur « qui est formé » sans avoir l'information",
+     "status": "pain"
+    }
+   ],
+   "edges": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "b",
+     "c"
+    ],
+    [
+     "c",
+     "d"
+    ],
+    [
+     "d",
+     "e"
+    ],
+    [
+     "e",
+     "f"
+    ],
+    [
+     "f",
+     "g"
+    ],
+    [
+     "h",
+     "i"
+    ]
+   ],
+   "message": "Le savoir-faire se transmet bien, mais de personne à personne : rien n'est partageable au-delà de l'atelier.",
+   "notes": "Sources : rapport d'audit (process de gestion du savoir-faire et de formation au poste), atelier RACI du 29/10/2025, hebdos des 04/12 et 18/12/2025, 09/01/2026."
+  },
+  {
+   "type": "table",
+   "title": "Qui porte le savoir-faire aujourd'hui",
+   "phase": "1 · Compréhension",
+   "widths": [
+    2.5,
+    4.0,
+    5.8
+   ],
+   "font_size": 12.5,
+   "rows": [
+    [
+     "Acteur",
+     "Son rôle",
+     "Ce que nous avons observé"
+    ],
+    [
+     "Direction de production",
+     "Fixe les priorités, sponsor du projet",
+     "Pas d'objectif de polyvalence formalisé ; la production passe avant le projet"
+    ],
+    [
+     "Responsables d'UAP",
+     "Répartissent les ressources entre ateliers",
+     "Prêts et transferts arbitrés au cas par cas ; peu associés à la définition des objectifs"
+    ],
+    [
+     "Coordinateurs (~70)",
+     "Affectent, forment et évaluent au quotidien",
+     "Opérateurs ~70 % de leur temps, évalués sur la présence au poste ; cartographie « en mémoire »"
+    ],
+    [
+     "Tuteurs / experts",
+     "Transmettent le geste par compagnonnage",
+     "Choisis pour leur expertise ; pas de support ni de validation formalisée"
+    ],
+    [
+     "RH",
+     "Accueil, fonctions, entretiens annuels, revues salariales",
+     "Trois référentiels (interne, groupe dans Workday, branche) ; sollicitée pour savoir « qui est formé »"
+    ],
+    [
+     "HSE",
+     "Identifie les besoins d'habilitation",
+     "Pas de matrice ; suivi Excel ; écart RJC sur la preuve de formation sécurité"
+    ]
+   ],
+   "row_heights": [
+    0.5,
+    0.78,
+    0.78,
+    0.78,
+    0.78,
+    0.78,
+    0.78
+   ],
+   "message": "Le savoir-faire repose sur ceux qui ont le moins de temps pour le formaliser : les coordinateurs.",
+   "notes": "Sources : rapport d'audit, réunions RH nov. 2024 - fév. 2025, atelier RACI du 29/10/2025, échange du 13/02/2026, réunion du 06/10/2026."
+  },
+  {
+   "type": "cards",
+   "title": "Quatre ateliers, quatre logiques de découpage",
+   "phase": "1 · Compréhension",
+   "cols": 4,
+   "intro": "Référentiel construit par chaque coordinateur pilote sur la plateforme (135 compétences au total) :",
+   "card_size": 12.5,
+   "card_gap": 10,
+   "cards": [
+    {
+     "title": "Montage / joaillerie",
+     "tag": "UAP A-B · par technique et par produit",
+     "items": [
+      "17 compétences « TM » : brasage, serti potence, soudage…",
+      "Postes par collection : Coco, Extrait N°5, ULTRA, Souplesse",
+      "Sous-postes par pièce : bague, pendentif, bracelet"
+     ]
+    },
+    {
+     "title": "Usinage / rectification",
+     "tag": "UAP C · par machine",
+     "items": [
+      "10 compétences « M » : une par machine (Bumotec, Crevoisier, Fanuc…)",
+      "8 compétences « P » : lecture de plan, code ISO, réglage",
+      "Poste opérateur régleur décliné en 10 sous-postes machine"
+     ]
+    },
+    {
+     "title": "Terminaison / polissage",
+     "tag": "UAP D · par technique et par matière",
+     "items": [
+      "14 compétences « TP » : avivage, satinage, lapidage…",
+      "6 compétences « Mé » : acier, or, platine, titane…",
+      "Postes polisseur et polisseur référent, grande série et CRF"
+     ]
+    },
+    {
+     "title": "Logistique",
+     "tag": "Stock et quai · par zone et par flux",
+     "items": [
+      "44 compétences « L », le tiers du référentiel",
+      "4 stocks et le quai × réception, picking, analyse, divers",
+      "Un titre unique « logisticien » depuis 2024"
+     ]
+    }
+   ],
+   "message": "Une même compétence ne porte pas le même nom d'un atelier à l'autre : aucune vue transverse n'est possible.",
+   "notes": "Source : plateforme Mercateam La-Chaux-De-Fonds (compétences, postes et sous-postes actifs). Logiques de découpage confirmées en réunions du 27/01/2026 et du 06/10/2026.",
+   "card_title_size": 15
+  },
+  {
+   "type": "stats",
+   "title": "Ce que montre le référentiel construit pendant le pilote",
+   "phase": "1 · Compréhension",
+   "value_size": 28,
+   "stats": [
+    {
+     "value": "135",
+     "label": "compétences, dont 116 créées en novembre 2025"
+    },
+    {
+     "value": "20 · 48",
+     "label": "postes et sous-postes de travail"
+    },
+    {
+     "value": "839",
+     "label": "compétences attribuées à 61 collaborateurs"
+    },
+    {
+     "value": "83 %",
+     "label": "des niveaux saisis à « débutant / formé »"
+    },
+    {
+     "value": "11 / 20",
+     "label": "habilitations sans aucun titulaire"
+    }
+   ],
+   "chart": {
+    "kind": "bar",
+    "reverse": true,
+    "title": "Nombre de compétences par famille",
+    "categories": [
+     "L · Logistique",
+     "RH · Ressources humaines",
+     "TM · Techniques de montage",
+     "TP · Techniques de polissage",
+     "M · Machines",
+     "P · Poste",
+     "TC · Techniques de contrôle",
+     "Mé · Métaux",
+     "Autres"
+    ],
+    "series": [
+     {
+      "name": "Compétences",
+      "values": [
+       44,
+       22,
+       17,
+       14,
+       10,
+       8,
+       7,
+       6,
+       7
+      ]
+     }
+    ],
+    "gap": 45
+   },
+   "message": "La matrice dit qui sait faire, pas qui maîtrise : niveaux peu utilisés et non décrits.",
+   "notes": "Source : Metabase, base de production, site La-Chaux-De-Fonds, extraction du 27/10/2026. Niveaux : 696 au niveau 1, 74 au niveau 2, 69 au niveau 3. 74 des 89 habilitations attribuées n'ont pas de date de fin. « Autres » : 4 compétences Mercateam (administration de l'outil), 2 transverses, 1 logistique."
+  },
+  {
+   "type": "table",
+   "title": "Une maturité de 2/5 sur les quatre axes",
+   "phase": "Audit · nov. 2025",
+   "phase_style": "light",
+   "widths": [
+    2.3,
+    1.2,
+    4.4,
+    4.4
+   ],
+   "font_size": 12.5,
+   "highlight_col": 1,
+   "rows": [
+    [
+     "Axe",
+     "Maturité",
+     "Forces",
+     "Faiblesses"
+    ],
+    [
+     "Sécurité",
+     "2/5",
+     "Conscience des lacunes relevées par l'audit RJC ; volonté partagée de fiabiliser",
+     "Habilitations dispersées sur plusieurs supports, sans matrice ; preuves difficiles à retrouver"
+    ],
+    [
+     "Qualité",
+     "2/5",
+     "Notion de niveaux partagée par l'encadrement ; volonté de capitaliser",
+     "Pas de parcours ni de supports ; le plus expert n'est pas forcément le meilleur formateur"
+    ],
+    [
+     "Productivité",
+     "2/5",
+     "AIC et MES en cours ; Paretos des causes de non-performance",
+     "OF affectés chaque matin sans vue des compétences ; polyvalence non pilotée"
+    ],
+    [
+     "Autonomie des collaborateurs",
+     "2/5",
+     "Tuteurs existants ; forte fierté de la marque et des produits",
+     "Peu de formalisation du « comment faire » ; aucune visibilité sur son parcours"
+    ]
+   ],
+   "row_heights": [
+    0.5,
+    1.15,
+    1.15,
+    1.15,
+    1.15
+   ],
+   "message": "Des pratiques solides mais informelles : le savoir-faire existe, il n'est ni décrit ni partagé.",
+   "notes": "Source : synthèse de maturité du rapport d'audit du 26/11/2025."
+  },
+  {
+   "type": "divider",
+   "num": "02",
+   "title": "Pourquoi ça n'a pas tenu sur le long terme",
+   "subtitle": "Notre lecture du pilote et de ce qui a suivi"
+  },
+  {
+   "type": "timeline",
+   "title": "Deux ans de projet, dix semaines de pilote",
+   "phase": "2 · Analyse",
+   "events": [
+    {
+     "date": "Nov. 2024",
+     "text": "Premiers échanges : localiser les savoir-faire critiques"
+    },
+    {
+     "date": "Fév. 2025",
+     "text": "Présentation au CODIR : un des projets stratégiques du site"
+    },
+    {
+     "date": "Mai-juin 2025",
+     "text": "Challenge du groupe (« pas un 56e logiciel ») : ~8 mois de décalage",
+     "status": "pain"
+    },
+    {
+     "date": "Sept. 2025",
+     "text": "Périmètre réduit à 4 équipes pilotes, ~60 personnes",
+     "status": "pain"
+    },
+    {
+     "date": "Nov. 2025",
+     "text": "Audit sur site et construction du référentiel"
+    },
+    {
+     "date": "Déc. 2025",
+     "text": "Séances annulées, plus rien de créé après la visite",
+     "status": "pain"
+    },
+    {
+     "date": "Janv. 2026",
+     "text": "Bilan du pilote : la formation passe en priorité 2",
+     "status": "pain"
+    },
+    {
+     "date": "Fév. 2026",
+     "text": "Le CODIR fait challenger le référentiel par un tiers ; déploiement en pause",
+     "status": "pain"
+    },
+    {
+     "date": "Oct. 2026",
+     "text": "Porteur du projet parti, nouvelle DRH attendue : projet gelé jusqu'en mars",
+     "status": "key"
+    }
+   ],
+   "message": "Le projet avait perdu son élan avant même le pilote : 8 mois de décalage, un périmètre divisé par sept.",
+   "notes": "Périmètre : ~450 personnes envisagées au départ, puis 300, 100, ~30 au cadrage, 61 collaborateurs effectivement chargés sur la plateforme. Sources : Claap nov. 2024 - oct. 2026."
+  },
+  {
+   "type": "chart",
+   "title": "Le référentiel a été rempli, pas utilisé",
+   "phase": "2 · Analyse",
+   "chart": {
+    "kind": "col",
+    "w": 8.3,
+    "title": "Activité sur la plateforme par mois",
+    "categories": [
+     "Nov. 25",
+     "Déc.",
+     "Janv. 26",
+     "Fév.",
+     "Mars",
+     "Avr.",
+     "Mai",
+     "Juin",
+     "Juil.",
+     "Août",
+     "Sept.",
+     "Oct."
+    ],
+    "series": [
+     {
+      "name": "Compétences attribuées ou modifiées",
+      "values": [
+       653,
+       377,
+       194,
+       55,
+       8,
+       0,
+       0,
+       0,
+       3,
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "name": "Parcours de formation lancés",
+      "values": [
+       90,
+       11,
+       40,
+       2,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    ],
+    "colors": [
+     "6733FC",
+     "F59E0B"
+    ],
+    "gap": 50
+   },
+   "side": [
+    {
+     "value": "11 / 125",
+     "label": "parcours de formation validés, aucun depuis décembre 2025",
+     "color": "DC2626",
+     "h": 1.1
+    },
+    {
+     "value": "1 h / sem.",
+     "label": "réellement tenue avec les coordinateurs, au lieu de 2 à 3 h prévues",
+     "h": 1.1
+    },
+    {
+     "value": "0",
+     "label": "évaluation dans la routine prévue (une personne toutes les deux semaines)",
+     "h": 1.1
+    },
+    {
+     "value": "0",
+     "label": "compte individuel pour les opérateurs : l'outil leur reste invisible",
+     "h": 1.1
+    }
+   ],
+   "quote": {
+    "text": "On a beaucoup rempli l'outil pendant les trois mois de pilote, mais on ne l'a pas forcément utilisé.",
+    "who": "Équipe projet Chatelain, janv. 2026"
+   },
+   "notes": "Source : Metabase. « Compétences attribuées ou modifiées » = créations d'affectations de compétences + dernières modifications datées dans le mois (une modification antérieure écrasée par une plus récente n'est pas comptée). Parcours : 125 actifs, 11 validés, 59 en retard, 12 en retard de validation, 37 non démarrés."
+  },
+  {
+   "type": "quotes",
+   "title": "Ce que nous avons entendu",
+   "phase": "2 · Analyse",
+   "cols": 3,
+   "quotes": [
+    {
+     "text": "C'est sympa l'outil, mais… ça ne change pas la vie.",
+     "who": "Retour terrain rapporté par les RH, nov. 2025"
+    },
+    {
+     "text": "Je sais très bien qu'ils vont l'utiliser que pendant les ateliers d'une heure qu'on fait.",
+     "who": "Équipe projet Chatelain, déc. 2025"
+    },
+    {
+     "text": "Si on déploie dans l'axe d'engagement du pilote, c'est un échec cuisant annoncé.",
+     "who": "Direction, bilan du pilote, janv. 2026"
+    },
+    {
+     "text": "On avait voulu mettre la charrue avant les bœufs : utiliser un logiciel pour piloter quelque chose qu'on n'avait pas.",
+     "who": "Équipe projet Chatelain, sept. 2026"
+    },
+    {
+     "text": "Pour nous, le pilote n'était pas vraiment concluant, alors que pour Mercateam, c'était go.",
+     "who": "Équipe projet Chatelain, sept. 2026"
+    },
+    {
+     "text": "Afficher 850 compétences couvertes… la valeur ajoutée, la qualité, la pertinence, elle n'était pas présente.",
+     "who": "Direction des opérations, oct. 2026"
+    }
+   ],
+   "notes": "Verbatims issus des enregistrements Claap, légèrement raccourcis. Attribution de la citation du bilan du 29/01/2026 déduite par recoupement (transcription de salle)."
+  },
+  {
+   "type": "cards",
+   "title": "Nos cinq causes racines",
+   "phase": "2 · Analyse",
+   "cols": 5,
+   "card_size": 13,
+   "card_title_size": 15,
+   "card_gap": 12,
+   "cards": [
+    {
+     "num": 1,
+     "title": "On a digitalisé avant de standardiser",
+     "items": [
+      "Pas de définition commune de la compétence",
+      "Niveaux non décrits, découpage différent dans chaque atelier",
+      "L'outil devait piloter un processus qui n'existait pas"
+     ]
+    },
+    {
+     "num": 2,
+     "title": "Pas de valeur visible pour le terrain",
+     "items": [
+      "Les coordinateurs connaissent déjà leurs équipes",
+      "Ni planning ni contrainte réglementaire pour créer un usage quotidien",
+      "Opérateurs sans accès à l'outil"
+     ]
+    },
+    {
+     "num": 3,
+     "title": "Ni temps, ni priorité",
+     "items": [
+      "Coordinateurs opérateurs ~70 % de leur temps",
+      "La production et les lancements passent avant",
+      "Projets concurrents : MES, Tulip, réorganisation"
+     ]
+    },
+    {
+     "num": 4,
+     "title": "Un portage RH, une production en retrait",
+     "items": [
+      "Projet descendant : direction → RH → production",
+      "Responsables d'UAP peu associés aux objectifs",
+      "Sponsor changeant, puis départ du porteur"
+     ]
+    },
+    {
+     "num": 5,
+     "title": "Un pilote court, mesuré au volume",
+     "items": [
+      "~10 semaines dont 2 de fermeture",
+      "Pas d'état zéro ni d'indicateur cible",
+      "Désaccords non exprimés au COPIL de fin"
+     ]
+    }
+   ],
+   "message": "Ces causes s'enchaînent : sans standard, pas de valeur ; sans valeur, pas de temps ; sans temps, pas d'usage.",
+   "notes": "Sources : hebdos déc. 2025 - janv. 2026, bilan du pilote (29/01/2026), échange après la table ronde (13/02/2026), réunions des 23/09 et 06/10/2026."
+  },
+  {
+   "type": "cards",
+   "title": "Notre part de responsabilité",
+   "phase": "2 · Analyse",
+   "cols": 2,
+   "card_size": 15,
+   "card_title_size": 17,
+   "card_gap": 14,
+   "cards": [
+    {
+     "num": 1,
+     "title": "Nous avons privilégié le volume à la méthode",
+     "style": "accent",
+     "items": [
+      "839 compétences attribuées en quelques semaines",
+      "Sans avoir posé de définitions ni de niveaux communs"
+     ]
+    },
+    {
+     "num": 2,
+     "title": "Nous avons sous-estimé le travail de structuration",
+     "style": "accent",
+     "items": [
+      "Le chantier était méthodologique avant d'être digital",
+      "Nous avons accepté un périmètre et une durée que nous savions trop courts"
+     ]
+    },
+    {
+     "num": 3,
+     "title": "Nous sommes restés dans un rôle d'éditeur",
+     "style": "accent",
+     "items": [
+      "Vous attendiez un cadrage de méthode, nous avons déployé un outil",
+      "D'où le recours à un tiers pour challenger le référentiel"
+     ]
+    },
+    {
+     "num": 4,
+     "title": "Nous n'avons pas fait émerger le désalignement",
+     "style": "accent",
+     "items": [
+      "Bilan présenté comme atteint, sans indicateur de valeur",
+      "Des doutes exprimés après coup plutôt qu'au COPIL"
+     ]
+    }
+   ],
+   "message": "Ces erreurs sont les nôtres : elles guident la façon dont nous voulons reprendre le sujet avec vous.",
+   "notes": "Mercateam recommandait 80 à 100 personnes au minimum lors du cadrage (sept. 2025). Constat partagé lors de la réunion du 06/10/2026."
+  },
+  {
+   "type": "cards",
+   "title": "Ce que nous en retenons pour la suite",
+   "phase": "2 · Analyse",
+   "cols": 5,
+   "card_size": 14.5,
+   "card_title_size": 16,
+   "card_gap": 16,
+   "cards": [
+    {
+     "num": 1,
+     "title": "Commencer par la méthode",
+     "items": [
+      "Définir ensemble la compétence et ses niveaux",
+      "Un découpage standard pour tout le site"
+     ]
+    },
+    {
+     "num": 2,
+     "title": "Partir d'un usage terrain",
+     "items": [
+      "Transmission des savoir-faire critiques",
+      "Mobilité entre ateliers"
+     ]
+    },
+    {
+     "num": 3,
+     "title": "Une gouvernance production",
+     "items": [
+      "Responsables d'UAP propriétaires du référentiel",
+      "Du temps protégé pour les coordinateurs"
+     ]
+    },
+    {
+     "num": 4,
+     "title": "Mesurer avant de déployer",
+     "items": [
+      "Un état zéro et des indicateurs cibles",
+      "Un bilan partagé, désaccords compris"
+     ]
+    },
+    {
+     "num": 5,
+     "title": "Capitaliser sur l'existant",
+     "items": [
+      "135 compétences et 57 contenus comme matière première",
+      "Plutôt que repartir de zéro"
+     ]
+    }
+   ],
+   "message": "Prochaine fenêtre : mars 2027, avec la nouvelle DRH et le chantier CODIR « savoir-faire critique et engagement du terrain »."
+  }
+ ]
+}
